@@ -2,18 +2,29 @@
 
 ## Goal
 Source text data for `crypto_scam`, `ai_reply`, and `clean`, with provenance
-stored for every record.
+stored for every record and without losing important information.
 
 ## Primary sources
 - X (Twitter): posts and replies.
 - Discord: DMs and server messages.
 - Web: site content or scraped text you control.
 
+## Ingestion
+- Use your existing OpenClaw instance to collect posts and write JSONL records
+  in the schema below.
+- Ensure the OpenClaw instructions preserve full text and metadata.
+
 ## AI-first labeling workflow
 1) Collect raw text + metadata.
 2) Use AI models to label `crypto_scam` at scale.
 3) Source `ai_reply` candidates by searching X for “AI reply”.
 4) Keep everything else as `clean` unless the AI labels it otherwise.
+
+## Data fidelity (do not lose information)
+- Preserve original text exactly (including emojis, casing, punctuation).
+- Keep original URLs; do not shorten or normalize them.
+- Store the full text even if it is long; do not truncate.
+- Avoid lossy transformations (strip HTML only if you also store raw).
 
 ## Provenance fields (required)
 - `platform`: x | discord | web | dm | other

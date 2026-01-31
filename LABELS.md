@@ -40,7 +40,7 @@ Each record is JSONL with at minimum:
 - `source_id`: platform-native id (tweet id, message id, etc.)
 - `source_url`: canonical URL when available
 - `collected_at`: ISO timestamp
-- `text`: raw text
+- `text`: raw text (preserve exactly; do not truncate)
 - `label`: crypto_scam | ai_reply | clean
 
 Optional fields:

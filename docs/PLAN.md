@@ -18,14 +18,17 @@ positives and user-adjustable thresholds.
 - Local-first: run on CPU without network calls for inference.
 - Conservative thresholds: prioritize low false positives.
 - Provenance: store where each text came from.
+- Fidelity: store data without losing important information.
 
 ## Roadmap
 ### Phase 0 — Definitions
 - Finalize labels and labeling rules.
 - Define minimum data schema (JSONL) with provenance fields.
+- Define data-fidelity rules (preserve original text, links, and metadata).
 - Decide user-adjustable thresholds and defaults.
 
 ### Phase 1 — Data Sourcing (AI-first)
+- Ingest with OpenClaw and write JSONL records in the repo schema.
 - Use AI models to label crypto scam content at scale.
 - For `ai_reply`, source candidates by searching X for “AI reply”.
 - Store provenance for every record (platform, source id/url, timestamp).
