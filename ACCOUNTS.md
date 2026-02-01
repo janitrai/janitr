@@ -368,3 +368,39 @@ Security researcher posts are **not scam content** — they're warnings. But the
   - **@OderaI72943** ("JACKSON WILLIAMS") — +277% profit claims, TG link, cashtag spam
 - **Security researcher source strategy**: ScamSniffer post had spam replies hidden under "Show probable spam" button — X auto-filters scam replies!
 - Next ID: x_0502
+
+## NFT Scam Networks (2026-02-01)
+
+### nerdsoneth.fun Drainer Campaign
+**Hub Account:**
+- @nerdsoneth (verified) — nerdsoneth.fun domain, "FREE MINT on ETH" with WL harvesting
+
+**Amplifier/Shill Accounts:**
+- @mmjpursuit — quotes hub, promotes WL
+- @patecostd — referral link nerdsoneth.fun/?ref=
+- @Drew0x27 — "This is cool af" shill post
+- @e4ma_officiall (verified) — step-by-step WL instructions, credential harvesting
+- @0xClaudz (verified) — manufactured enthusiasm post
+- @Sophia_Claire22 — WL instructions with referral
+- @LuvianElcy — "best nft free mint" shill
+- @Rave_murphy — shill with #NFTs tag
+- @KingsEcheeh (verified) — 10x WL giveaway with wallet harvesting
+- @Andramichael5 (verified) — urgency tactics "ending in few hours"
+
+### Fake OpenSea x InkChain Campaign
+Coordinated campaign promoting fake "Fresh INK" free NFT mint, likely phishing opensea.io links:
+- @xptoplayici — fake announcement with opensea.io/collection/fre
+- @Trustway4 — "Airdrop Alert" persona, urgency + fake opensea link
+- @Kaitor_eth (verified) — "Web3Moon" persona, same fake announcement
+- @Harven85791878 — copy-paste of fake announcement
+
+### NFT Giveaway Wallet Harvesting
+- @Give2Caesar — "NFT Giveaway" with "drop wallet" + "tag fren"
+- @Megaeth_Punks (verified) — "NFT GIVEAWAY" 5K views, wallet harvesting
+- @_morkie (verified) — "Mint Free NFT" on Arc Testnet, morkie.xyz drainer, 15K views
+
+### Other NFT Scam Domains
+- nerdsoneth.fun
+- morkie.xyz/vale
+- arcflow.finance
+
