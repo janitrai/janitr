@@ -16,7 +16,7 @@ other undesirable content.
 4) Thresholding: per-class confidence cutoffs to keep false positives low.
 
 ## Data
-See `LABELS.md` for labeling rules and `data/sample.jsonl` for the data shape.
+See `docs/LABELS.md` for labeling rules and `data/sample.jsonl` for the data shape.
 See `docs/DATA_MODEL.md` for schemas and storage patterns.
 
 Dataset creation is AI-first: use AI models to label crypto scams at scale and
@@ -29,6 +29,18 @@ timestamp). Preserve the original text and URLs without lossy transformations.
 This means we only capture fields visible in the DOM. See `docs/DATA_MODEL.md`
 for details on what fields are available and what's missing. Fill in what you
 can; partial records are fine for ML training.
+
+## Documentation
+
+| Doc | Description |
+|-----|-------------|
+| [docs/PLAN.md](docs/PLAN.md) | Project roadmap and phases |
+| [docs/TRAINING_INFERENCE_STACK.md](docs/TRAINING_INFERENCE_STACK.md) | SOTA training & inference architecture |
+| [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | Schemas and storage patterns |
+| [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) | Where to find data |
+| [docs/LABELS.md](docs/LABELS.md) | Labeling rules and definitions |
+| [docs/SOURCES.md](docs/SOURCES.md) | Source tracking |
+| [docs/ACCOUNTS.md](docs/ACCOUNTS.md) | Scam account registry |
 
 ## Local-first
 No network calls required for classification. Models should run on CPU.
