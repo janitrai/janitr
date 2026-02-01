@@ -209,6 +209,11 @@ Security researcher posts are **not scam content** — they're warnings. But the
 - Often impersonate legitimate projects
 - Hub accounts: TBD
 
+### Cloud Mining Investment Scams (NEW)
+- **@ChainsCloud** — 294 followers — chainscloud.com
+- Pattern: "cloud mining apps" + "daily profit" + "trusted" language; often used in cloud-mining scams
+- Samples: x_0569-x_0570
+
 ### WhatsApp Stock Signal Scam Network (NEW - Meme Coin Tag Spam)
 - **Pattern**: AI-generated "stock analysis" praise → WhatsApp link → "Send 'stocks' to get them for free"
 - **Hashtag gaming**: Uses #DOGE, #SHIB, #LDO, #AVAX to hijack meme coin searches
@@ -216,25 +221,37 @@ Security researcher posts are **not scam content** — they're warnings. But the
 - **Phone numbers (2 shared across network)**:
   - `+1 (213) 462-6461` — @murli_bhai, @Dilipmakwana197, @Abhisek93371673, @pkallappa01, @VimalSi30944018, @Manoran05401242
   - `+1 (303) 419-5364` — @KAyyappa20, @KandilalK, @AyanAcharya5, @Riteshvish55681, @VivekKu83554512, @Muskaan66202721, @Devbrat06653615, @padaliya_hitesh
-- **Accounts (14 documented)**:
-  | Handle | Phone | Sample ID |
-  |--------|-------|-----------|
-  | @Manoran05401242 | +12134626461 | x_0502 |
-  | @Riteshvish55681 | +13034195364 | x_0503 |
-  | @VimalSi30944018 | +12134626461 | x_0504 |
-  | @VivekKu83554512 | +13034195364 | x_0505 |
-  | @Devbrat06653615 | +13034195364 | x_0506 |
-  | @Muskaan66202721 | +13034195364 | x_0507 |
-  | @padaliya_hitesh | +13034195364 | x_0508 |
-  | @KAyyappa20 | +13034195364 | x_0509 |
-  | @murli_bhai | +12134626461 | x_0510 |
-  | @Dilipmakwana197 | +12134626461 | x_0511 |
-  | @KandilalK | +13034195364 | x_0512 |
-  | @Abhisek93371673 | +12134626461 | x_0513 |
-  | @pkallappa01 | +12134626461 | x_0514 |
-  | @AyanAcharya5 | +13034195364 | x_0515 |
-- **Samples collected**: 14 (x_0502 to x_0515)
-- **Notes**: Classic advance-fee fraud — victims DM WhatsApp, get pitched fake stock/crypto signals
+- **Accounts (26 documented)**:
+  | Handle | Phone | Tickers Used |
+  |--------|-------|--------------|
+  | @Manoran05401242 | +12134626461 | #SHIB |
+  | @Riteshvish55681 | +13034195364 | #SHIB |
+  | @VimalSi30944018 | +12134626461 | #SHIB |
+  | @VivekKu83554512 | +13034195364 | #SHIB |
+  | @Devbrat06653615 | +13034195364 | #SHIB |
+  | @Muskaan66202721 | +13034195364 | #SHIB |
+  | @padaliya_hitesh | +13034195364 | #SHIB |
+  | @KAyyappa20 | +13034195364 | #DOGE #SHIB |
+  | @murli_bhai | +12134626461 | #DOGE |
+  | @Dilipmakwana197 | +12134626461 | #DOGE #PEPE |
+  | @KandilalK | +13034195364 | #DOGE |
+  | @Abhisek93371673 | +12134626461 | #DOGE |
+  | @pkallappa01 | +12134626461 | #DOGE |
+  | @AyanAcharya5 | +13034195364 | #DOGE |
+  | @Rahul182020 | +12134626461 | #PEPE |
+  | @Mj31Jangid | +13034195364 | #PEPE |
+  | @KameshKing6 | +12134626461 | #PEPE |
+  | @SatishVulisett2 | +13034195364 | #PEPE |
+  | @SureshS95360800 | +12134626461 | #PEPE |
+  | @VikashK06132386 | +13034195364 | #PEPE |
+  | @BDhalayat52584 | +12134626461 | #BONK |
+  | @Chiragkhant19 | +12134626461 | #BONK |
+  | @suleman59639 | +13034195364 | #BONK |
+  | @SANOJKU33878929 | +12134626461 | #BONK |
+  | @MDHamidJamal3 | +13034195364 | #BONK |
+  | @Pradeep38758428 | +12134626461 | #BONK |
+- **Samples collected**: 28 (x_0502 to x_0528, excluding 2 clean)
+- **Notes**: Classic advance-fee fraud — victims DM WhatsApp, get pitched fake stock/crypto signals. Same 2 US phone numbers shared across 26+ accounts = centralized scam operation.
 
 ### Recovery Scams (Advance-Fee Fraud)
 - Pattern: Spam targeting scam victims, "DM me for assistance in recovering your funds"

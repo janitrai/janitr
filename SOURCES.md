@@ -29,12 +29,12 @@ Popular meme coins get impersonated constantly for fake airdrops/giveaways.
 
 | Ticker | Search Query | Status | Notes |
 |--------|--------------|--------|-------|
-| $DOGE | `"$DOGE airdrop" OR "free DOGE"` | ✅ DONE | Found WhatsApp stock scam network (7 samples x_0509-x_0515) |
-| $SHIB | `"$SHIB airdrop" OR "free SHIB"` | ✅ DONE | Found WhatsApp stock scam network (7 samples x_0502-x_0508) |
-| $PEPE | `"$PEPE airdrop" OR "free PEPE"` | 🔲 TODO | Pepe coin impersonation |
-| $FLOKI | `"$FLOKI airdrop"` | 🔲 TODO | Floki Inu impersonation |
-| $BONK | `"$BONK airdrop"` | 🔲 TODO | Solana meme coin |
-| $WIF | `"$WIF airdrop"` | 🔲 TODO | Dogwifhat impersonation |
+| $DOGE | `"$DOGE airdrop" OR "free DOGE"` | ✅ DONE | WhatsApp stock scam network (7 samples x_0509-x_0515) |
+| $SHIB | `"$SHIB airdrop" OR "free SHIB"` | ✅ DONE | WhatsApp stock scam network (7 samples x_0502-x_0508) |
+| $PEPE | `"$PEPE airdrop" OR "free PEPE"` | ✅ DONE | WhatsApp stock scam network (7 samples x_0516-x_0522) |
+| $BONK | `"$BONK airdrop"` | ✅ DONE | WhatsApp scam (6) + 2 clean (x_0523-x_0530) |
+| $FLOKI | `"$FLOKI airdrop"` | ✅ DONE | 1 fake airdrop scam + 1 clean (x_0531-x_0532) |
+| $WIF | `"$WIF airdrop"` | ✅ DONE | Low yield - mostly @_free_wif_i (JP influencer), not crypto scams |
 
 ## Collection Strategy
 1. Check security account posts for scam reports
