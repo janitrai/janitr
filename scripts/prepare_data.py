@@ -76,12 +76,26 @@ def main() -> None:
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="Input JSONL file")
     parser.add_argument("--train-out", type=Path, default=DEFAULT_TRAIN, help="Train output file")
     parser.add_argument("--valid-out", type=Path, default=DEFAULT_VALID, help="Validation output file")
+    parser.add_argument(
+        "--hard-negatives",
+        type=Path,
+        default=None,
+        help="JSONL of clean hard negatives to oversample into training",
+    )
+    parser.add_argument(
+        "--hard-negatives-mult",
+        type=int,
+        default=3,
+        help="Times to repeat each hard negative in training",
+    )
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--valid-ratio", type=float, default=0.2, help="Validation split ratio")
     parser.add_argument("--strip-urls", action="store_true", help="Remove URLs from text")
     parser.add_argument("--no-normalize", action="store_true", help="Disable Unicode normalization")
     parser.add_argument("--no-lowercase", action="store_true", help="Disable lowercasing")
     args = parser.parse_args()
+    if args.hard_negatives_mult < 1:
+        raise SystemExit("--hard-negatives-mult must be >= 1")
 
     samples = load_samples(args.input)
     print(f"Loaded {len(samples)} samples from {args.input}")
@@ -124,6 +138,35 @@ def main() -> None:
     if len(train_rows) == 0 and len(valid_rows) > 1:
         train_rows = [valid_rows.pop()]
 
+    hard_added = 0
+    hard_skipped_unknown = 0
+    hard_skipped_empty = 0
+
+    if args.hard_negatives is not None:
+        if not args.hard_negatives.exists():
+            raise SystemExit(f"Hard negatives file not found: {args.hard_negatives}")
+        hard_samples = load_samples(args.hard_negatives)
+        for sample in hard_samples:
+            label = map_label(sample.get("label", ""))
+            if label != "clean":
+                hard_skipped_unknown += 1
+                continue
+            text = sample.get("text") or sample.get("raw_text") or ""
+            cleaned = clean_text(
+                text,
+                normalize=not args.no_normalize,
+                lowercase=not args.no_lowercase,
+                strip_urls=args.strip_urls,
+            )
+            if not cleaned:
+                hard_skipped_empty += 1
+                continue
+            for _ in range(args.hard_negatives_mult):
+                train_rows.append(("clean", cleaned))
+                hard_added += 1
+
+        random.Random(args.seed).shuffle(train_rows)
+
     write_fasttext(args.train_out, train_rows)
     write_fasttext(args.valid_out, valid_rows)
 
@@ -133,6 +176,14 @@ def main() -> None:
     print("\nLabel distribution:")
     print(f"  train: {count_labels(train_rows)}")
     print(f"  valid: {count_labels(valid_rows)}")
+
+    if args.hard_negatives is not None:
+        print("\nHard negatives:")
+        print(f"  added to train: {hard_added}")
+        if hard_skipped_unknown or hard_skipped_empty:
+            print("  skipped:")
+            print(f"    non-clean label: {hard_skipped_unknown}")
+            print(f"    empty after cleaning: {hard_skipped_empty}")
 
     if skipped_unknown or skipped_empty:
         print("\nSkipped rows:")

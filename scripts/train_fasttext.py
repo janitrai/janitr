@@ -16,6 +16,9 @@ def main() -> None:
     parser.add_argument("--train", type=Path, default=DEFAULT_TRAIN, help="Training data file")
     parser.add_argument("--model-out", type=Path, default=DEFAULT_MODEL, help="Output model file")
     parser.add_argument("--word-ngrams", type=int, default=2, help="Word n-grams")
+    parser.add_argument("--minn", type=int, default=0, help="Min length of char n-grams (0 disables)")
+    parser.add_argument("--maxn", type=int, default=0, help="Max length of char n-grams (0 disables)")
+    parser.add_argument("--bucket", type=int, default=2000000, help="Number of buckets")
     parser.add_argument("--dim", type=int, default=100, help="Embedding dimension")
     parser.add_argument("--epoch", type=int, default=25, help="Training epochs")
     parser.add_argument("--lr", type=float, default=0.5, help="Learning rate")
@@ -36,6 +39,9 @@ def main() -> None:
     model = fasttext.train_supervised(
         input=str(args.train),
         wordNgrams=args.word_ngrams,
+        minn=args.minn,
+        maxn=args.maxn,
+        bucket=args.bucket,
         dim=args.dim,
         epoch=args.epoch,
         lr=args.lr,
