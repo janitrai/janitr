@@ -17,3 +17,6 @@ __pycache__/
 
 # Scraper scripts (temporary)
 scrape-*.mjs
+models/*.bin
+models/*.vec
+package*.json
