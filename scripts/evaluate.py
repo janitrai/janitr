@@ -11,6 +11,9 @@ DEFAULT_MODEL = REPO_ROOT / "models" / "scam_detector.bin"
 DEFAULT_VALID = REPO_ROOT / "data" / "valid.txt"
 
 CLASSES = ["clean", "crypto", "scam"]
+# Production threshold: 0.90 gives ~4.7% FPR with 75.8% recall.
+# Use 0.50 for evaluation/debugging by passing --threshold 0.50.
+PRODUCTION_THRESHOLD = 0.90
 
 
 def get_probs(model, text: str) -> dict[str, float]:
@@ -77,8 +80,8 @@ def main() -> None:
     parser.add_argument(
         "--threshold",
         type=float,
-        default=None,
-        help="Predict scam when p(scam) >= threshold (defaults to argmax)",
+        default=PRODUCTION_THRESHOLD,
+        help=f"Predict scam when p(scam) >= threshold (default: {PRODUCTION_THRESHOLD:.2f})",
     )
     parser.add_argument(
         "--sweep",
@@ -188,16 +191,8 @@ def main() -> None:
             pick_by_target("precision", args.target_precision)
         return
 
-    # Production threshold: 0.90 gives ~4.7% FPR with 75.8% recall
-    # Use 0.50 for evaluation/debugging, 0.90 for production
-    PRODUCTION_THRESHOLD = 0.90
-
     threshold = args.threshold
-    if threshold is None:
-        threshold = 0.5
-        threshold_note = f"argmax (equivalent to threshold 0.50) - NOTE: use --threshold {PRODUCTION_THRESHOLD} for production"
-    else:
-        threshold_note = f"threshold={threshold:.2f}"
+    threshold_note = f"threshold={threshold:.2f}"
 
     confusion = build_confusion(rows, threshold)
     for actual, text, p_scam in row_texts:
