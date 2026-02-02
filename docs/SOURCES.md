@@ -1,5 +1,45 @@
 # Scam Detection Data Sources
 
+## Active Veins
+
+### bags.fm
+- **Type**: Solana token launchpad (like pump.fun)
+- **URL**: https://bags.fm
+- **Scam patterns**:
+  - Token launch promotions on X
+  - "fill your bags" pump language
+  - Unverified token shilling
+  - Coordinated shill campaigns
+- **Search queries**:
+  - `bags.fm`
+  - `site:bags.fm`
+  - `$TOKEN bags`
+  - `bags launch`
+
+### pump.fun
+- **Type**: Solana memecoin launcher
+- **Scam patterns**:
+  - Stealth launches
+  - "100x gem" promotions
+  - Fake presales
+
+### NFT Scams
+- Free mint drainers (nerdsoneth, etc.)
+- Whitelist/WL spot giveaways
+- Fake OpenSea airdrops
+- NFT presale scams
+
+### Recovery Scams
+- "DM me to recover stolen funds"
+- Fake wallet recovery services
+
+### General Crypto Scams
+- Fake ETH/SOL giveaways
+- "Send X receive 2X" scams
+- Fake Binance/exchange promotions
+
+---
+
 ## Security Researcher Accounts (scam trackers)
 These accounts expose/track scams - their posts and replies are goldmines for finding actual scammers.
 
