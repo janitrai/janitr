@@ -1,0 +1,21 @@
+[project]
+name = "internetcondom"
+version = "0.1.0"
+description = "Scam detection model for browser extension"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+dependencies = [
+    "fasttext-wheel>=0.9.2",
+    "numpy<2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
