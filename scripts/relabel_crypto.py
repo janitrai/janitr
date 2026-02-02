@@ -1,12 +1,22 @@
 #!/usr/bin/env python3
-"""Relabel clean posts with crypto-related content to 'crypto' label."""
+"""
+Suggest crypto relabels for clean posts.
+
+READ-ONLY: This script SUGGESTS changes, it does NOT modify the dataset.
+Human review is required before applying any label changes.
+
+Usage:
+    python scripts/relabel_crypto.py data/sample.jsonl              # list suggestions
+    python scripts/relabel_crypto.py data/sample.jsonl --summary    # counts only
+    python scripts/relabel_crypto.py data/sample.jsonl --output suggestions.jsonl  # save to file
+"""
 import argparse
 import json
-import os
 import re
 import sys
-import tempfile
 from pathlib import Path
+
+# --- Detection patterns ---
 
 CRYPTO_TERMS = [
     "crypto","cryptocurrency","bitcoin","btc","ethereum","eth","xrp","ripple","solana","avalanche","avax",
@@ -20,6 +30,7 @@ CRYPTO_TERMS = [
     "liquidations","liquidated","tokenized","hodl","hodling","bitcon","polymarket","bitwise","microstrategy",
     "usdc","usdt","dai","perps","perpetuals","perpetual","futures","spot","cross-chain","cross chain",
     "phantom","starknet","algorand","aptos","arbitrum","injective","sui","cardano","optimism","cosmos",
+    "helium","blur","dips","shitcoin","shitcoins","100x","10x","moon","mooning","rug","rugged","rugpull",
 ]
 
 WORD_RE = re.compile(r"\b(" + "|".join(re.escape(t) for t in CRYPTO_TERMS) + r")\b", re.IGNORECASE)
@@ -28,72 +39,78 @@ ADDRESS_RE = re.compile(r"\b0x[a-fA-F0-9]{40}\b")
 BAG_RE = re.compile(r"\bbags?\b", re.IGNORECASE)
 NONCRYPTO_BAG_RE = re.compile(r"\b(gloves?|picnic|litter|trash|garbage|surgery|food|transpo|grocery|paper|plastic)\b", re.IGNORECASE)
 
-def should_relabel(obj: dict) -> bool:
+def get_suggestion_reason(obj: dict) -> str | None:
+    """Return reason for suggesting relabel, or None if no suggestion."""
     if obj.get("label") != "clean":
-        return False
+        return None
+    
     text = (obj.get("text") or "").replace("₿", "b")
     addresses = obj.get("addresses") or []
+    
+    reasons = []
+    
     if addresses:
-        return True
-    if WORD_RE.search(text) or TICKER_RE.search(text) or ADDRESS_RE.search(text):
-        return True
+        reasons.append("has_addresses")
+    
+    word_match = WORD_RE.search(text)
+    if word_match:
+        reasons.append(f"keyword:{word_match.group().lower()}")
+    
+    if TICKER_RE.search(text):
+        reasons.append("ticker_pattern")
+    
+    if ADDRESS_RE.search(text):
+        reasons.append("eth_address")
+    
     if BAG_RE.search(text) and not NONCRYPTO_BAG_RE.search(text):
-        return True
-    return False
+        reasons.append("crypto_bags_slang")
+    
+    return ", ".join(reasons) if reasons else None
 
-def relabel_file(path: Path, out_f):
-    changed = 0
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("path", nargs="?", default="data/sample.jsonl", help="Path to JSONL file")
+    ap.add_argument("--summary", action="store_true", help="Show counts only, no individual suggestions")
+    ap.add_argument("--output", "-o", help="Write suggestions to file (JSONL)")
+    args = ap.parse_args()
+
+    path = Path(args.path)
+    suggestions = []
     total_clean = 0
+    
     for line in path.open(encoding="utf-8"):
         obj = json.loads(line)
         if obj.get("label") == "clean":
             total_clean += 1
-            if should_relabel(obj):
-                obj["label"] = "crypto"
-                changed += 1
-        out_f.write(json.dumps(obj, ensure_ascii=False, separators=(",", ":")) + "\n")
-    return total_clean, changed
-
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("path", nargs="?", default="data/sample.jsonl")
-    ap.add_argument("--in-place", action="store_true")
-    ap.add_argument("--output")
-    ap.add_argument("--dry-run", action="store_true")
-    args = ap.parse_args()
-
-    path = Path(args.path)
-
-    if args.dry_run:
-        total_clean = 0
-        changed = 0
-        for line in path.open(encoding="utf-8"):
-            obj = json.loads(line)
-            if obj.get("label") == "clean":
-                total_clean += 1
-                if should_relabel(obj):
-                    changed += 1
-        print(f"clean_total={total_clean}")
-        print(f"relabeled_count={changed}")
+            reason = get_suggestion_reason(obj)
+            if reason:
+                suggestions.append({
+                    "id": obj.get("id"),
+                    "current_label": "clean",
+                    "suggested_label": "crypto",
+                    "reason": reason,
+                    "text_preview": (obj.get("text") or "")[:120],
+                })
+    
+    if args.summary:
+        print(f"Total clean: {total_clean}")
+        print(f"Suggested relabels: {len(suggestions)}")
+        print(f"\n⚠️  These are SUGGESTIONS only. Review manually before applying.")
         return
-
-    if args.in_place:
-        with tempfile.NamedTemporaryFile("w", delete=False, encoding="utf-8", dir=path.parent) as tmp:
-            total_clean, changed = relabel_file(path, tmp)
-            tmp_path = Path(tmp.name)
-        os.replace(tmp_path, path)
-        print(f"clean_total={total_clean}")
-        print(f"relabeled_count={changed}")
-        return
-
+    
     if args.output:
-        with open(args.output, "w", encoding="utf-8") as out_f:
-            total_clean, changed = relabel_file(path, out_f)
+        with open(args.output, "w", encoding="utf-8") as f:
+            for s in suggestions:
+                f.write(json.dumps(s, ensure_ascii=False) + "\n")
+        print(f"Wrote {len(suggestions)} suggestions to {args.output}", file=sys.stderr)
+        print(f"⚠️  Review and apply manually.", file=sys.stderr)
     else:
-        total_clean, changed = relabel_file(path, sys.stdout)
+        for s in suggestions:
+            print(json.dumps(s, ensure_ascii=False))
+        print(f"\n# Total clean: {total_clean}, Suggested: {len(suggestions)}", file=sys.stderr)
+        print(f"# ⚠️  SUGGESTIONS ONLY - review and apply manually", file=sys.stderr)
 
-    print(f"clean_total={total_clean}", file=sys.stderr)
-    print(f"relabeled_count={changed}", file=sys.stderr)
 
 if __name__ == "__main__":
     main()
