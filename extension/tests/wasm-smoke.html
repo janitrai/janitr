@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>fastText WASM Smoke Test</title>
+    <style>
+      body { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; padding: 16px; }
+      pre { white-space: pre-wrap; word-break: break-word; }
+    </style>
+  </head>
+  <body>
+    <pre id="output">Loading…</pre>
+    <script type="module">
+      import { predictScam, PRODUCTION_THRESHOLD } from '../fasttext/scam-detector.js';
+
+      const output = document.getElementById('output');
+      const samples = [
+        {
+          text: '🚀 FREE AIRDROP! Connect wallet now to claim your reward.',
+          note: 'scam-ish',
+        },
+        {
+          text: 'Just finished my morning run and made breakfast. Feeling great today!',
+          note: 'clean-ish',
+        },
+      ];
+
+      const run = async () => {
+        try {
+          const results = [];
+          for (const sample of samples) {
+            const result = await predictScam(sample.text, { threshold: PRODUCTION_THRESHOLD });
+            results.push({ ...sample, ...result });
+          }
+          window.__wasmTestResults = results;
+          window.__wasmTestDone = true;
+          output.textContent = JSON.stringify(results, null, 2);
+        } catch (err) {
+          window.__wasmTestError = String(err && err.stack ? err.stack : err);
+          window.__wasmTestDone = true;
+          output.textContent = window.__wasmTestError;
+        }
+      };
+
+      run();
+    </script>
+  </body>
+</html>
