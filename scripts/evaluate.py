@@ -188,10 +188,14 @@ def main() -> None:
             pick_by_target("precision", args.target_precision)
         return
 
+    # Production threshold: 0.90 gives ~4.7% FPR with 75.8% recall
+    # Use 0.50 for evaluation/debugging, 0.90 for production
+    PRODUCTION_THRESHOLD = 0.90
+
     threshold = args.threshold
     if threshold is None:
         threshold = 0.5
-        threshold_note = "argmax (equivalent to threshold 0.50)"
+        threshold_note = f"argmax (equivalent to threshold 0.50) - NOTE: use --threshold {PRODUCTION_THRESHOLD} for production"
     else:
         threshold_note = f"threshold={threshold:.2f}"
 

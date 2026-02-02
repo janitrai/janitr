@@ -3,7 +3,25 @@
 ## 1) Problem Statement
 X (Twitter) is the primary distribution channel for crypto scams: shill posts, rug-pull hype, impersonators, fake airdrops, wallet drainers, and malicious links. These scams move fast, exploit platform virality, and blend into legitimate crypto chatter. InternetCondom is a browser extension that detects scam content in X feeds and hides or warns users in real time. The system must be low-latency, resilient to adversarial wording, and continuously adaptable as scam tactics evolve.
 
-## 2) Current MVP Architecture (fastText + Rules)
+## 2) Model Performance & Thresholds
+
+**Current model:** fastText supervised classifier trained on 1345 samples.
+
+**Production threshold:** `0.90` (predict scam when P(scam) >= 0.90)
+
+| Threshold | FPR | Recall | Precision | Notes |
+|-----------|-----|--------|-----------|-------|
+| 0.50 | 12.9% | 84.3% | 85.2% | Default argmax - too many false positives |
+| 0.90 | 4.7% | 75.8% | 93.2% | **Production** - best FPR/recall tradeoff |
+| 0.95 | 2.4% | 68.5% | 96.0% | Conservative - use for high-stakes |
+
+**Key insight:** The model is well-calibrated. Higher threshold = fewer false positives but misses more scams. For a browser extension, users tolerate missing some scams better than wrongly flagging legitimate content.
+
+**Inference code:** `scripts/inference.py` uses production threshold by default.
+
+---
+
+## 3) Current MVP Architecture (fastText + Rules)
 The MVP uses a two-layer, on-device approach:
 
 - **Input:** Tweet text (plus minimal metadata when available).
@@ -16,7 +34,7 @@ The MVP uses a two-layer, on-device approach:
 
 Why this works now: it is fast, cheap to iterate, and runs locally. Why it will not scale: it is brittle to obfuscation, has limited context, and cannot generalize to evolving scam campaigns.
 
-## 3) Target Production Architecture (Multi-Stage Pipeline)
+## 4) Target Production Architecture (Multi-Stage Pipeline)
 We are moving toward a modular, multi-stage pipeline that mixes fast heuristics, learned models, and campaign-level intelligence. The goal is to reduce false positives while catching coordinated scam clusters early.
 
 **Pipeline overview:**
@@ -57,7 +75,7 @@ We are moving toward a modular, multi-stage pipeline that mixes fast heuristics,
 
 This architecture supports fast local decisions with optional cloud enrichment when needed.
 
-## 4) X-Specific Signals We Can Extract
+## 5) X-Specific Signals We Can Extract
 We should aggressively exploit X-specific context because scam signals are rarely just text.
 
 **Tweet-level:**
@@ -87,7 +105,7 @@ We should aggressively exploit X-specific context because scam signals are rarel
 - Coordinated posting within tight time windows.
 - Shared domains or wallet addresses across accounts.
 
-## 5) Phased Migration Plan (MVP → Production)
+## 6) Phased Migration Plan (MVP → Production)
 
 **Phase 0: Stabilize MVP (Now)**
 - Improve training data quality, tighten rules, and add minimum telemetry.
@@ -112,7 +130,7 @@ We should aggressively exploit X-specific context because scam signals are rarel
 - Use user feedback and weak labels to update models.
 - Risk calibration by user tolerance (warn vs hide).
 
-## 6) Design Principles
+## 7) Design Principles
 
 - **Modular by default:** every stage is swappable (model, rules, enrichment). No single component should be a choke point.
 - **Low-latency first:** fast local decisions; cloud only when value is clear.
