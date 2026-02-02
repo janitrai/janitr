@@ -48,7 +48,28 @@ Results in models/reduced/reduction_results.csv
 - Aggressive vocab pruning (cutoff) dramatically reduces size with modest accuracy loss
 - **quant-cutoff10k (690KB)** is the current best size/FPR tradeoff at **7.1% FPR**, while keeping recall ~0.80
 - 10k cutoff has *lower* FPR than larger cutoffs (extra vocab may be introducing false positives)
-- Current FPR still exceeds the <5% target at threshold 0.90, so tuning is required
+
+## Threshold Tuning Results (2026-02-02)
+
+Using `scripts/tune_threshold.py` on `quant-cutoff10k.ftz`:
+
+| Threshold | FPR | Precision | Recall | F1 | Notes |
+| --- | --- | --- | --- | --- | --- |
+| 0.90 | 7.1% | 0.894 | 0.803 | 0.846 | default |
+| 0.95 | 7.1% | 0.903 | 0.787 | 0.841 | |
+| 0.98 | 5.9% | 0.920 | 0.775 | 0.841 | |
+| **0.985** | **4.7%** | **0.926** | **0.770** | **0.840** | ✅ **HITS TARGET** |
+| 0.99 | 4.7% | 0.937 | 0.753 | 0.835 | |
+| 0.995 | 4.7% | 0.937 | 0.747 | 0.831 | |
+
+### ✅ Target Achieved!
+
+**Production config:**
+- Model: `models/reduced/quant-cutoff10k.ftz` (690KB)
+- Threshold: **0.985**
+- FPR: **4.7%** (target was ≤5%)
+- Recall: 77% (catches ~3 out of 4 scams)
+- False positives: 4 out of 85 clean samples
 
 ## Parallel work items
 - Add clean crypto posts with scammy keywords to reduce false positives
@@ -56,6 +77,7 @@ Results in models/reduced/reduction_results.csv
 - Decide acceptance criteria for production promotion
 
 ## Next Steps
-1. Threshold tuning to hit <5% FPR
+1. ~~Threshold tuning to hit <5% FPR~~ ✅ Done (0.985 threshold)
 2. WASM integration testing with `quant-cutoff10k.ftz`
-3. Consider if retraining with smaller dim would help
+3. Update browser extension to use threshold 0.985
+4. Consider if retraining with smaller dim would help
