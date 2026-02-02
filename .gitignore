@@ -1,1 +1,19 @@
 node_modules/
+
+# Model binaries (too large for git)
+models/*.bin
+models/*.vec
+models/*.ftz
+
+# Training data (generated)
+data/train.txt
+data/valid.txt
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Scraper scripts (temporary)
+scrape-*.mjs

@@ -15,6 +15,29 @@ other undesirable content.
 3) ML baseline: TF-IDF + Logistic Regression on CPU.
 4) Thresholding: per-class confidence cutoffs to keep false positives low.
 
+## MVP fastText pipeline (Milestone A)
+
+Dependencies (Python):
+- fastText Python bindings: `fasttext-wheel`
+
+Quick start:
+```
+make prepare
+make train
+make eval
+```
+
+Outputs:
+- `data/train.txt`, `data/valid.txt` (fastText format)
+- `models/scam_detector.bin` (trained model)
+
+If you do not have fastText installed, create a virtual environment and install:
+```
+python -m venv .venv
+. .venv/bin/activate
+python -m pip install fasttext-wheel
+```
+
 ## Data
 See `docs/LABELS.md` for labeling rules and `data/sample.jsonl` for the data shape.
 See `docs/DATA_MODEL.md` for schemas and storage patterns.
