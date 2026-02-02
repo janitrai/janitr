@@ -10,7 +10,7 @@ REPO_ROOT = Path(__file__).parent.parent
 DEFAULT_MODEL = REPO_ROOT / "models" / "scam_detector.bin"
 DEFAULT_VALID = REPO_ROOT / "data" / "valid.txt"
 
-CLASSES = ["clean", "scam"]
+CLASSES = ["clean", "crypto", "scam"]
 
 
 def get_probs(model, text: str) -> dict[str, float]:

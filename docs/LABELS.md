@@ -1,6 +1,6 @@
 # Label Guide
 
-This repo currently uses a 3-class scheme:
+This repo currently uses a 4-class scheme:
 
 ## crypto_scam
 Direct attempts to steal funds or credentials.
@@ -9,8 +9,18 @@ Direct attempts to steal funds or credentials.
 - Phishing links to fake exchanges, wallet drainers.
 
 Not crypto_scam:
-- General hype, token promotion, or price talk.
-- Legitimate project announcements without theft patterns.
+- General hype, token promotion, or price talk (label `crypto`).
+- Legitimate project announcements without theft patterns (label `crypto`).
+
+## crypto
+Crypto-related content that is not a scam.
+- Token promotion, price talk, meme coins, NFT drops.
+- Legitimate project announcements or ecosystem updates.
+- General crypto discussion, news, or education.
+
+Not crypto:
+- Non-crypto content.
+- Clear theft/phishing attempts (label `crypto_scam`).
 
 ## ai_reply
 Replies that are likely automated / LLM-generated.
@@ -23,15 +33,15 @@ Not ai_reply:
 - Short human replies, slang-heavy, or context-specific responses.
 
 ## clean
-Everything else that is not crypto_scam or ai_reply.
+Everything else that is not crypto_scam, crypto, or ai_reply.
 This includes:
-- Crypto promotion or "bags" talk (unless it is a scam).
 - Non-crypto content.
 
 ## Labeling rules
-1) Only label `crypto_scam` when there is clear theft or phishing intent.
-2) Only label `ai_reply` when there are strong stylistic cues.
-3) Everything else is `clean`.
+1) Only label `crypto_scam` when there is clear theft or phishing intent (highest priority).
+2) Only label `ai_reply` when there are strong stylistic cues (even if the topic is crypto).
+3) Label `crypto` when the content is crypto-related but not a scam.
+4) Everything else is `clean`.
 
 ## Data shape
 Each record is JSONL with at minimum:
@@ -41,7 +51,7 @@ Each record is JSONL with at minimum:
 - `source_url`: canonical URL when available
 - `collected_at`: ISO timestamp
 - `text`: raw text (preserve exactly; do not truncate)
-- `label`: crypto_scam | ai_reply | clean
+- `label`: crypto_scam | crypto | ai_reply | clean
 
 Optional fields:
 - `urls`: extracted URLs

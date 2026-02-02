@@ -5,6 +5,7 @@ Prepare data for fastText training.
 Converts data/sample.jsonl to data/train.txt and data/valid.txt
 with fastText labels:
   __label__scam <text>
+  __label__crypto <text>
   __label__clean <text>
 """
 
@@ -42,6 +43,8 @@ def clean_text(text: str, *, normalize: bool, lowercase: bool, strip_urls: bool)
 def map_label(label: str) -> str | None:
     if label == "clean":
         return "clean"
+    if label == "crypto":
+        return "crypto"
     if label in {"crypto_scam", "scam"}:
         return "scam"
     return None
