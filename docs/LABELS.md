@@ -18,9 +18,11 @@ If the scam is crypto-related, also add the `crypto` label.
 
 ## crypto
 Crypto-related content that is not a scam.
+- Any mention of a specific coin, token, NFT, or crypto asset.
 - Token promotion, price talk, meme coins, NFT drops.
 - Legitimate project announcements or ecosystem updates.
 - General crypto discussion, news, or education.
+- Wallet, exchange, DeFi, or blockchain references.
 
 Not crypto:
 - Non-crypto content.
@@ -61,7 +63,7 @@ This includes:
 ## Labeling rules
 1) Only label `scam` when there is clear theft or phishing intent (highest priority).
 2) Only label `ai_generated_reply` when there are strong stylistic cues (even if the topic is crypto).
-3) Label `crypto` when the content is crypto-related but not a scam.
+3) Label `crypto` when the content mentions any coin, token, NFT, wallet, exchange, or crypto asset.
 4) Label `promo` when the content is advertising or promotional copy.
 5) Everything else is `clean`.
 
