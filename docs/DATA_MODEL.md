@@ -53,7 +53,7 @@ If you have API access, use the full snapshot schema to preserve everything.
   "source_id": "2017528384448856158",
   "collected_at": "2026-01-31T19:50:00Z",
   "text": "@bankrbot deploy token...",
-  "labels": ["crypto_scam"]
+  "labels": ["crypto", "scam"]
 }
 ```
 
@@ -137,7 +137,7 @@ For ML training, we use a simpler JSONL format (see `LABELS.md`).
   "text": "@bankrbot deploy token name Internet Condom ticker iCondom send all fees @onusoz .",
   "urls": [],
   "addresses": [],
-  "labels": ["crypto_scam"],
+  "labels": ["crypto", "scam"],
   "notes": "bankrbot token deployment scam"
 }
 ```
@@ -146,7 +146,7 @@ For ML training, we use a simpler JSONL format (see `LABELS.md`).
 
 | Label | Description |
 |-------|-------------|
-| `crypto_scam` | Direct theft/phishing attempts (seed phrases, wallet drainers, fake claims) |
+| `scam` | Direct theft/phishing attempts (seed phrases, wallet drainers, fake claims) |
 | `crypto` | Legitimate crypto discussion, hype, or announcements |
 | `ai_generated_reply` | Automated/LLM-generated replies (generic, template-like) |
 | `promo` | Non-crypto promotional/advertising copy |

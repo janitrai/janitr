@@ -1,10 +1,10 @@
 # Manual label changes - reviewed 2026-02-02
 # Format: id new_label
 
-# === SCAMS (clean → crypto_scam) ===
-x_0394 crypto_scam
-x_0397 crypto_scam  
-x_0658 crypto_scam
+# === SCAMS (clean → crypto + scam) ===
+x_0394 crypto scam
+x_0397 crypto scam
+x_0658 crypto scam
 
 # === FALSE POSITIVES (keep as clean - excluded from bulk relabel) ===
 # x_0443 - piggyvest is Nigerian fintech, not crypto

@@ -29,7 +29,7 @@ LABELED_SAMPLE_SCHEMA = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "title": "Labeled Sample",
     "type": "object",
-    "required": ["id", "platform", "source_id", "collected_at", "text", "label"],
+    "required": ["id", "platform", "source_id", "collected_at", "text", "labels"],
     "additionalProperties": True,
     "properties": {
         "id": {"type": "string", "minLength": 1},
@@ -40,7 +40,11 @@ LABELED_SAMPLE_SCHEMA = {
         "text": {"type": "string"},
         "urls": {"type": "array", "items": {"type": "string"}},
         "addresses": {"type": "array", "items": {"type": "string"}},
-        "label": {"type": "string", "enum": ["crypto_scam", "ai_generated_reply", "clean"]},
+        "labels": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "enum": ["crypto", "scam", "promo", "ai_generated_reply", "clean"]},
+        },
         "notes": {"type": "string"},
     },
 }

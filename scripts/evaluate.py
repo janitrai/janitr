@@ -32,11 +32,23 @@ def parse_line(line: str) -> tuple[str, str] | None:
         return None
     if not line.startswith("__label__"):
         return None
-    parts = line.split(" ", 1)
-    label_token = parts[0]
-    text = parts[1] if len(parts) > 1 else ""
-    label = label_token.replace("__label__", "", 1)
-    return label, text
+    parts = line.split()
+    labels: list[str] = []
+    idx = 0
+    for token in parts:
+        if token.startswith("__label__"):
+            labels.append(token.replace("__label__", "", 1))
+            idx += 1
+        else:
+            break
+    if not labels:
+        return None
+    text = " ".join(parts[idx:]) if idx < len(parts) else ""
+    if "scam" in labels:
+        return "scam", text
+    if "crypto" in labels:
+        return "crypto", text
+    return "clean", text
 
 
 def safe_div(num: float, den: float) -> float:

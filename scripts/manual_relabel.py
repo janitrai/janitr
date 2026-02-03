@@ -12,9 +12,12 @@ Usage:
     python scripts/manual_relabel.py data/sample.jsonl --changes changes.txt --apply
 
 Changes file format (one per line):
-    x_0394 crypto_scam
-    x_0397 crypto_scam
+    # Single label
     x_0001 crypto
+
+    # Multiple labels (space or comma separated)
+    x_0394 crypto scam
+    x_0397 crypto,scam
 """
 import argparse
 import json
@@ -24,17 +27,54 @@ import tempfile
 from pathlib import Path
 
 
-def load_changes(changes_path: Path) -> dict[str, str]:
-    """Load id -> new_label mapping from changes file."""
-    changes = {}
+VALID_LABELS = {"clean", "crypto", "scam", "promo", "ai_generated_reply"}
+
+
+def normalize_labels(labels: list[str]) -> list[str]:
+    normalized: list[str] = []
+    for label in labels:
+        if label == "crypto_scam":
+            normalized.extend(["crypto", "scam"])
+            continue
+        if label in VALID_LABELS:
+            normalized.append(label)
+    seen = set()
+    deduped = []
+    for label in normalized:
+        if label in seen:
+            continue
+        seen.add(label)
+        deduped.append(label)
+    if "clean" in deduped and len(deduped) > 1:
+        deduped = [label for label in deduped if label != "clean"]
+    return deduped
+
+
+def parse_labels(tokens: list[str]) -> list[str]:
+    labels: list[str] = []
+    for token in tokens:
+        for part in token.split(","):
+            part = part.strip()
+            if part:
+                labels.append(part)
+    return normalize_labels(labels)
+
+
+def load_changes(changes_path: Path) -> dict[str, list[str]]:
+    """Load id -> labels mapping from changes file."""
+    changes: dict[str, list[str]] = {}
     for line in changes_path.open():
         line = line.strip()
         if not line or line.startswith("#"):
             continue
         parts = line.split()
         if len(parts) >= 2:
-            id_, label = parts[0], parts[1]
-            changes[id_] = label
+            id_, label_tokens = parts[0], parts[1:]
+            labels = parse_labels(label_tokens)
+            if not labels:
+                print(f"⚠️  Skipping {id_}: no valid labels found", file=sys.stderr)
+                continue
+            changes[id_] = labels
     return changes
 
 
@@ -63,11 +103,16 @@ def main():
         obj = json.loads(line)
         id_ = obj.get("id")
         if id_ in changes:
-            old_label = obj.get("label")
-            new_label = changes[id_]
-            if old_label != new_label:
-                print(f"  {id_}: {old_label} → {new_label}")
-                obj["label"] = new_label
+            old_labels = []
+            if isinstance(obj.get("labels"), list):
+                old_labels = normalize_labels(obj.get("labels"))
+            elif isinstance(obj.get("label"), str):
+                old_labels = normalize_labels([obj.get("label")])
+            new_labels = changes[id_]
+            if old_labels != new_labels or obj.get("labels") != new_labels or "label" in obj:
+                print(f"  {id_}: {old_labels} → {new_labels}")
+                obj["labels"] = new_labels
+                obj.pop("label", None)
                 applied += 1
             not_found.discard(id_)
         output_lines.append(json.dumps(obj, ensure_ascii=False, separators=(",", ":")))

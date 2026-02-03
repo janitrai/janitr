@@ -2,7 +2,7 @@
 
 > **Reviewed 2026-02-02**: API verified against `fasttext.wasm.js` v1.0.0 source. Fixed Pair access (`[0]`/`[1]` not `.first`/`.second`).
 >
-> **Updated 2026-02-02**: Applied 4 fixes from pi review: (1) scan predictions for `__label__crypto_scam` explicitly, (2) call `predictions.delete()` to avoid WASM heap leak, (3) manifest pattern `fastText/**` for subfolders, (4) filename case verified correct.
+> **Updated 2026-02-02**: Applied 4 fixes from pi review: (1) scan predictions for `__label__scam` explicitly, (2) call `predictions.delete()` to avoid WASM heap leak, (3) manifest pattern `fastText/**` for subfolders, (4) filename case verified correct.
 
 ## Overview
 
@@ -105,19 +105,19 @@ export class ScamDetector {
 
     // fastText predict returns Vector<Pair<number, string>> where Pair is a tuple [number, string]:
     // - [0] is probability
-    // - [1] is label (e.g., "__label__crypto_scam")
+    // - [1] is label (e.g., "__label__scam")
     // Use -1 to get ALL labels (don't assume binary normalized probabilities!)
     const predictions = this.model.predict(text, -1);
     
     try {
-      // Scan predictions for __label__crypto_scam explicitly
-      // (fastText doesn't guarantee p(crypto_scam)+p(not_scam)=1)
+      // Scan predictions for __label__scam explicitly
+      // (fastText doesn't guarantee p(scam)+p(not_scam)=1)
       let scamProb = 0;
       for (let i = 0; i < predictions.size(); i++) {
         const pair = predictions.get(i);
         const prob = pair[0];
         const label = pair[1];
-        if (label === '__label__crypto_scam') {
+        if (label === '__label__scam') {
           scamProb = prob;
           break;
         }
@@ -126,7 +126,7 @@ export class ScamDetector {
       return {
         isScam: scamProb >= threshold,
         confidence: scamProb >= threshold ? scamProb : 1 - scamProb,
-        label: scamProb >= threshold ? 'crypto_scam' : 'not_scam',
+        label: scamProb >= threshold ? 'scam' : 'not_scam',
         rawProbability: scamProb,
       };
     } finally {
@@ -256,7 +256,7 @@ async function checkText(text: string) {
 
 5. **Service Worker Lifecycle**: Background service workers can be terminated. Model may need to be re-loaded on wake.
 
-6. **Probability Values**: fastText doesn't guarantee `p(crypto_scam) + p(not_scam) = 1`. Don't use `1 - topProb` as the complement. Instead, scan predictions for the specific label you want (use `predict(text, -1)` to get all labels). If you keep multiple scam labels (e.g. `scam` + `crypto_scam`), combine them explicitly.
+6. **Probability Values**: fastText doesn't guarantee `p(scam) + p(not_scam) = 1`. Don't use `1 - topProb` as the complement. Instead, scan predictions for the specific label you want (use `predict(text, -1)` to get all labels). If you keep multiple scam labels, combine them explicitly.
 7. **Multi-label**: fastText supports multiple labels per sample. At inference, treat each label probability independently and return all labels above your threshold(s).
 
 ## Testing Checklist
@@ -273,7 +273,7 @@ async function checkText(text: string) {
 
 ```typescript
 await detector.predict("FREE AIRDROP! Connect wallet now!")
-// → { isScam: true, confidence: 0.999, label: 'crypto_scam', rawProbability: 0.999 }
+// → { isScam: true, confidence: 0.999, label: 'scam', rawProbability: 0.999 }
 
 await detector.predict("The meeting is scheduled for tomorrow at 3pm")
 // → { isScam: false, confidence: 0.95, label: 'not_scam', rawProbability: 0.05 }

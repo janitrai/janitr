@@ -1,7 +1,7 @@
 # Data Sources (AI-first)
 
 ## Goal
-Source text data for `crypto_scam`, `crypto`, `ai_generated_reply`, `promo`, and `clean`, with provenance
+Source text data for `scam`, `crypto`, `ai_generated_reply`, `promo`, and `clean`, with provenance
 stored for every record and without losing important information.
 
 ## Primary sources
@@ -30,7 +30,7 @@ Write to: data/raw/x_openclaw_YYYYMMDD.jsonl
 
 ## AI-first labeling workflow
 1) Collect raw text + metadata.
-2) Use AI models to label `crypto_scam` at scale.
+2) Use AI models to label `scam` at scale.
 3) Source `ai_generated_reply` candidates by searching X for “AI reply”.
 4) Collect non-crypto promo/ads and label as `promo`.
 5) Keep everything else as `clean` unless the AI labels it otherwise.
@@ -57,7 +57,7 @@ Each record:
   "source_url": "https://x.com/...",
   "collected_at": "2026-01-31T00:00:00Z",
   "text": "raw text",
-  "labels": ["crypto_scam"],
+  "labels": ["crypto", "scam"],
   "urls": ["https://example.com"],
   "addresses": ["..."],
   "notes": "optional"
@@ -78,7 +78,7 @@ Multi-label example:
 ```
 
 ## Sampling strategy
-- Ensure class balance across `crypto_scam`, `crypto`, `ai_generated_reply`, `promo`, and `clean`.
+- Ensure class balance across `scam`, `crypto`, `ai_generated_reply`, `promo`, and `clean`.
 - Use multiple labels when the attributes are orthogonal (e.g. `crypto` + `promo`).
 - Deduplicate near-identical text.
 - Keep a separate holdout split for evaluation.

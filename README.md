@@ -6,8 +6,9 @@ other undesirable content.
 ## Scope (v0)
 - Input: text content (DMs, posts, web text) with URL parsing.
 - Output: labels[] + confidence + optional reasons.
-- Classes: `crypto_scam`, `crypto`, `ai_generated_reply`, `promo`, `clean`.
+- Classes: `scam`, `crypto`, `ai_generated_reply`, `promo`, `clean`.
 - Goal: low false positives, with user-adjustable thresholds.
+- Training note: you can cluster labels during training (merge into coarse super-classes) to improve performance, while keeping the dataset labels fine-grained.
 
 ## Pipeline (minimal)
 1) Parse text and extract URLs (and optionally wallet addresses).
@@ -42,7 +43,7 @@ python -m pip install fasttext-wheel
 See `docs/LABELS.md` for labeling rules and `data/sample.jsonl` for the data shape.
 See `docs/DATA_MODEL.md` for schemas and storage patterns.
 
-Dataset creation is AI-first: use AI models to label crypto scams at scale and
+Dataset creation is AI-first: use AI models to label scams at scale and
 source `ai_generated_reply` candidates by searching X for "AI reply". Ingestion is done
 entirely via OpenClaw (no scripts in this repo), using its provided browser to
 collect everything. Store provenance for every sample (platform, source id/url,
