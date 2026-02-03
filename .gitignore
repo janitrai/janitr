@@ -37,3 +37,4 @@ playwright-report/
 *.svg
 *.ico
 *.bmp
+package-lock.json
