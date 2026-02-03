@@ -21,7 +21,7 @@ echo "just vibing with crypto friends" | python scripts/inference.py --stdin
 | Type | fastText supervised |
 | Training samples | 1345 |
 | Validation samples | 337 |
-| Classes | clean, crypto, scam, promo, ai_generated_reply |
+| Classes | clean, crypto, scam, promo |
 | Model size | ~767MB (unquantized) |
 | Inference time | <1ms per sample |
 
@@ -29,6 +29,8 @@ echo "just vibing with crypto friends" | python scripts/inference.py --stdin
 
 Per-label thresholds live in `config/thresholds.json` and are applied during inference.
 Use a single global threshold only for debugging or when the thresholds file is absent.
+
+**Note:** `ai_generated_reply` is currently excluded from training and inference until we have more labeled data.
 
 ## Training Pipeline
 
@@ -70,7 +72,6 @@ scripts/
 |-------|-------------|---------|
 | `scam` | Theft/phishing attempts (crypto or not) | "Send 1 ETH get 2 back!" |
 | `crypto` | Legitimate crypto discussion | "BTC looking bullish today" |
-| `ai_generated_reply` | Automated/LLM-generated replies | "Great post! This is amazing" |
 | `promo` | Promotional/advertising copy | "Free trial — get access in 2 minutes" |
 | `clean` | Non-crypto content | "Great weather today" |
 

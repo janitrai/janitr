@@ -14,7 +14,7 @@ DEFAULT_MODEL = REPO_ROOT / "models" / "scam_detector.bin"
 DEFAULT_VALID = REPO_ROOT / "data" / "valid.txt"
 DEFAULT_THRESHOLDS = REPO_ROOT / "config" / "thresholds.json"
 
-CLASSES = ["clean", "crypto", "scam", "promo", "ai_generated_reply"]
+CLASSES = ["clean", "crypto", "scam", "promo"]
 DEFAULT_GLOBAL_THRESHOLD = 0.5
 
 
@@ -31,10 +31,11 @@ def parse_line(line: str) -> tuple[set[str], str] | None:
             idx += 1
         else:
             break
-    if not labels:
+    filtered = {label for label in labels if label in CLASSES}
+    if not filtered:
         return None
     text = " ".join(parts[idx:]) if idx < len(parts) else ""
-    return set(labels), text
+    return filtered, text
 
 
 def get_scores(model, text: str) -> dict[str, float]:
