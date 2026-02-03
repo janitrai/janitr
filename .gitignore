@@ -21,3 +21,12 @@ models/*.bin
 models/*.vec
 package*.json
 models/reduced/
+# Images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg
+*.ico
+*.bmp
