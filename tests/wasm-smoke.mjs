@@ -2,7 +2,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promises as fs } from 'node:fs';
-import puppeteer from 'puppeteer-core';
+import { chromium } from 'playwright';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,16 +10,10 @@ const repoRoot = path.resolve(__dirname, '..');
 const extensionRoot = path.join(repoRoot, 'extension');
 
 const executablePath =
-  process.env.PUPPETEER_EXECUTABLE_PATH ||
+  process.env.PLAYWRIGHT_CHROME_EXECUTABLE_PATH ||
   process.env.CHROME_PATH ||
-  process.env.CHROMIUM_PATH;
-
-if (!executablePath) {
-  console.error(
-    'Missing Chrome/Chromium path. Set PUPPETEER_EXECUTABLE_PATH or CHROME_PATH.'
-  );
-  process.exit(1);
-}
+  process.env.CHROMIUM_PATH ||
+  undefined;
 
 const mimeTypes = {
   '.html': 'text/html; charset=utf-8',
@@ -80,10 +74,14 @@ const run = async () => {
   const port = await listen();
   const url = `http://127.0.0.1:${port}/tests/wasm-smoke.html`;
 
-  const browser = await puppeteer.launch({
-    executablePath,
+  const launchOptions = {
+    headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
+  };
+  if (executablePath) {
+    launchOptions.executablePath = executablePath;
+  }
+  const browser = await chromium.launch(launchOptions);
 
   try {
     const page = await browser.newPage();

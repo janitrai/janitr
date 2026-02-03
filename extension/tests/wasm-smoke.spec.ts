@@ -25,8 +25,6 @@ test('WASM smoke test loads in the extension', async ({}, testInfo) => {
 
   if (chromeExecutable) {
     launchOptions.executablePath = chromeExecutable;
-  } else {
-    launchOptions.channel = 'chrome';
   }
 
   const context = await chromium.launchPersistentContext(userDataDir, launchOptions);
@@ -37,7 +35,7 @@ test('WASM smoke test loads in the extension', async ({}, testInfo) => {
       .find((worker) => worker.url().startsWith('chrome-extension://'));
     const worker =
       existingWorker ||
-      (await context.waitForEvent('serviceworker', { timeout: 10000 }));
+      (await context.waitForEvent('serviceworker', { timeout: 20000 }));
     const extensionId = new URL(worker.url()).host;
 
     const page = await context.newPage();

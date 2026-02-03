@@ -4,10 +4,14 @@ node_modules/
 models/*.bin
 models/*.vec
 models/*.ftz
+*.ftz
 
 # Training data (generated)
 data/train.txt
 data/valid.txt
+data/holdout.txt
+data/holdout.jsonl
+data/holdout_meta.json
 
 # Python
 .venv/
@@ -19,8 +23,11 @@ __pycache__/
 scrape-*.mjs
 models/*.bin
 models/*.vec
-package*.json
 models/reduced/
+
+# Playwright artifacts
+test-results/
+playwright-report/
 # Images
 *.png
 *.jpg
