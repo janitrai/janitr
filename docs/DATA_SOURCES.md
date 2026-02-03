@@ -1,7 +1,7 @@
 # Data Sources (AI-first)
 
 ## Goal
-Source text data for `crypto_scam`, `ai_reply`, and `clean`, with provenance
+Source text data for `crypto_scam`, `crypto`, `ai_generated_reply`, `promo`, and `clean`, with provenance
 stored for every record and without losing important information.
 
 ## Primary sources
@@ -19,7 +19,7 @@ stored for every record and without losing important information.
 ```
 Collect posts from X using your queries. For each post, output one JSONL line
 with the required schema fields:
-id, platform="x", source_id, source_url, collected_at (ISO), text, label,
+id, platform="x", source_id, source_url, collected_at (ISO), text, labels[],
 urls[], addresses[], notes (optional).
 
 Preserve the original text exactly (including emojis, casing, punctuation).
@@ -31,8 +31,9 @@ Write to: data/raw/x_openclaw_YYYYMMDD.jsonl
 ## AI-first labeling workflow
 1) Collect raw text + metadata.
 2) Use AI models to label `crypto_scam` at scale.
-3) Source `ai_reply` candidates by searching X for “AI reply”.
-4) Keep everything else as `clean` unless the AI labels it otherwise.
+3) Source `ai_generated_reply` candidates by searching X for “AI reply”.
+4) Collect non-crypto promo/ads and label as `promo`.
+5) Keep everything else as `clean` unless the AI labels it otherwise.
 
 ## Data fidelity (do not lose information)
 - Preserve original text exactly (including emojis, casing, punctuation).
@@ -56,15 +57,29 @@ Each record:
   "source_url": "https://x.com/...",
   "collected_at": "2026-01-31T00:00:00Z",
   "text": "raw text",
-  "label": "crypto_scam|ai_reply|clean",
+  "labels": ["crypto_scam"],
   "urls": ["https://example.com"],
   "addresses": ["..."],
   "notes": "optional"
 }
 ```
 
+Multi-label example:
+```
+{
+  "id": "x_0002",
+  "platform": "x",
+  "source_id": "1234567891",
+  "source_url": "https://x.com/...",
+  "collected_at": "2026-01-31T00:05:00Z",
+  "text": "USDC + product launch promo...",
+  "labels": ["crypto", "promo"]
+}
+```
+
 ## Sampling strategy
-- Ensure class balance across `crypto_scam`, `ai_reply`, and `clean`.
+- Ensure class balance across `crypto_scam`, `crypto`, `ai_generated_reply`, `promo`, and `clean`.
+- Use multiple labels when the attributes are orthogonal (e.g. `crypto` + `promo`).
 - Deduplicate near-identical text.
 - Keep a separate holdout split for evaluation.
 

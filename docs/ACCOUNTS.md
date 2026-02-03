@@ -311,7 +311,7 @@ Security researcher posts are **not scam content** — they're warnings. But the
 
 ### 2026-02-01 01:33 UTC - Starting extended collection
 - Chairman requested 3000 total samples
-- Currently at 257 (200 scam, 56 clean, 1 ai_reply)
+- Currently at 257 (200 scam, 56 clean, 1 ai_generated_reply)
 - Need: 1800 more scam, ~935 more clean
 
 ### 2026-02-01 09:06 UTC - Airdrop scam expansion + follower counts

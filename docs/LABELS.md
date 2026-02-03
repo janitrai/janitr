@@ -1,6 +1,12 @@
 # Label Guide
 
-This repo currently uses a 4-class scheme:
+This repo currently uses a 5-class scheme with **multi-label support**.
+Each sample can have **one or more labels** when the attributes are orthogonal
+(e.g. topic + intent).
+
+Recommended representation:
+- `labels`: array of strings (one or more labels)
+- `primary_label` (optional): a single label when a primary class is needed
 
 ## crypto_scam
 Direct attempts to steal funds or credentials.
@@ -22,26 +28,43 @@ Not crypto:
 - Non-crypto content.
 - Clear theft/phishing attempts (label `crypto_scam`).
 
-## ai_reply
+## ai_generated_reply
 Replies that are likely automated / LLM-generated.
 Signals include:
 - Generic, overly flattering, or template-like replies.
 - Repetitive phrasing across many replies.
 - Low specificity to the original post.
 
-Not ai_reply:
+Not ai_generated_reply:
 - Short human replies, slang-heavy, or context-specific responses.
 
+## promo
+Non-crypto promotional or advertising content.
+- Product ads, affiliate pitches, newsletter promos.
+- “Limited time”, “free”, “sign up now”, “get access” marketing copy.
+- Generic growth/marketing hooks that are not crypto-related.
+
+Not promo:
+- Any crypto-related promotion (label `crypto` unless it is theft/phishing).
+- Clear theft/phishing attempts (label `crypto_scam`).
+- Ordinary non-promotional content (label `clean`).
+
 ## clean
-Everything else that is not crypto_scam, crypto, or ai_reply.
+Everything else that is not crypto_scam, crypto, ai_generated_reply, or promo.
 This includes:
 - Non-crypto content.
 
+## Multi-label rules
+- Use multiple labels when **both are true** (e.g. `crypto` + `promo`).
+- `clean` should be **exclusive** (do not combine with other labels).
+- `crypto_scam` can stand alone; it **implies crypto** and does not require adding `crypto`.
+
 ## Labeling rules
 1) Only label `crypto_scam` when there is clear theft or phishing intent (highest priority).
-2) Only label `ai_reply` when there are strong stylistic cues (even if the topic is crypto).
+2) Only label `ai_generated_reply` when there are strong stylistic cues (even if the topic is crypto).
 3) Label `crypto` when the content is crypto-related but not a scam.
-4) Everything else is `clean`.
+4) Label `promo` when the content is non-crypto advertising or promotional copy.
+5) Everything else is `clean`.
 
 ## Data shape
 Each record is JSONL with at minimum:
@@ -51,7 +74,7 @@ Each record is JSONL with at minimum:
 - `source_url`: canonical URL when available
 - `collected_at`: ISO timestamp
 - `text`: raw text (preserve exactly; do not truncate)
-- `label`: crypto_scam | crypto | ai_reply | clean
+- `labels`: crypto_scam | crypto | ai_generated_reply | promo | clean (one or more)
 
 Optional fields:
 - `urls`: extracted URLs

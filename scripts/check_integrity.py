@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 from collections import defaultdict
 
-VALID_LABELS = {"clean", "crypto", "crypto_scam", "ai_reply"}
+VALID_LABELS = {"clean", "crypto", "crypto_scam", "ai_generated_reply"}
 ID_PATTERN = re.compile(r"^x_\d+(_dup\d+)?$|^x_auto_\d+$")
 
 

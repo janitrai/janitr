@@ -40,7 +40,7 @@ LABELED_SAMPLE_SCHEMA = {
         "text": {"type": "string"},
         "urls": {"type": "array", "items": {"type": "string"}},
         "addresses": {"type": "array", "items": {"type": "string"}},
-        "label": {"type": "string", "enum": ["crypto_scam", "ai_reply", "clean"]},
+        "label": {"type": "string", "enum": ["crypto_scam", "ai_generated_reply", "clean"]},
         "notes": {"type": "string"},
     },
 }

@@ -83,7 +83,13 @@ scripts/
 |-------|-------------|---------|
 | `crypto_scam` | Malicious crypto theft/phishing | "Send 1 ETH get 2 back!" |
 | `crypto` | Legitimate crypto discussion | "BTC looking bullish today" |
+| `promo` | Non-crypto promotional/advertising copy | "Free trial — get access in 2 minutes" |
 | `clean` | Non-crypto content | "Great weather today" |
+
+Multi-label:
+- Store labels as an array (e.g. `["crypto", "promo"]`).
+- `clean` should be exclusive.
+- fastText supports multi-label by putting multiple `__label__...` tokens on the same line.
 
 **Recommendation:** keep `crypto_scam` as its own label (do not collapse into a generic `scam`). If you want a single “scam” decision at inference time, treat `crypto_scam` (and any future `scam`) as scam for highlighting/thresholding, but keep the label distinct in training and evaluation.
 

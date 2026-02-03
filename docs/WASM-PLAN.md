@@ -257,6 +257,7 @@ async function checkText(text: string) {
 5. **Service Worker Lifecycle**: Background service workers can be terminated. Model may need to be re-loaded on wake.
 
 6. **Probability Values**: fastText doesn't guarantee `p(crypto_scam) + p(not_scam) = 1`. Don't use `1 - topProb` as the complement. Instead, scan predictions for the specific label you want (use `predict(text, -1)` to get all labels). If you keep multiple scam labels (e.g. `scam` + `crypto_scam`), combine them explicitly.
+7. **Multi-label**: fastText supports multiple labels per sample. At inference, treat each label probability independently and return all labels above your threshold(s).
 
 ## Testing Checklist
 

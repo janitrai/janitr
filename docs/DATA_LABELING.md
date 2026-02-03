@@ -16,9 +16,14 @@ Why:
 
 Priority order (highest to lowest):
 1. `crypto_scam` - Malicious crypto content (drainers, fake airdrops, phishing)
-2. `ai_reply` - AI-generated promotional replies
+2. `ai_generated_reply` - AI-generated promotional replies
 3. `crypto` - Legitimate crypto discussion (news, trading, projects)
-4. `clean` - Non-crypto content
+4. `promo` - Non-crypto promotional/advertising copy
+5. `clean` - Non-crypto content
+
+Multi-label note:
+- Use multiple labels when the attributes are orthogonal (e.g. `crypto` + `promo`).
+- `clean` should be exclusive (no other labels).
 
 ## Labeling Process
 
@@ -56,11 +61,15 @@ git commit -m "Manual relabel: X entries clean→crypto, Y entries clean→crypt
 - Explanations of how scams work
 - Security advice ("never share your seed phrase")
 
-### Legitimate crypto (should be `crypto`, not `clean`)
+### Legitimate crypto (should be `crypto`, not `clean`/`promo`)
 - Project announcements from real teams
 - Price discussion, trading analysis
 - Hiring posts from crypto companies
 - Blockchain technical discussion
+
+### Non-crypto promos (should be `promo`, not `clean`)
+- Product ads, affiliate pitches, newsletter promos
+- “Limited time”, “free”, “sign up now” style marketing copy
 
 ## Scripts Inventory
 
@@ -84,7 +93,7 @@ Checks performed:
 - Valid JSON on every line
 - Required fields present (id, label, text)
 - No duplicate IDs
-- Valid label values (clean, crypto, crypto_scam, ai_reply)
+- Valid label values in `labels[]` (clean, crypto, crypto_scam, ai_generated_reply, promo)
 - No empty text
 - ID format consistency
 

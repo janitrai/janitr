@@ -5,8 +5,8 @@ other undesirable content.
 
 ## Scope (v0)
 - Input: text content (DMs, posts, web text) with URL parsing.
-- Output: label + confidence + optional reasons.
-- Classes: `crypto_scam`, `ai_reply`, `clean`.
+- Output: labels[] + confidence + optional reasons.
+- Classes: `crypto_scam`, `crypto`, `ai_generated_reply`, `promo`, `clean`.
 - Goal: low false positives, with user-adjustable thresholds.
 
 ## Pipeline (minimal)
@@ -43,7 +43,7 @@ See `docs/LABELS.md` for labeling rules and `data/sample.jsonl` for the data sha
 See `docs/DATA_MODEL.md` for schemas and storage patterns.
 
 Dataset creation is AI-first: use AI models to label crypto scams at scale and
-source `ai_reply` candidates by searching X for "AI reply". Ingestion is done
+source `ai_generated_reply` candidates by searching X for "AI reply". Ingestion is done
 entirely via OpenClaw (no scripts in this repo), using its provided browser to
 collect everything. Store provenance for every sample (platform, source id/url,
 timestamp). Preserve the original text and URLs without lossy transformations.
