@@ -15,7 +15,7 @@ Why:
 ## Label Hierarchy
 
 Priority order (highest to lowest):
-1. `crypto_scam` - Malicious crypto content (drainers, fake airdrops, phishing)
+1. `scam` - Malicious content (drainers, fake airdrops, phishing)
 2. `ai_generated_reply` - AI-generated promotional replies
 3. `crypto` - Legitimate crypto discussion (news, trading, projects)
 4. `promo` - Non-crypto promotional/advertising copy
@@ -45,18 +45,18 @@ python scripts/relabel_crypto.py data/sample.jsonl -o /tmp/suggestions.jsonl
 ### Step 3: Commit with clear message
 ```bash
 git add data/sample.jsonl
-git commit -m "Manual relabel: X entries clean→crypto, Y entries clean→crypto_scam"
+git commit -m "Manual relabel: X entries clean→crypto, Y entries clean→scam"
 ```
 
 ## Common Edge Cases
 
-### Scam patterns (should be `crypto_scam`, not `crypto`)
+### Scam patterns (should be `scam`, add `crypto` when applicable)
 - "Connect wallet" + "claim" + rewards/airdrop
 - Urgency language ("limited time", "act now")
 - Too-good-to-be-true offers ("double your ETH")
 - Impersonation of known projects/people
 
-### Educational content (should be `crypto`, not `crypto_scam`)
+### Educational content (should be `crypto`, not `scam`)
 - Posts *warning about* scams
 - Explanations of how scams work
 - Security advice ("never share your seed phrase")
@@ -93,7 +93,7 @@ Checks performed:
 - Valid JSON on every line
 - Required fields present (id, label, text)
 - No duplicate IDs
-- Valid label values in `labels[]` (clean, crypto, crypto_scam, ai_generated_reply, promo)
+- Valid label values in `labels[]` (clean, crypto, scam, ai_generated_reply, promo)
 - No empty text
 - ID format consistency
 

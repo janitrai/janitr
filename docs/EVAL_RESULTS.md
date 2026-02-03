@@ -4,7 +4,7 @@
 - **Total samples**: 1683
 - **Training**: 1346 samples (80%)
 - **Validation**: 337 samples (20%)
-- **Label distribution**: 916 crypto_scam, 419 clean, 347 crypto, 1 ai_generated_reply
+- **Label distribution**: 916 scam, 419 clean, 347 crypto, 1 ai_generated_reply
 
 ## Model Artifacts
 

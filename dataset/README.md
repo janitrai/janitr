@@ -18,14 +18,16 @@ size_categories:
 
 # Internet Condom Dataset
 
-A dataset for detecting crypto scams and AI-generated replies in social media content.
+A dataset for detecting scams, crypto content, promos, and AI-generated replies in social media content.
 
 ## Dataset Description
 
 This dataset contains labeled examples of:
-- **crypto_scam**: Posts attempting to steal funds (token deployments, wallet drainers, phishing)
+- **scam**: Posts attempting to steal funds (phishing, wallet drainers)
+- **crypto**: Legitimate crypto discussion and hype
+- **promo**: Promotional/advertising copy
 - **ai_generated_reply**: Automated/LLM-generated replies (bot spam, template responses)
-- **clean**: Normal content (including crypto discussion that isn't a scam)
+- **clean**: Normal content
 
 ### Intended Use
 
@@ -43,8 +45,8 @@ Collected from X (Twitter) via UI scraping. All samples include provenance (sour
 |-------|------|-------------|
 | `id` | string | Unique sample identifier |
 | `text` | string | The post/message content |
-| `label` | string | One of: `crypto_scam`, `ai_generated_reply`, `clean` |
-| `label_id` | int | Numeric label (0=clean, 1=crypto_scam, 2=ai_generated_reply) |
+| `labels` | array | One or more: `scam`, `crypto`, `promo`, `ai_generated_reply`, `clean` |
+| `label_ids` | array | Numeric label IDs (0=clean, 1=crypto, 2=scam, 3=ai_generated_reply, 4=promo) |
 | `platform` | string | Source platform (x, discord, web, dm, other) |
 | `source_id` | string | Platform-native ID (e.g., tweet ID) |
 | `source_url` | string | Canonical URL (when available) |
@@ -62,8 +64,10 @@ Collected from X (Twitter) via UI scraping. All samples include provenance (sour
 | Label | Count | Description |
 |-------|-------|-------------|
 | `clean` (0) | TBD | Normal content |
-| `crypto_scam` (1) | TBD | Scam/phishing attempts |
-| `ai_generated_reply` (2) | TBD | Automated responses |
+| `crypto` (1) | TBD | Crypto-related content |
+| `scam` (2) | TBD | Scam/phishing attempts |
+| `ai_generated_reply` (3) | TBD | Automated responses |
+| `promo` (4) | TBD | Promotional content |
 
 ## Usage
 
@@ -78,14 +82,14 @@ test = dataset["test"]
 
 # Example
 print(train[0])
-# {'id': 'x_0011', 'text': '@bankrbot deploy...', 'label': 'crypto_scam', 'label_id': 1, ...}
+# {'id': 'x_0011', 'text': '@bankrbot deploy...', 'labels': ['crypto', 'scam'], 'label_ids': [1, 2], ...}
 ```
 
 ## Labeling Guidelines
 
 See [LABELS.md](https://github.com/your-username/internetcondom/blob/main/LABELS.md) for detailed labeling rules.
 
-**crypto_scam** — Only when there's clear theft/phishing intent:
+**scam** — Only when there's clear theft/phishing intent:
 - Seed phrase / private key requests
 - "Claim airdrop" + wallet connect prompts
 - Fake exchanges, wallet drainers
@@ -94,6 +98,12 @@ See [LABELS.md](https://github.com/your-username/internetcondom/blob/main/LABELS
 - Generic, template-like responses
 - Repetitive phrasing across accounts
 - Low specificity to original post
+
+**crypto** — Legitimate crypto discussion:
+- Market commentary, announcements, product updates
+
+**promo** — Promotional/advertising content:
+- Product launches, affiliate pitches, marketing hooks
 
 **clean** — Everything else:
 - Normal crypto discussion ("bags", "hodl")

@@ -97,11 +97,13 @@ urls: [               # list of extracted URLs
   }
 ]
 rule_hits             # list of matched rule IDs (for reasons + feature tokens)
-labels                # array; crypto_scam | crypto | ai_generated_reply | promo | clean
+labels                # array; scam | crypto | ai_generated_reply | promo | clean
 label_confidence      # model confidence score
 label_source          # human | teacher | heuristic
 lang                  # optional; cheap fastText language ID later if needed
 ```
+
+Training note: you can cluster labels during training (merge into coarse super-classes) to improve performance, while keeping the dataset labels fine-grained for future remapping.
 
 ---
 

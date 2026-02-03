@@ -4,7 +4,7 @@ Dataset integrity checks for sample.jsonl.
 
 Checks:
 1. Valid JSON on every line
-2. Required fields present (id, label, text)
+2. Required fields present (id, labels, text)
 3. No duplicate IDs (excluding null)
 4. Valid label values
 5. No empty text
@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 from collections import defaultdict
 
-VALID_LABELS = {"clean", "crypto", "crypto_scam", "ai_generated_reply"}
+VALID_LABELS = {"clean", "crypto", "scam", "promo", "ai_generated_reply"}
 ID_PATTERN = re.compile(r"^x_\d+(_dup\d+)?$|^x_auto_\d+$")
 
 
@@ -50,11 +50,13 @@ def check_integrity(path: Path, fix_suggestions: bool = False) -> tuple[int, int
                 
                 # Check 2: Required fields
                 id_ = obj.get("id")
-                label = obj.get("label")
+                labels = obj.get("labels")
                 text = obj.get("text")
                 
-                if label is None:
-                    errors.append(f"Line {line_num} (id={id_}): Missing 'label' field")
+                if labels is None:
+                    errors.append(f"Line {line_num} (id={id_}): Missing 'labels' field")
+                elif not isinstance(labels, list) or not labels:
+                    errors.append(f"Line {line_num} (id={id_}): 'labels' must be a non-empty list")
                 
                 if text is None:
                     errors.append(f"Line {line_num} (id={id_}): Missing 'text' field")
@@ -65,9 +67,17 @@ def check_integrity(path: Path, fix_suggestions: bool = False) -> tuple[int, int
                 else:
                     warnings.append(f"Line {line_num}: Null ID")
                 
-                # Check 4: Valid label
-                if label is not None and label not in VALID_LABELS:
-                    errors.append(f"Line {line_num} (id={id_}): Invalid label '{label}' (valid: {VALID_LABELS})")
+                # Check 4: Valid labels
+                if labels is not None and isinstance(labels, list):
+                    for label in labels:
+                        if label not in VALID_LABELS:
+                            errors.append(
+                                f"Line {line_num} (id={id_}): Invalid label '{label}' (valid: {VALID_LABELS})"
+                            )
+                    if "clean" in labels and len(labels) > 1:
+                        errors.append(
+                            f"Line {line_num} (id={id_}): 'clean' must be exclusive (labels={labels})"
+                        )
                 
                 # Check 5: Empty text
                 if text is not None and not text.strip():
@@ -129,7 +139,8 @@ def main():
         
         labels = defaultdict(int)
         for obj in lines:
-            labels[obj.get("label")] += 1
+            for label in obj.get("labels", []) or []:
+                labels[label] += 1
         
         print(f"✅ All checks passed!")
         print(f"\nDataset stats:")

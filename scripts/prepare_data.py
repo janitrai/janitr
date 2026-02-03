@@ -3,9 +3,9 @@
 Prepare data for fastText training.
 
 Converts data/sample.jsonl to data/train.txt and data/valid.txt
-with fastText labels:
-  __label__scam <text>
-  __label__crypto <text>
+with fastText labels (supports multiple labels per line):
+  __label__scam __label__crypto <text>
+  __label__promo <text>
   __label__clean <text>
 """
 
@@ -40,14 +40,37 @@ def clean_text(text: str, *, normalize: bool, lowercase: bool, strip_urls: bool)
     return text
 
 
-def map_label(label: str) -> str | None:
-    if label == "clean":
-        return "clean"
-    if label == "crypto":
-        return "crypto"
-    if label in {"crypto_scam", "scam"}:
-        return "scam"
-    return None
+VALID_LABELS = {"clean", "crypto", "scam", "promo", "ai_generated_reply"}
+
+
+def normalize_labels(labels: list[str]) -> list[str]:
+    normalized: list[str] = []
+    for label in labels:
+        if label == "crypto_scam":
+            normalized.extend(["crypto", "scam"])
+            continue
+        if label in VALID_LABELS:
+            normalized.append(label)
+    # De-duplicate while preserving order
+    seen = set()
+    deduped = []
+    for label in normalized:
+        if label in seen:
+            continue
+        seen.add(label)
+        deduped.append(label)
+    if "clean" in deduped and len(deduped) > 1:
+        deduped = [label for label in deduped if label != "clean"]
+    return deduped
+
+
+def extract_labels(sample: dict) -> list[str]:
+    if isinstance(sample.get("labels"), list):
+        return normalize_labels(sample["labels"])
+    label = sample.get("label")
+    if isinstance(label, str):
+        return normalize_labels([label])
+    return []
 
 
 def load_samples(path: Path) -> list[dict]:
@@ -60,17 +83,21 @@ def load_samples(path: Path) -> list[dict]:
     return samples
 
 
-def write_fasttext(path: Path, rows: list[tuple[str, str]]):
+def write_fasttext(path: Path, rows: list[tuple[list[str], str]]):
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
-        for label, text in rows:
-            f.write(f"__label__{label} {text}\n")
+        for labels, text in rows:
+            if not labels:
+                continue
+            label_prefix = " ".join(f"__label__{label}" for label in labels)
+            f.write(f"{label_prefix} {text}\n")
 
 
-def count_labels(rows: list[tuple[str, str]]) -> dict[str, int]:
+def count_labels(rows: list[tuple[list[str], str]]) -> dict[str, int]:
     counts: dict[str, int] = {}
-    for label, _ in rows:
-        counts[label] = counts.get(label, 0) + 1
+    for labels, _ in rows:
+        for label in labels:
+            counts[label] = counts.get(label, 0) + 1
     return counts
 
 
@@ -103,13 +130,13 @@ def main() -> None:
     samples = load_samples(args.input)
     print(f"Loaded {len(samples)} samples from {args.input}")
 
-    rows: list[tuple[str, str]] = []
+    rows: list[tuple[list[str], str]] = []
     skipped_unknown = 0
     skipped_empty = 0
 
     for sample in samples:
-        label = map_label(sample.get("label", ""))
-        if label is None:
+        labels = extract_labels(sample)
+        if not labels:
             skipped_unknown += 1
             continue
 
@@ -125,7 +152,7 @@ def main() -> None:
             skipped_empty += 1
             continue
 
-        rows.append((label, cleaned))
+        rows.append((labels, cleaned))
 
     if not rows:
         raise SystemExit("No valid rows found after cleaning.")
@@ -150,8 +177,8 @@ def main() -> None:
             raise SystemExit(f"Hard negatives file not found: {args.hard_negatives}")
         hard_samples = load_samples(args.hard_negatives)
         for sample in hard_samples:
-            label = map_label(sample.get("label", ""))
-            if label != "clean":
+            labels = extract_labels(sample)
+            if "clean" not in labels or len(labels) != 1:
                 hard_skipped_unknown += 1
                 continue
             text = sample.get("text") or sample.get("raw_text") or ""
@@ -165,7 +192,7 @@ def main() -> None:
                 hard_skipped_empty += 1
                 continue
             for _ in range(args.hard_negatives_mult):
-                train_rows.append(("clean", cleaned))
+                train_rows.append((["clean"], cleaned))
                 hard_added += 1
 
         random.Random(args.seed).shuffle(train_rows)

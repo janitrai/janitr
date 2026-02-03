@@ -81,9 +81,10 @@ scripts/
 
 | Label | Description | Example |
 |-------|-------------|---------|
-| `crypto_scam` | Malicious crypto theft/phishing | "Send 1 ETH get 2 back!" |
+| `scam` | Theft/phishing attempts (crypto or not) | "Send 1 ETH get 2 back!" |
 | `crypto` | Legitimate crypto discussion | "BTC looking bullish today" |
-| `promo` | Non-crypto promotional/advertising copy | "Free trial — get access in 2 minutes" |
+| `ai_generated_reply` | Automated/LLM-generated replies | "Great post! This is amazing" |
+| `promo` | Promotional/advertising copy | "Free trial — get access in 2 minutes" |
 | `clean` | Non-crypto content | "Great weather today" |
 
 Multi-label:
@@ -91,7 +92,9 @@ Multi-label:
 - `clean` should be exclusive.
 - fastText supports multi-label by putting multiple `__label__...` tokens on the same line.
 
-**Recommendation:** keep `crypto_scam` as its own label (do not collapse into a generic `scam`). If you want a single “scam” decision at inference time, treat `crypto_scam` (and any future `scam`) as scam for highlighting/thresholding, but keep the label distinct in training and evaluation.
+**Recommendation:** keep `scam` and `crypto` as separate labels in the dataset. If you want a single “crypto_scam” decision, derive it during training or inference by combining `scam` + `crypto`.
+
+**Training note:** you can cluster labels during training (e.g., merge into coarse super-classes or train with grouped targets) to improve performance, while keeping the dataset labels fine-grained for future remapping.
 
 ## Browser Extension Integration
 

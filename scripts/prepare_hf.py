@@ -20,8 +20,10 @@ OUTPUT_DIR = REPO_ROOT / "dataset"
 
 LABEL_TO_ID = {
     "clean": 0,
-    "crypto_scam": 1,
-    "ai_generated_reply": 2,
+    "crypto": 1,
+    "scam": 2,
+    "ai_generated_reply": 3,
+    "promo": 4,
 }
 
 
@@ -38,11 +40,23 @@ def load_samples(path: Path) -> list[dict]:
 
 def convert_to_hf_format(sample: dict) -> dict:
     """Convert internal format to HF format."""
+    labels = sample.get("labels")
+    if labels is None and "label" in sample:
+        labels = [sample["label"]]
+    labels = labels or []
+    seen = set()
+    deduped = []
+    for label in labels:
+        if label in seen:
+            continue
+        seen.add(label)
+        deduped.append(label)
+    label_ids = [LABEL_TO_ID[label] for label in deduped if label in LABEL_TO_ID]
     return {
         "id": sample["id"],
         "text": sample["text"],
-        "label": sample["label"],
-        "label_id": LABEL_TO_ID[sample["label"]],
+        "labels": deduped,
+        "label_ids": label_ids,
         "platform": sample.get("platform", "x"),
         "source_id": sample.get("source_id", ""),
         "source_url": sample.get("source_url", ""),
