@@ -1,36 +1,26 @@
 #!/usr/bin/env python3
 """
-Evaluate a fastText model and print metrics.
+Evaluate a fastText model with multi-label metrics.
 """
 
 import argparse
+import json
+from collections import Counter
+from datetime import date
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
 DEFAULT_MODEL = REPO_ROOT / "models" / "scam_detector.bin"
 DEFAULT_VALID = REPO_ROOT / "data" / "valid.txt"
+DEFAULT_THRESHOLDS = REPO_ROOT / "config" / "thresholds.json"
 
-CLASSES = ["clean", "crypto", "scam"]
-# Production threshold: 0.90 gives ~4.7% FPR with 75.8% recall.
-# Use 0.50 for evaluation/debugging by passing --threshold 0.50.
-PRODUCTION_THRESHOLD = 0.90
-
-
-def get_probs(model, text: str) -> dict[str, float]:
-    labels, probs = model.predict(text, k=len(CLASSES))
-    scores: dict[str, float] = {cls: 0.0 for cls in CLASSES}
-    for label, prob in zip(labels, probs):
-        cls = label.replace("__label__", "", 1)
-        if cls in scores:
-            scores[cls] = float(prob)
-    return scores
+CLASSES = ["clean", "crypto", "scam", "promo", "ai_generated_reply"]
+DEFAULT_GLOBAL_THRESHOLD = 0.5
 
 
-def parse_line(line: str) -> tuple[str, str] | None:
+def parse_line(line: str) -> tuple[set[str], str] | None:
     line = line.strip()
-    if not line:
-        return None
-    if not line.startswith("__label__"):
+    if not line or not line.startswith("__label__"):
         return None
     parts = line.split()
     labels: list[str] = []
@@ -44,79 +34,210 @@ def parse_line(line: str) -> tuple[str, str] | None:
     if not labels:
         return None
     text = " ".join(parts[idx:]) if idx < len(parts) else ""
-    if "scam" in labels:
-        return "scam", text
-    if "crypto" in labels:
-        return "crypto", text
-    return "clean", text
+    return set(labels), text
+
+
+def get_scores(model, text: str) -> dict[str, float]:
+    labels, probs = model.predict(text, k=len(CLASSES))
+    scores: dict[str, float] = {cls: 0.0 for cls in CLASSES}
+    for label, prob in zip(labels, probs):
+        cls = label.replace("__label__", "", 1)
+        if cls in scores:
+            scores[cls] = float(prob)
+    return scores
+
+
+def load_thresholds(path: Path | None) -> dict[str, float] | None:
+    if path is None or not path.exists():
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        payload = json.load(f)
+    raw = payload.get("thresholds") if isinstance(payload, dict) else None
+    if raw is None and isinstance(payload, dict):
+        raw = payload
+    if not isinstance(raw, dict):
+        return None
+    thresholds: dict[str, float] = {}
+    for cls in CLASSES:
+        if cls in raw:
+            thresholds[cls] = float(raw[cls])
+    return thresholds or None
+
+
+def build_thresholds(
+    per_label: dict[str, float] | None, global_threshold: float
+) -> dict[str, float]:
+    thresholds = {cls: global_threshold for cls in CLASSES}
+    if per_label:
+        for cls, value in per_label.items():
+            if cls in thresholds:
+                thresholds[cls] = float(value)
+    return thresholds
+
+
+def predict_labels(
+    scores: dict[str, float],
+    thresholds: dict[str, float],
+    *,
+    allow_empty: bool,
+) -> set[str]:
+    predicted = {cls for cls in CLASSES if scores.get(cls, 0.0) >= thresholds[cls]}
+    if not predicted and not allow_empty:
+        predicted = {"clean"} if "clean" in CLASSES else {max(scores, key=scores.get)}
+    if "clean" in predicted and any(cls != "clean" for cls in predicted):
+        predicted.discard("clean")
+    return predicted
 
 
 def safe_div(num: float, den: float) -> float:
     return num / den if den else 0.0
 
 
-def build_confusion(rows: list[tuple[str, float]], threshold: float) -> dict[str, dict[str, int]]:
-    confusion = {actual: {pred: 0 for pred in CLASSES} for actual in CLASSES}
-    for actual, p_scam in rows:
-        pred = "scam" if p_scam >= threshold else "clean"
-        confusion[actual][pred] += 1
-    return confusion
+def evaluate(
+    rows: list[tuple[set[str], str]],
+    model,
+    thresholds: dict[str, float],
+    *,
+    allow_empty: bool,
+) -> dict:
+    tp = Counter()
+    fp = Counter()
+    fn = Counter()
+    support = Counter()
+    exact = 0
 
+    for gold, text in rows:
+        scores = get_scores(model, text)
+        pred = predict_labels(scores, thresholds, allow_empty=allow_empty)
+        if pred == gold:
+            exact += 1
+        for cls in CLASSES:
+            if cls in gold:
+                support[cls] += 1
+            if cls in pred and cls in gold:
+                tp[cls] += 1
+            elif cls in pred and cls not in gold:
+                fp[cls] += 1
+            elif cls not in pred and cls in gold:
+                fn[cls] += 1
 
-def summarize(confusion: dict[str, dict[str, int]]) -> dict[str, float]:
-    metrics: dict[str, float] = {}
+    metrics: dict[str, dict[str, float]] = {}
     for cls in CLASSES:
-        tp = confusion[cls][cls]
-        fp = sum(confusion[a][cls] for a in CLASSES if a != cls)
-        fn = sum(confusion[cls][p] for p in CLASSES if p != cls)
-        precision = safe_div(tp, tp + fp)
-        recall = safe_div(tp, tp + fn)
+        precision = safe_div(tp[cls], tp[cls] + fp[cls])
+        recall = safe_div(tp[cls], tp[cls] + fn[cls])
         f1 = safe_div(2 * precision * recall, precision + recall)
-        metrics[f"{cls}_precision"] = precision
-        metrics[f"{cls}_recall"] = recall
-        metrics[f"{cls}_f1"] = f1
-    total_clean = sum(confusion["clean"].values())
-    total_scam = sum(confusion["scam"].values())
-    fp = confusion["clean"]["scam"]
-    fn = confusion["scam"]["clean"]
-    metrics["fpr"] = safe_div(fp, total_clean)
-    metrics["fnr"] = safe_div(fn, total_scam)
-    return metrics
+        metrics[cls] = {
+            "precision": precision,
+            "recall": recall,
+            "f1": f1,
+            "support": float(support[cls]),
+        }
+
+    total_tp = sum(tp.values())
+    total_fp = sum(fp.values())
+    total_fn = sum(fn.values())
+    micro_precision = safe_div(total_tp, total_tp + total_fp)
+    micro_recall = safe_div(total_tp, total_tp + total_fn)
+    micro_f1 = safe_div(2 * micro_precision * micro_recall, micro_precision + micro_recall)
+
+    macro_precision = safe_div(sum(m["precision"] for m in metrics.values()), len(CLASSES))
+    macro_recall = safe_div(sum(m["recall"] for m in metrics.values()), len(CLASSES))
+    macro_f1 = safe_div(sum(m["f1"] for m in metrics.values()), len(CLASSES))
+
+    return {
+        "metrics": metrics,
+        "exact_match": safe_div(exact, len(rows)),
+        "micro": {"precision": micro_precision, "recall": micro_recall, "f1": micro_f1},
+        "macro": {"precision": macro_precision, "recall": macro_recall, "f1": macro_f1},
+    }
+
+
+def tune_thresholds(
+    rows: list[tuple[set[str], str]],
+    model,
+    *,
+    step: float,
+) -> dict[str, float]:
+    if step <= 0 or step >= 1:
+        raise ValueError("tune step must be > 0 and < 1")
+    grid: list[float] = []
+    thr = step
+    while thr < 1.0:
+        grid.append(round(thr, 6))
+        thr += step
+
+    scores_by_label: dict[str, list[float]] = {cls: [] for cls in CLASSES}
+    gold_by_label: dict[str, list[int]] = {cls: [] for cls in CLASSES}
+
+    for gold, text in rows:
+        scores = get_scores(model, text)
+        for cls in CLASSES:
+            scores_by_label[cls].append(scores.get(cls, 0.0))
+            gold_by_label[cls].append(1 if cls in gold else 0)
+
+    best: dict[str, float] = {}
+    for cls in CLASSES:
+        best_f1 = -1.0
+        best_thr = DEFAULT_GLOBAL_THRESHOLD
+        y_true = gold_by_label[cls]
+        y_score = scores_by_label[cls]
+        for thr in grid:
+            tp = fp = fn = 0
+            for score, gold in zip(y_score, y_true):
+                pred = score >= thr
+                if pred and gold:
+                    tp += 1
+                elif pred and not gold:
+                    fp += 1
+                elif (not pred) and gold:
+                    fn += 1
+            precision = safe_div(tp, tp + fp)
+            recall = safe_div(tp, tp + fn)
+            f1 = safe_div(2 * precision * recall, precision + recall)
+            if f1 > best_f1:
+                best_f1 = f1
+                best_thr = thr
+        best[cls] = best_thr
+    return best
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Evaluate fastText model")
+    parser = argparse.ArgumentParser(description="Evaluate fastText model (multi-label)")
     parser.add_argument("--model", type=Path, default=DEFAULT_MODEL, help="Model file")
     parser.add_argument("--valid", type=Path, default=DEFAULT_VALID, help="Validation file")
-    parser.add_argument("--fp-limit", type=int, default=200, help="Max false positives to print")
     parser.add_argument(
         "--threshold",
         type=float,
-        default=PRODUCTION_THRESHOLD,
-        help=f"Predict scam when p(scam) >= threshold (default: {PRODUCTION_THRESHOLD:.2f})",
+        default=None,
+        help="Global threshold for all labels (overrides thresholds file)",
     )
     parser.add_argument(
-        "--sweep",
+        "--thresholds",
+        type=Path,
+        default=DEFAULT_THRESHOLDS,
+        help="JSON file with per-label thresholds",
+    )
+    parser.add_argument(
+        "--allow-empty",
         action="store_true",
-        help="Sweep thresholds and print metrics table",
+        help="Allow empty predictions when nothing meets threshold",
     )
     parser.add_argument(
-        "--sweep-step",
-        type=float,
-        default=0.02,
-        help="Step size for threshold sweep",
+        "--tune",
+        action="store_true",
+        help="Tune per-label thresholds to maximize F1 on validation set",
     )
     parser.add_argument(
-        "--target-fpr",
+        "--tune-step",
         type=float,
+        default=0.05,
+        help="Step size for threshold tuning grid",
+    )
+    parser.add_argument(
+        "--save-thresholds",
+        type=Path,
         default=None,
-        help="Find highest-recall threshold with FPR <= target",
-    )
-    parser.add_argument(
-        "--target-precision",
-        type=float,
-        default=None,
-        help="Find highest-recall threshold with precision >= target",
+        help="Write tuned thresholds JSON to this path",
     )
     args = parser.parse_args()
 
@@ -132,110 +253,82 @@ def main() -> None:
             "fasttext is not installed. Install with: pip install fasttext-wheel"
         ) from exc
 
-    model = fasttext.load_model(str(args.model))
-
-    false_positives: list[str] = []
-    total = 0
-    rows: list[tuple[str, float]] = []
-    row_texts: list[tuple[str, str, float]] = []
-
+    rows: list[tuple[set[str], str]] = []
     with open(args.valid, "r", encoding="utf-8") as f:
         for line in f:
             parsed = parse_line(line)
             if parsed is None:
                 continue
-            actual, text = parsed
-            if actual not in CLASSES:
-                continue
-            scores = get_probs(model, text)
-            p_scam = scores["scam"]
-            rows.append((actual, p_scam))
-            row_texts.append((actual, text, p_scam))
-            total += 1
+            labels, text = parsed
+            if labels:
+                rows.append((labels, text))
 
-    if total == 0:
+    if not rows:
         raise SystemExit("No valid rows found in validation file.")
 
-    if args.sweep:
-        step = args.sweep_step
-        if step <= 0 or step >= 1:
-            raise SystemExit("--sweep-step must be > 0 and < 1")
-        print(f"Evaluated {total} samples")
-        print("\nThreshold sweep (predict scam if p>=threshold)")
-        header = f"{'thr':>6s} {'fpr':>7s} {'fnr':>7s} {'prec':>7s} {'rec':>7s} {'f1':>7s}"
-        print(header)
-        thr = 0.0
-        sweep_rows: list[tuple[float, dict[str, float]]] = []
-        while thr <= 1.000001:
-            confusion = build_confusion(rows, thr)
-            metrics = summarize(confusion)
-            sweep_rows.append((thr, metrics))
-            print(
-                f"{thr:6.2f} {metrics['fpr']:7.3f} {metrics['fnr']:7.3f} "
-                f"{metrics['scam_precision']:7.3f} {metrics['scam_recall']:7.3f} {metrics['scam_f1']:7.3f}"
-            )
-            thr += step
+    model = fasttext.load_model(str(args.model))
 
-        def pick_by_target(kind: str, target: float) -> None:
-            best: tuple[float, dict[str, float]] | None = None
-            for thr_value, metrics in sweep_rows:
-                if kind == "fpr" and metrics["fpr"] > target:
-                    continue
-                if kind == "precision" and metrics["scam_precision"] < target:
-                    continue
-                if best is None or metrics["scam_recall"] > best[1]["scam_recall"]:
-                    best = (thr_value, metrics)
-            if best is None:
-                print(f"\nNo threshold met target {kind}={target:.3f}")
-            else:
-                thr_value, metrics = best
-                print(
-                    f"\nBest recall under target {kind}={target:.3f}: "
-                    f"thr={thr_value:.2f} "
-                    f"precision={metrics['scam_precision']:.3f} "
-                    f"recall={metrics['scam_recall']:.3f} "
-                    f"fpr={metrics['fpr']:.3f}"
-                )
+    per_label = None
+    global_threshold = DEFAULT_GLOBAL_THRESHOLD
 
-        if args.target_fpr is not None:
-            pick_by_target("fpr", args.target_fpr)
-        if args.target_precision is not None:
-            pick_by_target("precision", args.target_precision)
-        return
+    if args.tune:
+        per_label = tune_thresholds(rows, model, step=args.tune_step)
+        if args.save_thresholds:
+            try:
+                tuned_on = str(args.valid.relative_to(REPO_ROOT))
+            except ValueError:
+                tuned_on = str(args.valid)
+            payload = {
+                "version": 1,
+                "classes": CLASSES,
+                "thresholds": per_label,
+                "tuned_on": tuned_on,
+                "tuned_at": date.today().isoformat(),
+                "tune_step": args.tune_step,
+            }
+            args.save_thresholds.parent.mkdir(parents=True, exist_ok=True)
+            with open(args.save_thresholds, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2, sort_keys=True)
+    else:
+        if args.threshold is not None:
+            global_threshold = args.threshold
+        else:
+            per_label = load_thresholds(args.thresholds)
+            if per_label is None:
+                global_threshold = DEFAULT_GLOBAL_THRESHOLD
 
-    threshold = args.threshold
-    threshold_note = f"threshold={threshold:.2f}"
+    thresholds = build_thresholds(per_label, global_threshold)
+    result = evaluate(rows, model, thresholds, allow_empty=args.allow_empty)
 
-    confusion = build_confusion(rows, threshold)
-    for actual, text, p_scam in row_texts:
-        pred = "scam" if p_scam >= threshold else "clean"
-        if actual == "clean" and pred == "scam":
-            false_positives.append(text)
+    print(f"Evaluated {len(rows)} samples")
+    if per_label:
+        print("Thresholds: per-label")
+    else:
+        print(f"Thresholds: global {global_threshold:.2f}")
 
-    print(f"Evaluated {total} samples")
-    print(f"Decision rule: {threshold_note}")
-    print("\nConfusion matrix (rows=actual, cols=predicted)")
-    header = f"{'':12s} {'pred_clean':>10s} {'pred_scam':>10s}"
-    print(header)
-    for actual in CLASSES:
-        row = confusion[actual]
-        print(f"{('actual_' + actual):12s} {row['clean']:10d} {row['scam']:10d}")
+    print("\nOverall:")
+    print(
+        f"  exact match accuracy: {result['exact_match']:.3f}\n"
+        f"  micro precision/recall/f1: {result['micro']['precision']:.3f} "
+        f"{result['micro']['recall']:.3f} {result['micro']['f1']:.3f}\n"
+        f"  macro precision/recall/f1: {result['macro']['precision']:.3f} "
+        f"{result['macro']['recall']:.3f} {result['macro']['f1']:.3f}"
+    )
 
     print("\nPer-class metrics:")
-    metrics = summarize(confusion)
     for cls in CLASSES:
+        metrics = result["metrics"][cls]
         print(
-            f"  {cls:5s} | precision {metrics[cls + '_precision']:.3f} "
-            f"| recall {metrics[cls + '_recall']:.3f} | f1 {metrics[cls + '_f1']:.3f}"
+            f"  {cls:18s} "
+            f"p={metrics['precision']:.3f} "
+            f"r={metrics['recall']:.3f} "
+            f"f1={metrics['f1']:.3f} "
+            f"support={int(metrics['support']):4d} "
+            f"thr={thresholds[cls]:.2f}"
         )
 
-    print(f"\nFalse positives (clean -> scam): {len(false_positives)}")
-    if false_positives:
-        limit = max(args.fp_limit, 0)
-        for idx, text in enumerate(false_positives[:limit], start=1):
-            print(f"  {idx:03d}. {text}")
-        if len(false_positives) > limit:
-            print(f"  ... {len(false_positives) - limit} more not shown")
+    if args.tune and args.save_thresholds:
+        print(f"\nWrote tuned thresholds to {args.save_thresholds}")
 
 
 if __name__ == "__main__":

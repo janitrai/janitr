@@ -1,26 +1,20 @@
 #!/usr/bin/env python3
 """
-Production inference for scam detection.
-
-Uses the trained fastText model with the optimized threshold (0.90)
-that achieves ~4.7% FPR with 75.8% recall.
-
-Usage:
-    python scripts/inference.py "check this text for scams"
-    echo "some tweet" | python scripts/inference.py --stdin
+Production inference for multi-label scam/crypto classification.
 """
 
 import argparse
 import sys
+import json
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
 DEFAULT_MODEL = REPO_ROOT / "models" / "scam_detector.bin"
 
-# Optimized threshold: 4.7% FPR, 75.8% recall on validation set
-# Lower threshold = more aggressive (catches more scams, more false positives)
-# Higher threshold = more conservative (fewer false positives, misses some scams)
-PRODUCTION_THRESHOLD = 0.90
+DEFAULT_THRESHOLDS = REPO_ROOT / "config" / "thresholds.json"
+DEFAULT_GLOBAL_THRESHOLD = 0.5
+
+CLASSES = ["clean", "crypto", "scam", "promo", "ai_generated_reply"]
 
 
 def load_model(model_path: Path):
@@ -38,52 +32,89 @@ def load_model(model_path: Path):
     return fasttext.load_model(str(model_path))
 
 
-def predict(model, text: str, threshold: float = PRODUCTION_THRESHOLD) -> dict:
-    """
-    Predict if text is a scam.
-    
-    Returns:
-        dict with keys:
-            - is_scam: bool (True if scam probability >= threshold)
-            - probability: float (scam probability 0-1)
-            - confidence: str ("high", "medium", "low")
-            - label: str ("scam" or "clean")
-    """
-    labels, probs = model.predict(text.replace("\n", " "), k=3)
-    
-    scores = {}
+def load_thresholds(path: Path | None) -> dict[str, float] | None:
+    if path is None or not path.exists():
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        payload = json.load(f)
+    raw = payload.get("thresholds") if isinstance(payload, dict) else None
+    if raw is None and isinstance(payload, dict):
+        raw = payload
+    if not isinstance(raw, dict):
+        return None
+    thresholds: dict[str, float] = {}
+    for cls in CLASSES:
+        if cls in raw:
+            thresholds[cls] = float(raw[cls])
+    return thresholds or None
+
+
+def build_thresholds(
+    per_label: dict[str, float] | None, global_threshold: float
+) -> dict[str, float]:
+    thresholds = {cls: global_threshold for cls in CLASSES}
+    if per_label:
+        for cls, value in per_label.items():
+            if cls in thresholds:
+                thresholds[cls] = float(value)
+    return thresholds
+
+
+def predict(
+    model,
+    text: str,
+    *,
+    thresholds: dict[str, float] | None = None,
+    threshold: float = DEFAULT_GLOBAL_THRESHOLD,
+    allow_empty: bool = False,
+) -> dict:
+    labels, probs = model.predict(text.replace("\n", " "), k=len(CLASSES))
+
+    scores = {cls: 0.0 for cls in CLASSES}
     for label, prob in zip(labels, probs):
         cls = label.replace("__label__", "", 1)
-        scores[cls] = float(prob)
-    
+        if cls in scores:
+            scores[cls] = float(prob)
+
+    applied_thresholds = build_thresholds(thresholds, threshold)
+    predicted = {cls for cls in CLASSES if scores.get(cls, 0.0) >= applied_thresholds[cls]}
+    if not predicted and not allow_empty:
+        predicted = {"clean"} if "clean" in CLASSES else {max(scores, key=scores.get)}
+    if "clean" in predicted and any(cls != "clean" for cls in predicted):
+        predicted.discard("clean")
+
+    ordered_labels = [cls for cls in CLASSES if cls in predicted]
     p_scam = scores.get("scam", 0.0)
-    is_scam = p_scam >= threshold
-    
-    # Confidence bands
+    is_scam = "scam" in predicted
+
+    # Confidence bands (scam-specific)
     if p_scam >= 0.95 or p_scam <= 0.05:
         confidence = "high"
     elif p_scam >= 0.80 or p_scam <= 0.20:
         confidence = "medium"
     else:
         confidence = "low"
-    
+
     return {
+        "labels": ordered_labels,
         "is_scam": is_scam,
         "probability": p_scam,
         "confidence": confidence,
         "label": "scam" if is_scam else "clean",
         "scores": scores,
+        "thresholds": applied_thresholds,
     }
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Detect scams in text using fastText model",
+        description="Predict labels for text using fastText model",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
     python scripts/inference.py "🚀 FREE AIRDROP! Connect wallet now!"
     python scripts/inference.py --threshold 0.50 "suspicious text"
+    python scripts/inference.py --thresholds config/thresholds.json "text to check"
     echo "check this" | python scripts/inference.py --stdin
     python scripts/inference.py --json "text to check"
         """,
@@ -93,8 +124,19 @@ Examples:
     parser.add_argument(
         "--threshold",
         type=float,
-        default=PRODUCTION_THRESHOLD,
-        help=f"Scam threshold (default: {PRODUCTION_THRESHOLD})",
+        default=None,
+        help="Global threshold for all labels (overrides thresholds file)",
+    )
+    parser.add_argument(
+        "--thresholds",
+        type=Path,
+        default=DEFAULT_THRESHOLDS,
+        help="JSON file with per-label thresholds",
+    )
+    parser.add_argument(
+        "--allow-empty",
+        action="store_true",
+        help="Allow empty predictions when nothing meets threshold",
     )
     parser.add_argument("--stdin", action="store_true", help="Read text from stdin")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
@@ -111,14 +153,26 @@ Examples:
         parser.print_help()
         raise SystemExit(1)
 
+    per_label = None
+    global_threshold = DEFAULT_GLOBAL_THRESHOLD
+    if args.threshold is not None:
+        global_threshold = args.threshold
+    else:
+        per_label = load_thresholds(args.thresholds)
+
     results = []
     for text in texts:
-        result = predict(model, text, args.threshold)
+        result = predict(
+            model,
+            text,
+            thresholds=per_label,
+            threshold=global_threshold,
+            allow_empty=args.allow_empty,
+        )
         result["text"] = text[:100] + "..." if len(text) > 100 else text
         results.append(result)
 
     if args.json:
-        import json
         if len(results) == 1:
             print(json.dumps(results[0], indent=2))
         else:
@@ -126,7 +180,10 @@ Examples:
     else:
         for r in results:
             emoji = "🚨" if r["is_scam"] else "✅"
-            print(f"{emoji} {r['label'].upper()} (p={r['probability']:.3f}, {r['confidence']} confidence)")
+            labels = ",".join(r["labels"]) if r["labels"] else "none"
+            print(
+                f"{emoji} {labels.upper()} (p_scam={r['probability']:.3f}, {r['confidence']} confidence)"
+            )
             if len(results) > 1:
                 print(f"   {r['text']}")
 

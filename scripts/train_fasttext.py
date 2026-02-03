@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Train a fastText supervised model for scam detection.
+Train a fastText supervised model for multi-label scam/crypto classification.
 """
 
 import argparse
@@ -16,12 +16,19 @@ def main() -> None:
     parser.add_argument("--train", type=Path, default=DEFAULT_TRAIN, help="Training data file")
     parser.add_argument("--model-out", type=Path, default=DEFAULT_MODEL, help="Output model file")
     parser.add_argument("--word-ngrams", type=int, default=2, help="Word n-grams")
-    parser.add_argument("--minn", type=int, default=0, help="Min length of char n-grams (0 disables)")
-    parser.add_argument("--maxn", type=int, default=0, help="Max length of char n-grams (0 disables)")
+    parser.add_argument("--minn", type=int, default=2, help="Min length of char n-grams (0 disables)")
+    parser.add_argument("--maxn", type=int, default=5, help="Max length of char n-grams (0 disables)")
     parser.add_argument("--bucket", type=int, default=2000000, help="Number of buckets")
     parser.add_argument("--dim", type=int, default=100, help="Embedding dimension")
-    parser.add_argument("--epoch", type=int, default=25, help="Training epochs")
+    parser.add_argument("--epoch", type=int, default=50, help="Training epochs")
     parser.add_argument("--lr", type=float, default=0.5, help="Learning rate")
+    parser.add_argument(
+        "--loss",
+        type=str,
+        default="ova",
+        choices=["softmax", "ova", "hs"],
+        help="Loss function (use 'ova' for multi-label)",
+    )
     args = parser.parse_args()
 
     if not args.train.exists():
@@ -45,6 +52,7 @@ def main() -> None:
         dim=args.dim,
         epoch=args.epoch,
         lr=args.lr,
+        loss=args.loss,
     )
 
     model.save_model(str(args.model_out))
