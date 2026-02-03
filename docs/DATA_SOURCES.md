@@ -14,6 +14,7 @@ stored for every record and without losing important information.
   and write JSONL records in the schema below.
 - OpenClaw is the only ingestion path (no scripts in this repo).
 - Ensure the OpenClaw instructions preserve full text and metadata.
+- X home-feed scraping flow: see `docs/SCRAPING.md`.
 
 ## OpenClaw JSONL instruction block (copy/paste)
 ```
