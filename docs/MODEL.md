@@ -21,27 +21,14 @@ echo "just vibing with crypto friends" | python scripts/inference.py --stdin
 | Type | fastText supervised |
 | Training samples | 1345 |
 | Validation samples | 337 |
-| Classes | clean, crypto, scam |
+| Classes | clean, crypto, scam, promo, ai_generated_reply |
 | Model size | ~767MB (unquantized) |
 | Inference time | <1ms per sample |
 
-## Production Threshold
+## Production Thresholds
 
-**Use threshold `0.90` for production.**
-
-```python
-PRODUCTION_THRESHOLD = 0.90  # 4.7% FPR, 75.8% recall
-```
-
-The model outputs P(scam) between 0 and 1. Predict "scam" when P(scam) >= threshold.
-
-### Threshold Selection Guide
-
-| Use Case | Threshold | FPR | Recall |
-|----------|-----------|-----|--------|
-| Aggressive (catch more) | 0.50 | 12.9% | 84.3% |
-| **Balanced (production)** | **0.90** | **4.7%** | **75.8%** |
-| Conservative (fewer FPs) | 0.95 | 2.4% | 68.5% |
+Per-label thresholds live in `config/thresholds.json` and are applied during inference.
+Use a single global threshold only for debugging or when the thresholds file is absent.
 
 ## Training Pipeline
 
