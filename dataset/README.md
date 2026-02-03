@@ -24,7 +24,7 @@ A dataset for detecting crypto scams and AI-generated replies in social media co
 
 This dataset contains labeled examples of:
 - **crypto_scam**: Posts attempting to steal funds (token deployments, wallet drainers, phishing)
-- **ai_reply**: Automated/LLM-generated replies (bot spam, template responses)
+- **ai_generated_reply**: Automated/LLM-generated replies (bot spam, template responses)
 - **clean**: Normal content (including crypto discussion that isn't a scam)
 
 ### Intended Use
@@ -43,8 +43,8 @@ Collected from X (Twitter) via UI scraping. All samples include provenance (sour
 |-------|------|-------------|
 | `id` | string | Unique sample identifier |
 | `text` | string | The post/message content |
-| `label` | string | One of: `crypto_scam`, `ai_reply`, `clean` |
-| `label_id` | int | Numeric label (0=clean, 1=crypto_scam, 2=ai_reply) |
+| `label` | string | One of: `crypto_scam`, `ai_generated_reply`, `clean` |
+| `label_id` | int | Numeric label (0=clean, 1=crypto_scam, 2=ai_generated_reply) |
 | `platform` | string | Source platform (x, discord, web, dm, other) |
 | `source_id` | string | Platform-native ID (e.g., tweet ID) |
 | `source_url` | string | Canonical URL (when available) |
@@ -63,7 +63,7 @@ Collected from X (Twitter) via UI scraping. All samples include provenance (sour
 |-------|-------|-------------|
 | `clean` (0) | TBD | Normal content |
 | `crypto_scam` (1) | TBD | Scam/phishing attempts |
-| `ai_reply` (2) | TBD | Automated responses |
+| `ai_generated_reply` (2) | TBD | Automated responses |
 
 ## Usage
 
@@ -90,7 +90,7 @@ See [LABELS.md](https://github.com/your-username/internetcondom/blob/main/LABELS
 - "Claim airdrop" + wallet connect prompts
 - Fake exchanges, wallet drainers
 
-**ai_reply** — Strong stylistic cues of automation:
+**ai_generated_reply** — Strong stylistic cues of automation:
 - Generic, template-like responses
 - Repetitive phrasing across accounts
 - Low specificity to original post

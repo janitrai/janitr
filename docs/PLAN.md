@@ -6,8 +6,8 @@ positives and user-adjustable thresholds.
 
 ## Scope (initial)
 - Inputs: text content (DMs, posts, web text) with URL parsing.
-- Outputs: label + confidence + optional reasons.
-- Classes: `crypto_scam`, `ai_reply`, `clean`.
+- Outputs: labels[] + confidence + optional reasons.
+- Classes: `crypto_scam`, `crypto`, `ai_generated_reply`, `promo`, `clean`.
 
 ## Non-goals (v0)
 - No account-level bot scoring.
@@ -31,7 +31,8 @@ positives and user-adjustable thresholds.
 - Ingest with OpenClaw only (no scripts in this repo).
 - Use the provided browser to collect all source content.
 - Use AI models to label crypto scam content at scale.
-- For `ai_reply`, source candidates by searching X for “AI reply”.
+- For `ai_generated_reply`, source candidates by searching X for “AI reply”.
+- Collect non-crypto promo/ads and label as `promo`.
 - Store provenance for every record (platform, source id/url, timestamp).
 
 ### Phase 2 — Baseline ML (CPU)
@@ -51,7 +52,8 @@ positives and user-adjustable thresholds.
 
 ## Data Strategy
 - Use AI models to label the bulk of the dataset.
-- Add `ai_reply` samples by searching X for “AI reply”.
+- Add `ai_generated_reply` samples by searching X for “AI reply”.
+- Add `promo` samples from non-crypto marketing content.
 - Keep provenance fields for source tracking.
 
 ## Evaluation

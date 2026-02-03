@@ -21,7 +21,7 @@ OUTPUT_DIR = REPO_ROOT / "dataset"
 LABEL_TO_ID = {
     "clean": 0,
     "crypto_scam": 1,
-    "ai_reply": 2,
+    "ai_generated_reply": 2,
 }
 
 

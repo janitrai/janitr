@@ -97,7 +97,7 @@ urls: [               # list of extracted URLs
   }
 ]
 rule_hits             # list of matched rule IDs (for reasons + feature tokens)
-label                 # crypto_scam | ai_reply | clean
+labels                # array; crypto_scam | crypto | ai_generated_reply | promo | clean
 label_confidence      # model confidence score
 label_source          # human | teacher | heuristic
 lang                  # optional; cheap fastText language ID later if needed
@@ -222,7 +222,7 @@ Rules first:
 
 Stage 1:
   if p(scam) > threshold_scam → hide
-  else if p(ai_reply) > threshold_ai → collapse
+  else if p(ai_generated_reply) > threshold_ai → collapse
   else if near threshold band → Stage 2 (if enabled)
 
 Stage 2:

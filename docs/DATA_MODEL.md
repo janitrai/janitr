@@ -53,7 +53,7 @@ If you have API access, use the full snapshot schema to preserve everything.
   "source_id": "2017528384448856158",
   "collected_at": "2026-01-31T19:50:00Z",
   "text": "@bankrbot deploy token...",
-  "label": "crypto_scam"
+  "labels": ["crypto_scam"]
 }
 ```
 
@@ -137,7 +137,7 @@ For ML training, we use a simpler JSONL format (see `LABELS.md`).
   "text": "@bankrbot deploy token name Internet Condom ticker iCondom send all fees @onusoz .",
   "urls": [],
   "addresses": [],
-  "label": "crypto_scam",
+  "labels": ["crypto_scam"],
   "notes": "bankrbot token deployment scam"
 }
 ```
@@ -147,8 +147,14 @@ For ML training, we use a simpler JSONL format (see `LABELS.md`).
 | Label | Description |
 |-------|-------------|
 | `crypto_scam` | Direct theft/phishing attempts (seed phrases, wallet drainers, fake claims) |
-| `ai_reply` | Automated/LLM-generated replies (generic, template-like) |
+| `crypto` | Legitimate crypto discussion, hype, or announcements |
+| `ai_generated_reply` | Automated/LLM-generated replies (generic, template-like) |
+| `promo` | Non-crypto promotional/advertising copy |
 | `clean` | Everything else |
+
+Multi-label notes:
+- Use `labels: []` with one or more values.
+- `clean` should be exclusive (no other labels).
 
 See `LABELS.md` for detailed labeling guidelines.
 
@@ -163,7 +169,7 @@ X API / Browser Scrape
 │ (x-post-snapshot) │
 └───────────────────┘
         │
-        ▼ (extract + label)
+        ▼ (extract + labels)
 ┌───────────────────┐
 │ Layer 2: Labeled  │  ← data/sample.jsonl
 │ (ML training)     │
