@@ -14,7 +14,7 @@ DEFAULT_MODEL = REPO_ROOT / "models" / "scam_detector.bin"
 DEFAULT_THRESHOLDS = REPO_ROOT / "config" / "thresholds.json"
 DEFAULT_GLOBAL_THRESHOLD = 0.5
 
-CLASSES = ["clean", "crypto", "scam", "promo", "ai_generated_reply"]
+CLASSES = ["clean", "crypto", "scam", "promo"]
 
 
 def load_model(model_path: Path):

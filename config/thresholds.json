@@ -3,15 +3,13 @@
     "clean",
     "crypto",
     "scam",
-    "promo",
-    "ai_generated_reply"
+    "promo"
   ],
   "thresholds": {
-    "ai_generated_reply": 0.05,
-    "clean": 0.1,
+    "clean": 0.3,
     "crypto": 0.5,
     "promo": 0.15,
-    "scam": 0.25
+    "scam": 0.3
   },
   "tune_step": 0.05,
   "tuned_at": "2026-02-03",
