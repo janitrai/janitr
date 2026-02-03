@@ -123,14 +123,20 @@ def evaluate(
                 fn[cls] += 1
 
     metrics: dict[str, dict[str, float]] = {}
+    total = len(rows)
     for cls in CLASSES:
         precision = safe_div(tp[cls], tp[cls] + fp[cls])
         recall = safe_div(tp[cls], tp[cls] + fn[cls])
         f1 = safe_div(2 * precision * recall, precision + recall)
+        negatives = total - support[cls]
+        fpr = safe_div(fp[cls], negatives)
+        fnr = safe_div(fn[cls], support[cls])
         metrics[cls] = {
             "precision": precision,
             "recall": recall,
             "f1": f1,
+            "fpr": fpr,
+            "fnr": fnr,
             "support": float(support[cls]),
         }
 
@@ -324,6 +330,8 @@ def main() -> None:
             f"p={metrics['precision']:.3f} "
             f"r={metrics['recall']:.3f} "
             f"f1={metrics['f1']:.3f} "
+            f"fpr={metrics['fpr']:.3f} "
+            f"fnr={metrics['fnr']:.3f} "
             f"support={int(metrics['support']):4d} "
             f"thr={thresholds[cls]:.2f}"
         )

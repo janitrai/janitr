@@ -1,7 +1,7 @@
 import { getFastTextClass, getFastTextModule } from '../vendor/fasttext/main/common.mjs';
 
-const MODEL_FILENAME = 'quant-cutoff10k.ftz';
-const PRODUCTION_THRESHOLD = 0.985;
+const MODEL_FILENAME = 'quant-cutoff100k.ftz';
+const PRODUCTION_THRESHOLD = 0.6151;
 
 let modelPromise = null;
 
@@ -60,8 +60,9 @@ export const predictScam = async (text, { threshold = PRODUCTION_THRESHOLD, k = 
         const prob = Number(item[0]);
         const label = String(item[1]);
         const key = label.replace(/^__label__/, '');
-        if (!Number.isNaN(prob)) {
-          scores[key] = prob;
+        if (Number.isFinite(prob)) {
+          const bounded = Math.min(1, Math.max(0, prob));
+          scores[key] = bounded;
         }
       }
     } finally {

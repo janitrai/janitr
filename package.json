@@ -1,0 +1,8 @@
+{
+  "name": "internetcondom",
+  "version": "0.0.0",
+  "private": true,
+  "devDependencies": {
+    "playwright": "^1.58.1"
+  }
+}

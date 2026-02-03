@@ -114,31 +114,61 @@ const pickTopLabel = (scores) => {
   return { label: bestLabel, score: bestScore };
 };
 
+const pickLabelList = (scores, { minScore = 0.5, maxLabels = 3 } = {}) => {
+  if (!scores || typeof scores !== 'object') return [];
+  const entries = Object.entries(scores)
+    .filter(([, score]) => Number.isFinite(score))
+    .sort((a, b) => b[1] - a[1]);
+  const picked = entries
+    .filter(([label, score]) => label !== 'clean' && score >= minScore)
+    .map(([label]) => label);
+  if (picked.length === 0 && entries.length > 0) {
+    picked.push(entries[0][0]);
+  }
+  return picked.slice(0, maxLabels);
+};
+
+const formatScores = (scores, limit = 4) => {
+  if (!scores || typeof scores !== 'object') return '';
+  const entries = Object.entries(scores)
+    .filter(([, score]) => Number.isFinite(score))
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([label, score]) => `${label}=${score.toFixed(3)}`);
+  return entries.join(' ');
+};
+
 const clearHighlight = (el) => {
   if (!el) return;
   el.classList.remove('ic-flagged', 'ic-scam', 'ic-crypto');
   el.removeAttribute('data-ic-label');
+  el.removeAttribute('data-ic-labels');
   el.removeAttribute('data-ic-score');
   el.removeAttribute('data-ic-pscam');
   el.removeAttribute('title');
 };
 
-const applyHighlight = (el, label, score, pScam) => {
+const applyHighlight = (el, label, score, pScam, labels = [], scores = {}) => {
   if (!el) return;
   el.classList.add('ic-flagged');
   el.classList.toggle('ic-scam', label === 'scam');
   el.classList.toggle('ic-crypto', label === 'crypto');
   el.dataset.icLabel = label;
+  if (labels.length > 0) {
+    el.dataset.icLabels = labels.join(' + ');
+  }
   if (Number.isFinite(score)) {
     el.dataset.icScore = score.toFixed(3);
   }
   if (Number.isFinite(pScam)) {
     el.dataset.icPscam = pScam.toFixed(3);
   }
-  const labelText = `${label}`;
+  const labelText = labels.length > 0 ? labels.join(' + ') : `${label}`;
   const scoreText = Number.isFinite(score) ? `, score=${score.toFixed(3)}` : '';
   const pScamText = Number.isFinite(pScam) ? `, pScam=${pScam.toFixed(3)}` : '';
-  el.title = `Scam model: ${labelText}${scoreText}${pScamText}`;
+  const scoreList = formatScores(scores);
+  const scoreListText = scoreList ? `, scores: ${scoreList}` : '';
+  el.title = `Scam model: ${labelText}${scoreText}${pScamText}${scoreListText}`;
 };
 
 const buildItem = (el) => {
@@ -177,6 +207,7 @@ const processQueue = async () => {
           if (!result) continue;
           const scores = result?.scores || {};
           const { label, score } = pickTopLabel(scores);
+          const labelList = pickLabelList(scores);
           const pScam =
             typeof scores.scam === 'number' ? scores.scam : result?.probability || 0;
 
@@ -191,7 +222,7 @@ const processQueue = async () => {
           }
 
           if (label !== 'clean') {
-            applyHighlight(el, label, score, pScam);
+            applyHighlight(el, label, score, pScam, labelList, scores);
           } else {
             clearHighlight(el);
           }
@@ -294,6 +325,7 @@ const injectStyles = () => {
       outline: 2px solid #ff4d4f;
       background: rgba(255, 77, 79, 0.12);
       border-radius: 4px;
+      position: relative;
     }
     .ic-flagged.ic-crypto {
       outline-color: #faad14;
@@ -302,6 +334,22 @@ const injectStyles = () => {
     .ic-flagged.ic-scam {
       outline-color: #ff4d4f;
       background: rgba(255, 77, 79, 0.14);
+    }
+    .ic-flagged::after {
+      content: attr(data-ic-labels);
+      position: absolute;
+      top: -6px;
+      left: -6px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 10px;
+      line-height: 1;
+      white-space: nowrap;
+      pointer-events: none;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
     }
   `;
   document.documentElement.appendChild(style);

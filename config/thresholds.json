@@ -6,13 +6,15 @@
     "promo"
   ],
   "thresholds": {
-    "clean": 0.3,
-    "crypto": 0.5,
-    "promo": 0.15,
-    "scam": 0.3
+    "clean": 0.1,
+    "crypto": 0.9969,
+    "promo": 0.7719,
+    "scam": 0.9815
   },
   "tune_step": 0.05,
   "tuned_at": "2026-02-03",
   "tuned_on": "data/valid.txt",
-  "version": 1
+  "version": 1,
+  "fpr_target": 0.02,
+  "tune_method": "max_recall_under_fpr"
 }

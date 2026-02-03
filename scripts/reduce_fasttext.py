@@ -24,6 +24,10 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 import evaluate as eval_mod  # type: ignore
 
 
+def safe_div(num: float, den: float) -> float:
+    return num / den if den else 0.0
+
+
 @dataclass(frozen=True)
 class ReductionSpec:
     name: str
@@ -136,23 +140,44 @@ def build_specs(
 
 
 def evaluate_model(model, valid_path: Path, threshold: float) -> dict[str, float]:
-    rows: list[tuple[str, float]] = []
-    total = 0
+    rows: list[tuple[set[str], float]] = []
     with open(valid_path, "r", encoding="utf-8") as handle:
         for line in handle:
             parsed = eval_mod.parse_line(line)
             if parsed is None:
                 continue
-            actual, text = parsed
-            if actual not in eval_mod.CLASSES:
-                continue
-            scores = eval_mod.get_probs(model, text)
-            rows.append((actual, scores["scam"]))
-            total += 1
-    if total == 0:
+            labels, text = parsed
+            scores = eval_mod.get_scores(model, text)
+            rows.append((labels, scores.get("scam", 0.0)))
+
+    if not rows:
         raise SystemExit("No valid rows found for evaluation.")
-    confusion = eval_mod.build_confusion(rows, threshold)
-    return eval_mod.summarize(confusion)
+
+    tp = fp = fn = tn = 0
+    for labels, p_scam in rows:
+        gold = "scam" in labels
+        pred = p_scam >= threshold
+        if pred and gold:
+            tp += 1
+        elif pred and not gold:
+            fp += 1
+        elif (not pred) and gold:
+            fn += 1
+        else:
+            tn += 1
+
+    precision = safe_div(tp, tp + fp)
+    recall = safe_div(tp, tp + fn)
+    f1 = safe_div(2 * precision * recall, precision + recall)
+    fpr = safe_div(fp, fp + tn)
+    fnr = safe_div(fn, fn + tp)
+    return {
+        "scam_precision": precision,
+        "scam_recall": recall,
+        "scam_f1": f1,
+        "fpr": fpr,
+        "fnr": fnr,
+    }
 
 
 def run_spec(
