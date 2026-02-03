@@ -3,8 +3,25 @@
   "name": "Scam Detector WASM Smoke Test",
   "version": "0.0.0",
   "description": "Local fastText WASM smoke test harness.",
+  "permissions": ["offscreen"],
   "background": {
     "service_worker": "background.js",
     "type": "module"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*", "https://*.x.com/*"],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["vendor/fasttext/**", "models/*"],
+      "matches": ["https://x.com/*", "https://*.x.com/*"]
+    }
+  ]
 }
