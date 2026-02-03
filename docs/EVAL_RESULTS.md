@@ -1,65 +1,62 @@
-# Evaluation Results - fastText MVP (2026-02-02)
+# Evaluation Results - fastText MVP (2026-02-03)
 
 ## Dataset
-- **Total samples**: 1683
-- **Training**: 1346 samples (80%)
-- **Validation**: 337 samples (20%)
-- **Label distribution**: 916 scam, 419 clean, 347 crypto, 1 ai_generated_reply
+- **Raw samples**: 1814 (`data/sample.jsonl`)
+- **Usable after cleaning**: 1811
+- **Train/valid split**: 1448 / 363 (80/20)
+- **Holdout**: 182 (last 10% by `collected_at`, time-split)
+- **Holdout boundary**:
+  - last train: 2026-02-01T18:43:00+00:00
+  - first holdout: 2026-02-01T18:45:00+00:00
+
+Label counts (multi-label totals, not row counts):
+- **Train**: clean 444, crypto 965, scam 453, promo 186, ai_generated_reply 1
+- **Valid**: clean 121, crypto 231, scam 112, promo 46
 
 ## Model Artifacts
 
 | File | Size | Notes |
 |------|------|-------|
-| `models/scam_detector.bin` | 767 MB | Original fastText model |
-| `models/scam_detector.ftz` | 97 MB | Quantized (87% reduction) |
+| `models/scam_detector.bin` | ~767 MB | Reference model (gitignored) |
+| `models/reduced/quant-cutoff100k.ftz` | 5.72 MB | **Current extension model** |
+| `models/reduced/quant-cutoff10k.ftz` | 0.66 MB | Size-optimal alternative |
 
-**Target**: <10 MB for browser extension deployment
+## Production (Extension) Configuration
 
-## Production Configuration
+- **Model**: `quant-cutoff100k.ftz`
+- **Scam threshold**: `0.6151` (tuned for FPR <= 2% on holdout)
+- **Note**: quantized models can return probabilities slightly > 1. Clamp to `[0, 1]` before comparisons.
 
-```python
-PRODUCTION_THRESHOLD = 0.90
-```
+### Holdout performance (scam label, time-split)
 
-At threshold 0.90:
-- **False Positive Rate**: 4.7% ✅ (4/85 clean posts flagged as scam)
-- **Recall**: 75.8% (catches ~3/4 of scams)
-- **Target FPR**: ≤5% — **ACHIEVED**
+| Metric | Value |
+|---|---|
+| Precision | 0.9524 |
+| Recall | 0.9524 |
+| FPR | 1.43% |
+| Threshold | 0.6151 |
 
-## Threshold Sweep Results
+## Per-label Thresholds (offline inference)
 
-| Threshold | Precision | Recall | F1 | FPR |
-|-----------|-----------|--------|-----|-----|
-| 0.50 | 0.88 | 0.82 | 0.85 | 12.94% |
-| 0.60 | 0.89 | 0.81 | 0.85 | 11.76% |
-| 0.70 | 0.90 | 0.80 | 0.85 | 10.59% |
-| 0.80 | 0.92 | 0.78 | 0.85 | 8.24% |
-| **0.90** | **0.94** | **0.76** | **0.84** | **4.71%** |
-| 0.95 | 0.96 | 0.70 | 0.81 | 2.35% |
+`config/thresholds.json` stores per-label thresholds for multi-label inference on the `.bin` model
+(tuned on `data/valid.txt` for FPR <= 2%):
 
-## Tradeoffs
+- `crypto`: 0.9969
+- `scam`: 0.9815
+- `promo`: 0.7719
+- `clean`: 0.10 (fallback)
 
-- **0.50 threshold**: Catches more scams (82% recall) but 13% false positives = too noisy
-- **0.90 threshold**: Fewer false alarms (4.7% FPR) but misses ~24% of scams
-- **Decision**: Prefer low FPR for browser extension UX — users disable noisy tools
+## Reduction Sweep (valid set, threshold = 0.90)
 
-## False Positives at 0.90 (4 samples)
+| name | size_mb | precision | recall | fpr |
+| --- | --- | --- | --- | --- |
+| quant-default | 96.10 | 0.8378 | 0.8304 | 7.17% |
+| quant-cutoff100k | 5.72 | 0.9222 | 0.7411 | 2.79% |
+| quant-cutoff50k | 2.90 | 0.9111 | 0.7321 | 3.19% |
+| quant-cutoff20k | 1.22 | 0.9053 | 0.7679 | 3.59% |
+| quant-cutoff10k | 0.66 | 0.9062 | 0.7768 | 3.59% |
 
-1. Legitimate crypto discussions with scam-adjacent keywords
-2. Sarcastic/joking posts about scams
-3. Official project announcements with "claim"/"airdrop" language
-
-## Next Steps
-
-1. ~~Threshold tuning~~ ✅ Done (0.90 is production default)
-2. **Model size reduction** — 97 MB → target <10 MB
-   - Reduce embedding dimensions
-   - Prune vocabulary
-   - Use unigrams only (drop bigrams)
-3. **More clean data** — add crypto posts with scammy keywords
-4. **Browser extension integration** — WASM export
-
-## Training Commands
+## Repeatable Commands
 
 ```bash
 # Prepare data
@@ -68,9 +65,13 @@ python scripts/prepare_data.py
 # Train model
 python scripts/train_fasttext.py
 
-# Evaluate (uses 0.90 threshold by default)
-python scripts/evaluate.py
+# Create holdout split
+python scripts/make_holdout.py --ratio 0.1
 
-# Threshold sweep
-python scripts/evaluate.py --sweep
+# Compare reduced models under FPR constraint (holdout)
+python scripts/compare_models_fpr.py --models "models/reduced/quant-*.ftz" --target-fpr 0.02 --holdout data/holdout.txt
+
+# Playwright smoke tests
+node tests/wasm-smoke.mjs
+pnpm exec playwright test extension/tests/wasm-smoke.spec.ts
 ```

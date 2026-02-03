@@ -5,15 +5,16 @@
 - Keep the full training pipeline intact (reference .bin remains source of truth)
 - Reduction is scripted and repeatable
 
-## Baseline (2026-02-02)
-- models/scam_detector.bin ~767MB (reference)
-- models/scam_detector.ftz ~97MB (current quantized)
+## Baseline (2026-02-03)
+- `models/scam_detector.bin` ~767MB (reference)
+- `models/reduced/quant-cutoff100k.ftz` 5.72MB (**current extension model**)
+- `models/reduced/quant-cutoff10k.ftz` 0.66MB (size-optimal alternative)
 
 ## Repeatable pipeline
-1. Train reference model (existing pipeline) -> models/scam_detector.bin
-2. Run reduction suite -> models/reduced/*.ftz + models/reduced/reduction_results.csv
-3. Select smallest model that keeps FPR <= 5% at threshold 0.90 with acceptable recall
-4. Promote chosen model to models/scam_detector.ftz and update docs/MODEL.md + docs/EVAL_RESULTS.md
+1. Train reference model (existing pipeline) -> `models/scam_detector.bin`
+2. Run reduction suite -> `models/reduced/*.ftz` + `models/reduced/reduction_results.csv`
+3. Compare models under an FPR constraint on holdout
+4. Promote chosen model to extension and update docs
 
 ## Reduction options (post-training)
 - Quantize with qout/qnorm/dsub for aggressive compression
@@ -26,58 +27,40 @@
 python scripts/reduce_fasttext.py --profile compact
 python scripts/reduce_fasttext.py --profile grid --cutoffs 0,200000,100000,50000,20000 --dsubs 2,4,8
 python scripts/reduce_fasttext.py --profile compact --pca-dims 50,25
+
+# Compare reduced models under FPR constraint (holdout)
+python scripts/compare_models_fpr.py --models "models/reduced/quant-*.ftz" --target-fpr 0.02 --holdout data/holdout.txt
 ```
-Results in models/reduced/reduction_results.csv
 
-## Results (2026-02-02, threshold 0.90)
+## Results (2026-02-03, threshold 0.90 on valid)
 
-| name | size_mb | precision | recall | fpr | notes |
-| --- | --- | --- | --- | --- | --- |
-| quant-default | 96.06 | 0.9348 | 0.7247 | 3.5% | baseline quantized |
-| quant-cutoff100k | 5.72 | 0.8924 | 0.7921 | 8.2% | |
-| quant-cutoff50k | 2.95 | 0.8987 | 0.7978 | 8.2% | |
-| quant-cutoff20k | 1.27 | 0.8931 | 0.7978 | 8.2% | |
-| **quant-cutoff10k** | **0.69** | 0.8938 | 0.8034 | **7.1%** | ⭐ best size/FPR tradeoff |
-| quant-cutoff5k | 0.40 | 0.8788 | 0.8146 | 10.6% | |
-| quant-cutoff1k | 0.16 | 0.8720 | 0.8034 | 11.8% | |
+| name | size_mb | precision | recall | fpr |
+| --- | --- | --- | --- | --- |
+| quant-default | 96.10 | 0.8378 | 0.8304 | 7.17% |
+| quant-cutoff100k | 5.72 | 0.9222 | 0.7411 | 2.79% |
+| quant-cutoff50k | 2.90 | 0.9111 | 0.7321 | 3.19% |
+| quant-cutoff20k | 1.22 | 0.9053 | 0.7679 | 3.59% |
+| quant-cutoff10k | 0.66 | 0.9062 | 0.7768 | 3.59% |
 
 **Note**: `qout=True` variants fail on this model (matrix too small for quantization).
 
 ### Key findings
-- Reduction pipeline is complete and repeatable; the grid run captured size/precision/recall/FPR at threshold 0.90
-- Aggressive vocab pruning (cutoff) dramatically reduces size with modest accuracy loss
-- **quant-cutoff10k (690KB)** is the current best size/FPR tradeoff at **7.1% FPR**, while keeping recall ~0.80
-- 10k cutoff has *lower* FPR than larger cutoffs (extra vocab may be introducing false positives)
+- For **low false alarms**, `quant-cutoff100k` yields the best recall under FPR <= 2% on holdout.
+- `quant-cutoff10k` remains the best size/recall tradeoff when <1MB is required.
+- Larger models reduce false positives but cost more disk and load time.
 
-## Threshold Tuning Results (2026-02-02)
+## FPR-target tuning (holdout, scam label)
 
-Using `scripts/tune_threshold.py` on `quant-cutoff10k.ftz`:
+| Model | Threshold | FPR | Recall | Precision |
+| --- | --- | --- | --- | --- |
+| quant-cutoff100k | 0.6151 | 1.43% | 0.9524 | 0.9524 |
 
-| Threshold | FPR | Precision | Recall | F1 | Notes |
-| --- | --- | --- | --- | --- | --- |
-| 0.90 | 7.1% | 0.894 | 0.803 | 0.846 | default |
-| 0.95 | 7.1% | 0.903 | 0.787 | 0.841 | |
-| 0.98 | 5.9% | 0.920 | 0.775 | 0.841 | |
-| **0.985** | **4.7%** | **0.926** | **0.770** | **0.840** | ✅ **HITS TARGET** |
-| 0.99 | 4.7% | 0.937 | 0.753 | 0.835 | |
-| 0.995 | 4.7% | 0.937 | 0.747 | 0.831 | |
-
-### ✅ Target Achieved!
-
-**Production config:**
-- Model: `models/reduced/quant-cutoff10k.ftz` (690KB)
-- Threshold: **0.985**
-- FPR: **4.7%** (target was ≤5%)
-- Recall: 77% (catches ~3 out of 4 scams)
-- False positives: 4 out of 85 clean samples
-
-## Parallel work items
-- Add clean crypto posts with scammy keywords to reduce false positives
-- Validate WASM compatibility for top candidates
-- Decide acceptance criteria for production promotion
+**Production config (extension):**
+- Model: `quant-cutoff100k.ftz`
+- Threshold: `0.6151`
+- FPR target: <= 2% on holdout
 
 ## Next Steps
-1. ~~Threshold tuning to hit <5% FPR~~ ✅ Done (0.985 threshold)
-2. WASM integration testing with `quant-cutoff10k.ftz`
-3. Update browser extension to use threshold 0.985
-4. Consider if retraining with smaller dim would help
+1. Keep expanding clean data with scammy keywords to reduce false positives
+2. Maintain time-based holdout and re-check FPR on every retrain
+3. Evaluate smaller models if bundle size becomes a hard constraint

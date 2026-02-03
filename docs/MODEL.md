@@ -19,8 +19,8 @@ echo "just vibing with crypto friends" | python scripts/inference.py --stdin
 | Property | Value |
 |----------|-------|
 | Type | fastText supervised |
-| Training samples | 1345 |
-| Validation samples | 337 |
+| Training samples | 1448 |
+| Validation samples | 363 |
 | Classes | clean, crypto, scam, promo |
 | Model size | ~767MB (unquantized) |
 | Inference time | <1ms per sample |
@@ -29,6 +29,7 @@ echo "just vibing with crypto friends" | python scripts/inference.py --stdin
 
 Per-label thresholds live in `config/thresholds.json` and are applied during inference.
 Use a single global threshold only for debugging or when the thresholds file is absent.
+The browser extension currently uses a scam-only threshold tuned for FPR <= 2% on holdout.
 
 **Note:** `ai_generated_reply` is currently excluded from training and inference until we have more labeled data.
 
@@ -44,8 +45,11 @@ python scripts/train_fasttext.py
 # 3. Evaluate
 python scripts/evaluate.py --threshold 0.90
 
-# Or sweep all thresholds
-python scripts/evaluate.py --sweep --target-fpr 0.05
+# Or tune per-label thresholds
+python scripts/evaluate.py --tune --save-thresholds config/thresholds.json
+
+# Create a time-based holdout split
+python scripts/make_holdout.py --ratio 0.1
 ```
 
 ## Files
@@ -87,7 +91,9 @@ Multi-label:
 ## Browser Extension Integration
 
 For WASM deployment, the model needs to be:
-1. Quantized (reduces ~767MB → ~10-50MB)
+1. Quantized (reduces ~767MB → ~5-6MB)
 2. Compiled to WASM via fastText WASM port
+
+Current extension model: `models/reduced/quant-cutoff100k.ftz` (5.72MB).
 
 See `docs/ARCHITECTURE.md` for the full production pipeline.

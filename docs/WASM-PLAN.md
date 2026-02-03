@@ -6,7 +6,7 @@
 
 ## Overview
 
-Load the trained fastText model (`quant-cutoff10k.ftz`, 690KB) in the browser extension using WebAssembly.
+Load the trained fastText model (`quant-cutoff100k.ftz`, 5.72MB) in the browser extension using WebAssembly.
 
 ## Recommended Library
 
@@ -22,17 +22,15 @@ Load the trained fastText model (`quant-cutoff10k.ftz`, 690KB) in the browser ex
 
 ```
 extension/
-├── public/
-│   └── fastText/
-│       ├── fastText.common.wasm    # WASM binary from fasttext.wasm.js
-│       └── models/
-│           └── scam-detector.ftz   # Our model (690KB)
-├── src/
-│   ├── lib/
-│   │   └── scam-detector.ts        # ScamDetector class wrapper
-│   └── background.ts               # Background service worker
-├── package.json
-└── wxt.config.ts                   # WXT config (or manifest.json)
+├── vendor/
+│   └── fasttext/                   # fasttext.wasm.js assets
+├── fasttext/
+│   └── fasttext_wasm.wasm          # WASM binary
+├── models/
+│   └── quant-cutoff100k.ftz        # Our model (5.72MB)
+├── background.js                   # Background service worker
+├── content-script.js               # Content script
+└── manifest.json
 ```
 
 ## Implementation Steps
@@ -52,13 +50,13 @@ Copy from `node_modules/fasttext.wasm.js`:
 Or use a build script to copy automatically:
 ```bash
 mkdir -p extension/public/fastText/models
-cp node_modules/fasttext.wasm.js/dist/core/fastText.common.wasm extension/public/fastText/
-cp models/reduced/quant-cutoff10k.ftz extension/public/fastText/models/scam-detector.ftz
+cp node_modules/fasttext.wasm.js/dist/core/fastText.common.wasm extension/fasttext/
+cp models/reduced/quant-cutoff100k.ftz extension/models/quant-cutoff100k.ftz
 ```
 
 **WASM Size**: 423KB
-**Model Size**: 690KB
-**Total**: ~1.1MB (very reasonable for a browser extension!)
+**Model Size**: 5.72MB
+**Total**: ~6.1MB (still fine for a browser extension)
 
 ### Phase 3: Create ScamDetector Wrapper
 
@@ -67,7 +65,7 @@ cp models/reduced/quant-cutoff10k.ftz extension/public/fastText/models/scam-dete
 ```typescript
 import { getFastTextModule, getFastTextClass, type FastTextModel } from 'fasttext.wasm.js/common';
 
-const PRODUCTION_THRESHOLD = 0.985;
+const PRODUCTION_THRESHOLD = 0.6151;
 
 export interface PredictionResult {
   isScam: boolean;
@@ -84,7 +82,7 @@ export class ScamDetector {
     if (this.loaded) return;
 
     const wasmPath = options?.wasmPath ?? chrome.runtime.getURL('fastText/fastText.common.wasm');
-    const modelPath = options?.modelPath ?? chrome.runtime.getURL('fastText/models/scam-detector.ftz');
+    const modelPath = options?.modelPath ?? chrome.runtime.getURL('models/quant-cutoff100k.ftz');
 
     // Step 1: Initialize the WASM module with custom path
     const getFastTextModuleWithPath = () => getFastTextModule({ wasmPath });
@@ -229,7 +227,7 @@ async function checkText(text: string) {
 |------|--------|-------------|
 | `extension/package.json` | Modify | Add `fasttext.wasm.js` dependency |
 | `extension/public/fastText/fastText.common.wasm` | Create | Copy WASM binary |
-| `extension/public/fastText/models/scam-detector.ftz` | Create | Copy our model |
+| `extension/models/quant-cutoff100k.ftz` | Create | Copy our model |
 | `extension/src/lib/scam-detector.ts` | Create | ScamDetector wrapper class |
 | `extension/src/background.ts` | Modify | Initialize detector, handle messages |
 | `extension/manifest.json` | Modify | Add web_accessible_resources |
@@ -238,11 +236,18 @@ async function checkText(text: string) {
 
 | Parameter | Value | Notes |
 |-----------|-------|-------|
-| Threshold | 0.985 | Tuned for 4.7% FPR |
-| Model | `quant-cutoff10k.ftz` | 690KB, quantized |
+| Threshold | 0.6151 | Tuned for <=2% FPR on holdout |
+| Model | `quant-cutoff100k.ftz` | 5.72MB, quantized |
 | WASM | `fastText.common.wasm` | 423KB |
 
-**Total bundle size: ~1.1MB** - very reasonable for a browser extension!
+**Total bundle size: ~6.1MB** - still reasonable for a browser extension.
+
+## UI highlights
+
+- **scam**: red outline/background
+- **crypto**: orange outline/background
+- **promo**: blue outline/background
+- Label badge shows top labels on highlighted elements; tooltip includes top scores.
 
 ## Potential Gotchas
 
@@ -257,13 +262,15 @@ async function checkText(text: string) {
 5. **Service Worker Lifecycle**: Background service workers can be terminated. Model may need to be re-loaded on wake.
 
 6. **Probability Values**: fastText doesn't guarantee `p(scam) + p(not_scam) = 1`. Don't use `1 - topProb` as the complement. Instead, scan predictions for the specific label you want (use `predict(text, -1)` to get all labels). If you keep multiple scam labels, combine them explicitly.
-7. **Multi-label**: fastText supports multiple labels per sample. At inference, treat each label probability independently and return all labels above your threshold(s).
+7. **Quantized overshoot**: quantized models may return probabilities slightly > 1. Clamp to `[0, 1]` before comparisons.
+8. **CSP**: inline scripts are blocked on extension pages. Load smoke-test JS from an external file (e.g., `wasm-smoke.js`).
+9. **Multi-label**: fastText supports multiple labels per sample. At inference, treat each label probability independently and return all labels above your threshold(s).
 
 ## Testing Checklist
 
 - [ ] Model loads successfully in background script
 - [ ] Prediction returns correct format (check Vector/Pair access)
-- [ ] Threshold of 0.985 works correctly
+- [ ] Threshold of 0.6151 works correctly
 - [ ] Content script can communicate with background
 - [ ] No CORS issues with WASM/model loading
 - [ ] Memory usage is acceptable
