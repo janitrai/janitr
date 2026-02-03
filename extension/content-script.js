@@ -140,7 +140,7 @@ const formatScores = (scores, limit = 4) => {
 
 const clearHighlight = (el) => {
   if (!el) return;
-  el.classList.remove('ic-flagged', 'ic-scam', 'ic-crypto');
+  el.classList.remove('ic-flagged', 'ic-scam', 'ic-crypto', 'ic-promo');
   el.removeAttribute('data-ic-label');
   el.removeAttribute('data-ic-labels');
   el.removeAttribute('data-ic-score');
@@ -153,6 +153,7 @@ const applyHighlight = (el, label, score, pScam, labels = [], scores = {}) => {
   el.classList.add('ic-flagged');
   el.classList.toggle('ic-scam', label === 'scam');
   el.classList.toggle('ic-crypto', label === 'crypto');
+  el.classList.toggle('ic-promo', label === 'promo');
   el.dataset.icLabel = label;
   if (labels.length > 0) {
     el.dataset.icLabels = labels.join(' + ');
@@ -334,6 +335,10 @@ const injectStyles = () => {
     .ic-flagged.ic-scam {
       outline-color: #ff4d4f;
       background: rgba(255, 77, 79, 0.14);
+    }
+    .ic-flagged.ic-promo {
+      outline-color: #1677ff;
+      background: rgba(22, 119, 255, 0.14);
     }
     .ic-flagged::after {
       content: attr(data-ic-labels);
