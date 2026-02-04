@@ -4,6 +4,29 @@
 
 A browser extension that filters crypto scams, AI-generated replies, and promotional spam from your social media feeds — entirely locally, with no network calls.
 
+> **⚠️ Work in Progress**: This project is under active development. The extension works but is not yet polished for general use.
+
+## Vision
+
+Internet Condom currently focuses on **crypto scams**, but the goal is much broader: build a comprehensive filtering system for all types of unwanted social media content.
+
+**Planned content categories:**
+
+- 🪙 Crypto scams & pump-and-dump schemes (current focus)
+- 🤖 AI-generated spam replies
+- 📢 Promotional spam & engagement bait
+- 🗳️ Political content & partisan rage-bait
+- 😶‍🌫️ Vagueposting & attention-seeking posts
+- 🔥 Rage-bait & outrage farming
+- 🤬 Profanities & toxic language
+- 👊 Online harassment & pile-ons
+
+**Open datasets:**
+
+A key goal is to create and release **large, high-quality labeled datasets** for unwanted content detection. Training data is collected via browser automation (not APIs), labeled at scale using AI models, and every sample includes full provenance (platform, source URL, timestamp). These datasets will be open for researchers and developers building healthier social media experiences.
+
+The approach: start narrow (crypto scams have clear ground truth), prove the pipeline works, then expand to fuzzier categories where labeling is more subjective.
+
 ## Install
 
 1. Clone or download this repo
