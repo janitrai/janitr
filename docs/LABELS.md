@@ -1,5 +1,7 @@
 # Label Guide
 
+> **Note (2026-02-04):** The `ai_generated_reply` label exists in the schema but is **not currently used in training or inference**. We are not focusing on AI-generated reply detection at this time. The label is preserved for future work but is excluded from the active classification pipeline. See [TRAINING_INFERENCE_STACK.md](./TRAINING_INFERENCE_STACK.md) for details.
+
 This repo currently uses a 5-class scheme with **multi-label support**.
 Each sample can have **one or more labels** when the attributes are orthogonal
 (e.g. topic + intent).
