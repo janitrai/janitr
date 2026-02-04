@@ -76,6 +76,49 @@ Script: `scripts/reduce_fasttext.py`
 
 ---
 
+## Grid Search Results (2026-02-04)
+
+Comprehensive grid search across cutoffs (1k-200k) × dsub (1,2,4,8) × qnorm × qout.
+
+### Key Finding: Smaller is Better
+
+Counter-intuitively, **cutoff=1000** produced the best crypto recall. Aggressive vocabulary pruning forces the model to focus on the most discriminative features.
+
+### Best Model (Browser Extension)
+
+```
+File: models/experiments/quant_grid_10mb/grid_w1_c25_lr0.2_cut1000_dsub8_qout0_qnorm0.ftz
+Size: 0.12 MB (120 KB)
+```
+
+| Label | Recall | Precision | FPR | Threshold |
+|-------|--------|-----------|-----|-----------|
+| Crypto | **89.2%** | 99.3% | 1.1% | 0.7432 |
+| Scam | 33.7% | 91.9% | 1.9% | 0.9305 |
+
+### Comparison: Cutoff vs Crypto Recall (dsub=8, qout=0, qnorm=0)
+
+| Cutoff | Size | Crypto Recall | Notes |
+|--------|------|---------------|-------|
+| 1,000 | 0.12 MB | 89.2% | **Best** |
+| 5,000 | 0.20 MB | 86.7% | |
+| 10,000 | 0.30 MB | 83.7% | |
+| 20,000 | 0.51 MB | 80.7% | |
+| 50,000 | 1.16 MB | 74.7% | |
+| 100,000 | >10 MB | - | Exceeds limit |
+
+### Why Small Cutoff Wins
+
+1. **Focus**: Fewer vocabulary items = model learns most predictive tokens
+2. **Generalization**: Less overfitting to rare words in training data
+3. **Quantization-friendly**: Smaller matrices quantize with less information loss
+
+### Full Results
+
+See `docs/logs/2026-02-04.md` for complete grid search table with all 40+ configurations.
+
+---
+
 ## Quality Gates
 
 Before deploying any quantized model:

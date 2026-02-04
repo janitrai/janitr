@@ -91,10 +91,22 @@ Multi-label:
 ## Browser Extension Integration
 
 For WASM deployment, the model needs to be:
-1. Quantized (reduces ~767MB → ~5-6MB)
+1. Quantized (reduces ~767MB → target size)
 2. Compiled to WASM via fastText WASM port
 
-Current extension model: `models/reduced/quant-cutoff100k.ftz` (5.72MB).
+### Current Best Model (2026-02-04)
 
-See `docs/QUANTIZATION.md` for size targets, quality gates, and the quantization pipeline.
+```
+File: models/experiments/quant_grid_10mb/grid_w1_c25_lr0.2_cut1000_dsub8_qout0_qnorm0.ftz
+Size: 120 KB
+```
+
+| Label | Recall | Precision | FPR |
+|-------|--------|-----------|-----|
+| Crypto | 89.2% | 99.3% | 1.1% |
+| Scam | 33.7% | 91.9% | 1.9% |
+
+This model is **800x smaller** than the default quantized model (97MB) with **better crypto recall** (89% vs 64%). The aggressive vocabulary cutoff (1000 words) forces the model to focus on the most discriminative features.
+
+See `docs/QUANTIZATION.md` for the full grid search results, size targets, and quality gates.
 See `docs/ARCHITECTURE.md` for the full production pipeline.

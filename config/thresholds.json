@@ -5,16 +5,33 @@
     "scam",
     "promo"
   ],
+  "label_stats": {
+    "crypto": {
+      "fpr": 0.010526315789473684,
+      "precision": 0.9907407407407407,
+      "recall": 0.6445783132530121,
+      "threshold": 0.9450355768203735
+    },
+    "scam": {
+      "fpr": 0.00625,
+      "precision": 0.967741935483871,
+      "recall": 0.297029702970297,
+      "threshold": 0.985887885093689
+    }
+  },
   "thresholds": {
     "clean": 0.1,
-    "crypto": 0.9969,
-    "promo": 0.7719,
-    "scam": 0.9815
+    "crypto": 0.9450355768203735,
+    "promo": 1.0,
+    "scam": 0.985887885093689
   },
-  "tune_step": 0.05,
-  "tuned_at": "2026-02-03",
-  "tuned_on": "data/valid.txt",
-  "version": 1,
-  "fpr_target": 0.02,
-  "tune_method": "max_recall_under_fpr"
+  "tune_method": "max_recall_under_fpr",
+  "tune_target_fpr": null,
+  "tune_target_fpr_by_label": {
+    "crypto": 0.02,
+    "scam": 0.01
+  },
+  "tuned_at": "2026-02-04",
+  "tuned_on": "data/holdout_time.txt",
+  "version": 1
 }

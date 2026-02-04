@@ -12,6 +12,17 @@ data/valid.txt
 data/holdout.txt
 data/holdout.jsonl
 data/holdout_meta.json
+data/train_time.txt
+data/train_time.jsonl
+data/calib.txt
+data/calib.jsonl
+data/holdout_time.txt
+data/holdout_time.jsonl
+data/train_pool.jsonl
+data/train_valid.jsonl
+data/*_rebalanced*.txt
+data/hardneg_*.txt
+data/train_time_hn*.txt
 
 # Python
 .venv/
