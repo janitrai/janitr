@@ -51,6 +51,7 @@ playwright-report/
 # But keep extension icons and logo
 !extension/icon*.png
 !assets/logo.svg
+!assets/logo-white.svg
 package-lock.json
 models/
 !extension/fasttext/model.ftz

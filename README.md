@@ -1,7 +1,7 @@
 # Internet Condom
 
 <p align="center">
-  <img src="assets/logo.svg" alt="Internet Condom logo" width="200">
+  <img src="assets/logo-white.svg" alt="Internet Condom logo" width="200">
 </p>
 
 A browser extension that filters crypto scams, AI-generated replies, and promotional spam from your social media feeds — entirely locally, with no network calls.
