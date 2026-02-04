@@ -22,6 +22,12 @@ Internet Condom currently focuses on **crypto scams**, but the goal is much broa
 - 👊 Online harassment & pile-ons
 - 💡 **Your idea here** — propose new categories via [@onusoz](https://x.com/onusoz)
 
+**Local-first, lightweight models:**
+
+A core principle is that models must run **locally on your device** — no cloud, no API calls, no data leaving your browser. This means optimizing for small model sizes and fast inference so detection works on everything from phones to older laptops. Privacy isn't optional.
+
+The current implementation uses **fastText** (122KB quantized model running via WebAssembly), but the underlying ML approach may evolve in future iterations as we expand to more content categories.
+
 **Open datasets:**
 
 A key goal is to create and release **large, high-quality labeled datasets** for unwanted content detection. Training data is collected via browser automation (not APIs), labeled at scale using AI models, and every sample includes full provenance (platform, source URL, timestamp). These datasets will be open for researchers and developers building healthier social media experiences.
