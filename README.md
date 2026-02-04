@@ -132,3 +132,7 @@ See `docs/DATA_LABELING.md` for the labeling workflow.
 ## Local-First
 
 No network calls. No telemetry. No cloud. Your browsing stays private.
+
+## License
+
+[MIT](LICENSE)
