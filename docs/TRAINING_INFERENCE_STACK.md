@@ -3,6 +3,8 @@
 SOTA training and inference architecture for extremely efficient local ML filtering.
 Runs on browser CPU, phones, and grandma's 2012 Windows tower.
 
+> **Scope (2026-02-04):** The current training pipeline focuses on **scam, crypto, promo, and clean** labels only. The `ai_generated_reply` label exists in the schema but is **excluded from training and inference** for now. We are not focusing on AI-generated reply detection at this time—the label is preserved in the dataset for potential future work but should not be integrated into the active classification pipeline.
+
 ## Architecture Overview
 
 Use a **2-stage stack**:
@@ -224,7 +226,8 @@ Rules first:
 
 Stage 1:
   if p(scam) > threshold_scam → hide
-  else if p(ai_generated_reply) > threshold_ai → collapse
+  # NOTE: ai_generated_reply detection is deferred (not in current pipeline)
+  # else if p(ai_generated_reply) > threshold_ai → collapse
   else if near threshold band → Stage 2 (if enabled)
 
 Stage 2:

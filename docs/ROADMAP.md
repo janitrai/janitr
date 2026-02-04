@@ -1,5 +1,7 @@
 # Model Size Reduction Roadmap
 
+> **Scope note (2026-02-04):** The `ai_generated_reply` label is **not in scope** for the current pipeline. We are focusing on scam/crypto/promo/clean classification only. AI-generated reply detection may be added in a future phase.
+
 ## Goals
 - Target <10MB ideal; 20-30MB acceptable
 - Keep the full training pipeline intact (reference .bin remains source of truth)
