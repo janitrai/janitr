@@ -39,6 +39,8 @@ The current implementation uses **fastText** (122KB quantized model running via 
 
 ~2,900 labeled samples total (multi-label, so counts overlap). All sourced from X via browser automation, labeled with AI assistance, human-verified for edge cases.
 
+This entire project — data collection, labeling, model training, and the extension itself — was built using [OpenClaw](https://github.com/openclaw/openclaw), an open framework for digital AI assistants.
+
 **Open datasets:**
 
 A key goal is to create and release **large, high-quality labeled datasets** for unwanted content detection. Training data is collected via browser automation (not APIs), labeled at scale using AI models, and every sample includes full provenance (platform, source URL, timestamp). These datasets will be open for researchers and developers building healthier social media experiences.
