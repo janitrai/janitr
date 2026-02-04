@@ -96,4 +96,5 @@ For WASM deployment, the model needs to be:
 
 Current extension model: `models/reduced/quant-cutoff100k.ftz` (5.72MB).
 
+See `docs/QUANTIZATION.md` for size targets, quality gates, and the quantization pipeline.
 See `docs/ARCHITECTURE.md` for the full production pipeline.
