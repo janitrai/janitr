@@ -39,7 +39,7 @@ The current implementation uses **fastText** (122KB quantized model running via 
 
 ~2,900 labeled samples total (multi-label, so counts overlap). All sourced from X via browser automation, labeled with AI assistance, human-verified for edge cases.
 
-This entire project — data collection, labeling, model training, and the extension itself — was built using [OpenClaw](https://github.com/openclaw/openclaw), an open framework for digital AI assistants.
+This entire project — data collection, labeling, model training, and the extension itself — was built using [OpenClaw](https://github.com/openclaw/openclaw), an open framework for personal AI assistants.
 
 **Open datasets:**
 
