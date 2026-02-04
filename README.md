@@ -28,6 +28,17 @@ A core principle is that models must run **locally on your device** — no cloud
 
 The current implementation uses **fastText** (122KB quantized model running via WebAssembly), but the underlying ML approach may evolve in future iterations as we expand to more content categories.
 
+**Current dataset:**
+
+| Label  | Samples |
+| ------ | ------- |
+| clean  | 1,482   |
+| crypto | 1,249   |
+| scam   | 572     |
+| promo  | 368     |
+
+~2,900 labeled samples total (multi-label, so counts overlap). All sourced from X via browser automation, labeled with AI assistance, human-verified for edge cases.
+
 **Open datasets:**
 
 A key goal is to create and release **large, high-quality labeled datasets** for unwanted content detection. Training data is collected via browser automation (not APIs), labeled at scale using AI models, and every sample includes full provenance (platform, source URL, timestamp). These datasets will be open for researchers and developers building healthier social media experiences.
