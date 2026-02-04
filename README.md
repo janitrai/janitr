@@ -4,7 +4,7 @@
 
 A browser extension that filters crypto scams, AI-generated replies, and promotional spam from your social media feeds — entirely locally, with no network calls.
 
-> **⚠️ Work in Progress**: This project is under active development. The extension works but is not yet polished for general use.
+> **⚠️ Work in Progress**: This is an MVP. Currently it only works on X (Twitter) for demoing scam detection. Try it out, and if you have ideas for new content categories or improvements, tag or DM [@onusoz](https://x.com/onusoz) on X.
 
 ## Vision
 
@@ -20,6 +20,7 @@ Internet Condom currently focuses on **crypto scams**, but the goal is much broa
 - 🔥 Rage-bait & outrage farming
 - 🤬 Profanities & toxic language
 - 👊 Online harassment & pile-ons
+- 💡 **Your idea here** — propose new categories via [@onusoz](https://x.com/onusoz)
 
 **Open datasets:**
 
