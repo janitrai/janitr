@@ -1,4 +1,4 @@
-import { predictScam, PRODUCTION_THRESHOLD } from '../fasttext/scam-detector.js';
+import { loadScamThresholds, predictScam } from '../fasttext/scam-detector.js';
 
 const output = document.getElementById('output');
 const samples = [
@@ -14,9 +14,10 @@ const samples = [
 
 const run = async () => {
   try {
+    const thresholds = await loadScamThresholds();
     const results = [];
     for (const sample of samples) {
-      const result = await predictScam(sample.text, { threshold: PRODUCTION_THRESHOLD });
+      const result = await predictScam(sample.text, { thresholds });
       results.push({ ...sample, ...result });
     }
     window.__wasmTestResults = results;

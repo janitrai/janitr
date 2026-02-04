@@ -1,4 +1,9 @@
-import { loadScamModel, predictScam, resetScamModel, PRODUCTION_THRESHOLD } from './fasttext/scam-detector.js';
+import {
+  loadScamModel,
+  loadScamThresholds,
+  predictScam,
+  resetScamModel,
+} from './fasttext/scam-detector.js';
 
 let queue = Promise.resolve();
 
@@ -13,9 +18,10 @@ const enqueue = (task) => {
 
 const classifyTexts = async (texts) => {
   await loadScamModel();
+  const thresholds = await loadScamThresholds();
   const results = [];
   for (const text of texts) {
-    results.push(await predictScam(text, { threshold: PRODUCTION_THRESHOLD, k: 3 }));
+    results.push(await predictScam(text, { thresholds }));
   }
   return results;
 };
