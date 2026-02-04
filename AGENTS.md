@@ -1,3 +1,164 @@
 # Agent Instructions
 
+## Project Overview
+
+**InternetCondom** is a browser extension that detects crypto scams, shill posts, and other undesirable content on X (Twitter) in real-time. It runs entirely on-device using a fastText classifier compiled to WebAssembly—no network calls required for classification.
+
+### Goals
+
+- **Low false positives** (FPR < 2%) — users tolerate missing some scams better than wrongly flagging legit content
+- **Fast local inference** — classification happens in the browser, no cloud dependency
+- **Small model size** — target 3-5MB for the browser extension (currently 122KB!)
+
+### Labels
+
+| Label    | Description                                        |
+| -------- | -------------------------------------------------- |
+| `crypto` | Crypto-related content (not necessarily scam)      |
+| `scam`   | Malicious: phishing, wallet drainers, rug pulls    |
+| `promo`  | Promotional/marketing content (currently disabled) |
+| `clean`  | Normal, benign content                             |
+
+---
+
+## Directory Structure
+
+```
+InternetCondom/
+├── extension/           # Chrome extension (MV3)
+│   ├── manifest.json    # Extension manifest
+│   ├── content-script.js # Injected into X pages, scans tweets
+│   ├── background.js    # Service worker
+│   ├── offscreen.js     # Offscreen doc for WASM inference
+│   ├── fasttext/        # WASM model + JS bindings
+│   │   ├── model.ftz    # Quantized fastText model (122KB)
+│   │   ├── thresholds.json # Per-label confidence thresholds
+│   │   ├── scam-detector.js # High-level detection API
+│   │   └── fasttext.js  # WASM loader
+│   ├── vendor/          # Third-party WASM bindings
+│   └── tests/           # Extension smoke tests
+│
+├── scripts/             # Python ML pipeline
+│   ├── prepare_data.py  # Convert JSONL → fastText format
+│   ├── train_fasttext.py # Train classifier
+│   ├── evaluate.py      # Eval metrics, confusion matrix
+│   ├── inference.py     # Run inference on text
+│   ├── reduce_fasttext.py # Quantize models for size
+│   ├── tune_thresholds_fpr.py # Find thresholds for target FPR
+│   └── ...              # Various data processing scripts
+│
+├── data/                # Training data (git-ignored)
+│   ├── snapshots/       # Raw X post snapshots (JSONL)
+│   ├── train.txt        # fastText training format
+│   └── valid.txt        # fastText validation format
+│
+├── dataset/             # Curated labeled datasets
+│
+├── models/              # Trained models (git-ignored)
+│   ├── scam_detector.bin # Full model (~97MB)
+│   ├── scam_detector.ftz # Quantized model
+│   └── experiments/     # Grid search results
+│
+├── config/
+│   └── thresholds.json  # Production threshold config
+│
+├── docs/                # Documentation (SimpleDoc conventions)
+│   ├── ARCHITECTURE.md  # System design
+│   ├── MODEL.md         # Current model specs
+│   ├── QUANTIZATION.md  # Size optimization guide
+│   ├── LABELS.md        # Labeling guidelines
+│   ├── DATA_MODEL.md    # Data schemas
+│   └── logs/            # Daily development logs
+│
+├── tests/               # Integration tests
+└── skills/              # Agent skills (SimpleDoc)
+```
+
+---
+
+## Key Components
+
+### 1. Browser Extension (`extension/`)
+
+Chrome MV3 extension that:
+
+- Injects `content-script.js` into X pages
+- Extracts tweet text from DOM
+- Runs fastText inference via WASM in an offscreen document
+- Hides or badges flagged content based on confidence thresholds
+
+**Key files:**
+
+- `fasttext/scam-detector.js` — main detection API (`predictScam()`)
+- `fasttext/thresholds.json` — per-label thresholds (crypto: 0.7432, scam: 0.9305)
+- `fasttext/model.ftz` — quantized model (122KB)
+
+### 2. ML Pipeline (`scripts/`)
+
+Python scripts for training and evaluation. Uses `fasttext-wheel` bindings.
+
+**Typical workflow:**
+
+```bash
+# Prepare data
+python scripts/prepare_data.py
+
+# Train model
+python scripts/train_fasttext.py
+
+# Evaluate
+python scripts/evaluate.py
+
+# Quantize for browser
+python scripts/reduce_fasttext.py --cutoff 1000 --dsub 8
+```
+
+**Key metrics to watch:**
+
+- **FPR (False Positive Rate)** — must stay < 2%
+- **Crypto Recall** — target > 60% (currently 89.2%)
+- **Model Size** — target < 6MB for extension
+
+### 3. Data (`data/`, `dataset/`)
+
+Training data collected via browser automation (OpenClaw), not X API.
+
+**Format:** JSONL snapshots with fields:
+
+- `id`, `text`, `authorHandle`, `timestamp`
+- `label` (human or AI-assigned)
+- `source` (provenance tracking)
+
+**Note:** `data/` and `models/` are git-ignored due to size. Regenerate from scripts.
+
+---
+
+## Development Notes
+
+### Pre-commit Hooks
+
+Husky runs on every commit:
+
+- `ruff format` — Python formatting
+- `prettier` — JS/TS/JSON/MD formatting
+- `simpledoc check` — Doc convention validation
+
+### Quantization
+
+See `docs/QUANTIZATION.md` for size optimization. Key finding: **smaller vocabulary (cutoff=1000) actually improves crypto recall** by forcing the model to focus on discriminative features.
+
+### Thresholds
+
+Thresholds are tuned per-label to maintain FPR < 2%. The `promo` label is currently disabled (threshold=1.0) to reduce noise.
+
+---
+
+## SimpleDoc Conventions
+
 **Attention agent!** Before creating ANY documentation, use the `simpledoc` skill in `skills/simpledoc/SKILL.md`.
+
+Key rules:
+
+- Filenames: `SCREAMING_SNAKE_CASE.md`
+- Daily logs: `docs/logs/YYYY-MM-DD.md` with YAML frontmatter
+- No hyphens in doc filenames (use underscores)
