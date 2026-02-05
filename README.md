@@ -6,10 +6,6 @@ A browser extension that filters crypto scams, AI-generated replies, and promoti
 
 > **⚠️ Work in Progress**: This is an MVP. Currently it only works on X (Twitter) for demoing scam detection. Try it out, and if you have ideas for new content categories or improvements, tag or DM [@onusoz](https://x.com/onusoz) on X.
 
-## Origin Story
-
-This project was originally called **Internet Condom**, inspired by [@tszzl](https://x.com/tszzl)'s "internet condom" concept from mid-2025 — the idea of an AI layer between you and the web that filters, rewrites, and protects you from ads, spam, dark patterns, and low-signal content. We liked the metaphor (a protective barrier so _your agent_ touches the web, not you), but renamed to **Janitr** because... well, try explaining "Internet Condom" in a work meeting.
-
 **Website:** [janitr.ai](https://janitr.ai)
 
 ## Vision
@@ -138,6 +134,10 @@ See `docs/DATA_LABELING.md` for the labeling workflow.
 ## Local-First
 
 No network calls. No telemetry. No cloud. Your browsing stays private.
+
+## Origin Story
+
+This project was originally called **Internet Condom**, inspired by [@tszzl](https://x.com/tszzl)'s "internet condom" concept from mid-2025 — the idea of an AI layer between you and the web that filters, rewrites, and protects you from ads, spam, dark patterns, and low-signal content. We liked the metaphor (a protective barrier so _your agent_ touches the web, not you), but renamed to **Janitr** because... well, try explaining "Internet Condom" in a work meeting.
 
 ## License
 
