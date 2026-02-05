@@ -42,6 +42,7 @@ spam_manipulation_commercial:
   - astroturf
   - bot
   - ai_generated
+  - ai_generated_reply
   - ai_slop
   - content_farm
   - copypasta
@@ -252,11 +253,24 @@ Automation signals dominate (high volume, templated replies, unnatural repetitio
 
 #### `ai_generated`
 
-Looks AI-written/AI-made (even if a human posted it).
+Looks AI-written/AI-made (even if a human posted it). General detection label for AI-authored content regardless of quality or intent.
+
+#### `ai_generated_reply`
+
+AI-generated replies specifically. **This is a distinct category and a major user complaint.** Users widely report that AI-generated replies are flooding social media, creating inauthentic engagement and drowning out genuine conversation. These are typically:
+
+- Generic, overly flattering, or template-like replies ("Great post!", "This is so insightful!")
+- Repetitive phrasing patterns across many replies from the same or different accounts
+- Low specificity to the original post content
+- Often combined with promotional intent or follow-baiting
+
+**Data collection note**: AI-generated replies should be scraped **with surrounding context** (the parent post they're replying to) for efficient training. The relationship between the reply and its parent is a strong signal—genuine replies reference specific content while AI replies are generic regardless of context.
+
+Can co-occur with: `reply_spam`, `bot`, `promo`, `lead_gen`, `ai_slop`.
 
 #### `ai_slop`
 
-Low-quality, high-volume AI output optimized for engagement/monetization. "AI slop" is now a widely used term for this category.
+Low-quality, high-volume AI output optimized for engagement/monetization. "AI slop" is now a widely used term for this category. Distinct from `ai_generated` (neutral detection) and `ai_generated_reply` (reply-specific)—`ai_slop` implies the content is actively unwanted due to low quality and engagement-farming intent.
 
 #### `content_farm`
 
@@ -608,6 +622,8 @@ What "comprehensive" buys you:
 | Election suppression: "Polling stations are closed tomorrow; vote by text" | `civic_misinfo` + `misinformation` + `topic_politics`           |
 | Non-consensual sexual deepfake "nudification"                              | `nonconsensual_nudity` + `manipulated_media`                    |
 | Thread about GPT-5 capabilities with AI-generated summary                  | `topic_ai` + `ai_generated`                                     |
+| Reply: "This is incredible! 🔥 The future is here!" (to any post)          | `ai_generated_reply` + `reply_spam` + `low_effort`              |
+| Reply: "Amazing insights! DM me to learn more about crypto gains"          | `ai_generated_reply` + `reply_spam` + `promo` + `lead_gen`      |
 | Game of Thrones finale spoiler without warning                             | `spoiler` + `topic_tv_movies`                                   |
 | Breaking news about earthquake with graphic imagery                        | `topic_disasters_tragedy` + `graphic_violence` + `topic_news`   |
 
@@ -633,6 +649,7 @@ What "comprehensive" buys you:
 - You can cluster labels during training (merge into coarse super-classes) to improve performance, while keeping the dataset labels fine-grained for future remapping.
 - **Topic labels** map internally to IAB Tier-1 for complete coverage even when not all are exposed as UI toggles.
 - Consider time-boxed filtering for `spoiler` labels (24h/7d auto-expiry).
+- **AI-generated reply detection** benefits significantly from surrounding context. When scraping `ai_generated_reply` samples, capture the parent post—the relationship between reply and parent is a strong signal (AI replies are generic regardless of context; genuine replies reference specific content).
 
 ---
 
@@ -653,3 +670,6 @@ Optional fields:
 - `urls`: extracted URLs
 - `addresses`: extracted wallet addresses
 - `notes`: short rationale
+- `parent_text`: text of the parent post (for replies; important for `ai_generated_reply` detection)
+- `parent_id`: source_id of the parent post
+- `is_reply`: boolean indicating if this is a reply
