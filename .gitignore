@@ -52,7 +52,7 @@ playwright-report/
 !extension/icon*.png
 !assets/logo.svg
 !assets/logo-white.svg
-!site/logo.svg
+!webapp/logo.svg
 package-lock.json
 models/
 !extension/fasttext/model.ftz
