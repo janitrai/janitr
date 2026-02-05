@@ -2,4 +2,4 @@
 npx lint-staged
 
 # Run simpledoc conventions check
-node ~/SimpleDoc/dist/bin/simpledoc.js check
+npx simpledoc check
