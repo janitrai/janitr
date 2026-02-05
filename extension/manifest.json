@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Internet Condom",
+  "name": "Janitr",
   "version": "0.1.0",
   "description": "Filter crypto scams, AI spam, and promotional garbage from your social feeds — locally, with no network calls.",
   "permissions": ["offscreen"],
@@ -17,7 +17,7 @@
       "48": "icon48.png",
       "128": "icon128.png"
     },
-    "default_title": "Internet Condom"
+    "default_title": "Janitr"
   },
   "background": {
     "service_worker": "background.js",

@@ -1,14 +1,20 @@
-# Internet Condom
+# Janitr
 
-<img src="assets/logo-white.svg" alt="Internet Condom logo" width="200">
+<img src="assets/logo-white.svg" alt="Janitr logo" width="200">
 
 A browser extension that filters crypto scams, AI-generated replies, and promotional spam from your social media feeds — entirely locally, with no network calls.
 
 > **⚠️ Work in Progress**: This is an MVP. Currently it only works on X (Twitter) for demoing scam detection. Try it out, and if you have ideas for new content categories or improvements, tag or DM [@onusoz](https://x.com/onusoz) on X.
 
+## Origin Story
+
+This project was originally called **Internet Condom**, inspired by [@tszzl](https://x.com/tszzl)'s "internet condom" concept from mid-2025 — the idea of an AI layer between you and the web that filters, rewrites, and protects you from ads, spam, dark patterns, and low-signal content. We liked the metaphor (a protective barrier so _your agent_ touches the web, not you), but renamed to **Janitr** because... well, try explaining "Internet Condom" in a work meeting.
+
+**Website:** [janitr.ai](https://janitr.ai)
+
 ## Vision
 
-Internet Condom currently focuses on **crypto scams**, but the goal is much broader: build a comprehensive filtering system for all types of unwanted social media content.
+Janitr currently focuses on **crypto scams**, but the goal is much broader: build a comprehensive filtering system for all types of unwanted social media content.
 
 **Planned content categories:**
 
