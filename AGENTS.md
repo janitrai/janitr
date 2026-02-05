@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**InternetCondom** is a browser extension that detects crypto scams, shill posts, and other undesirable content on X (Twitter) in real-time. It runs entirely on-device using a fastText classifier compiled to WebAssembly—no network calls required for classification.
+**Janitr** is a browser extension that detects crypto scams, shill posts, and other undesirable content on X (Twitter) in real-time. It runs entirely on-device using a fastText classifier compiled to WebAssembly—no network calls required for classification.
 
 ### Goals
 
@@ -24,7 +24,7 @@
 ## Directory Structure
 
 ```
-InternetCondom/
+Janitr/
 ├── extension/           # Chrome extension (MV3)
 │   ├── manifest.json    # Extension manifest
 │   ├── content-script.js # Injected into X pages, scans tweets

@@ -1,8 +1,8 @@
-# InternetCondom Architecture
+# Janitr Architecture
 
 ## 1) Problem Statement
 
-X (Twitter) is the primary distribution channel for crypto scams: shill posts, rug-pull hype, impersonators, fake airdrops, wallet drainers, and malicious links. These scams move fast, exploit platform virality, and blend into legitimate crypto chatter. InternetCondom is a browser extension that detects scam content in X feeds and hides or warns users in real time. The system must be low-latency, resilient to adversarial wording, and continuously adaptable as scam tactics evolve.
+X (Twitter) is the primary distribution channel for crypto scams: shill posts, rug-pull hype, impersonators, fake airdrops, wallet drainers, and malicious links. These scams move fast, exploit platform virality, and blend into legitimate crypto chatter. Janitr is a browser extension that detects scam content in X feeds and hides or warns users in real time. The system must be low-latency, resilient to adversarial wording, and continuously adaptable as scam tactics evolve.
 
 ## 2) Model Performance & Thresholds
 

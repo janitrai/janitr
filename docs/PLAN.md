@@ -1,4 +1,4 @@
-# Internet Condom Plan (v0)
+# Janitr Plan (v0)
 
 ## Goal
 

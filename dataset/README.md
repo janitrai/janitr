@@ -11,12 +11,12 @@ tags:
   - moderation
   - content-filtering
   - ai-detection
-pretty_name: Internet Condom
+pretty_name: Janitr
 size_categories:
   - n<1K
 ---
 
-# Internet Condom Dataset
+# Janitr Dataset
 
 A dataset for detecting scams, crypto content, promos, and AI-generated replies in social media content.
 
@@ -74,7 +74,7 @@ Collected from X (Twitter) via UI scraping. All samples include provenance (sour
 ```python
 from datasets import load_dataset
 
-dataset = load_dataset("your-username/internet-condom")
+dataset = load_dataset("janitrai/janitr")
 
 # Access splits
 train = dataset["train"]
@@ -87,7 +87,7 @@ print(train[0])
 
 ## Labeling Guidelines
 
-See [LABELS.md](https://github.com/your-username/internetcondom/blob/main/LABELS.md) for detailed labeling rules.
+See [LABELS.md](https://github.com/janitrai/janitr/blob/main/LABELS.md) for detailed labeling rules.
 
 **scam** — Only when there's clear theft/phishing intent:
 - Seed phrase / private key requests
@@ -120,10 +120,10 @@ See [LABELS.md](https://github.com/your-username/internetcondom/blob/main/LABELS
 
 ```bibtex
 @dataset{internet_condom_2026,
-  title={Internet Condom: Crypto Scam and AI Reply Detection Dataset},
+  title={Janitr: Crypto Scam and AI Reply Detection Dataset},
   author={OpenClaw Contributors},
   year={2026},
-  url={https://huggingface.co/datasets/your-username/internet-condom}
+  url={https://huggingface.co/datasets/janitrai/janitr}
 }
 ```
 
