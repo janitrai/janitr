@@ -73,16 +73,73 @@ safety_sensitive:
   - profanity
 
 topic_filters_optional:
-  - crypto
-  - politics
-  - gambling
-  - finance
-  - health
-  - adult_services
-  - religion
-  - celebrity
-  - sports
-  - language_other
+  # News and society
+  - topic_news
+  - topic_world_news
+  - topic_local_news
+  - topic_war_conflict
+  - topic_crime_truecrime
+  - topic_disasters_tragedy
+  - topic_law_courts
+  - topic_environment_climate
+  - topic_social_issues
+
+  # Politics and governance
+  - topic_politics
+  - topic_elections
+
+  # Money and commerce
+  - topic_finance
+  - topic_investing
+  - topic_personal_finance
+  - topic_crypto
+  - topic_real_estate
+  - topic_shopping_deals
+  - topic_marketing_advertising
+  - topic_gambling
+
+  # Technology
+  - topic_technology
+  - topic_ai
+  - topic_cybersecurity
+  - topic_programming_dev
+  - topic_startups_vc
+  - topic_consumer_electronics
+
+  # Entertainment and fandom
+  - topic_entertainment
+  - topic_tv_movies
+  - topic_music
+  - topic_books
+  - topic_anime_manga
+  - topic_gaming
+  - topic_esports
+  - topic_celebrity
+  - topic_celebrity_gossip
+  - topic_comedy_memes
+
+  # Lifestyle
+  - topic_health
+  - topic_nutrition_diet
+  - topic_fitness
+  - topic_mental_health
+  - topic_beauty_fashion
+  - topic_food_drink
+  - topic_travel
+  - topic_home_garden
+  - topic_family_parenting
+  - topic_relationships_dating
+
+  # Sports
+  - topic_sports
+
+  # Other
+  - topic_religion
+  - topic_adult_services
+  - topic_language_other
+
+special_modes:
+  - spoiler
 ```
 
 > **Backbone alignment note**: many of these map cleanly onto X's own "Safety / Privacy / Authenticity" rule headings (e.g., violent content, child safety, abuse/harassment, hateful conduct, suicide/self-harm, adult content, illegal goods, private information, platform manipulation/spam, civic integrity, misleading identities, synthetic/manipulated media, etc.).
@@ -311,47 +368,231 @@ Profanity/obscenity filter separate from harassment/hate (useful for "clean feed
 
 ### Topic filters (optional)
 
-These are "user preference" filters, not moral judgments:
+These are "user preference" filters, not moral judgments. Use `topic_*` prefix to separate "aboutness" from "badness/behavior" labels. A post can be `topic_crypto + scam + impersonation`.
 
-#### `crypto`
+> **UI note**: Show ~15–25 top toggles, add "More topics…" search for the long tail. Internally map to IAB Tier-1 for complete topic coverage.
 
-Crypto-related content. Any mention of a specific coin, token, NFT, wallet, exchange, DeFi, or blockchain references.
+#### News and society
 
-#### `politics`
+##### `topic_news`
 
-Political content, partisan discussion, election-related posts.
+General news content.
 
-#### `gambling`
+##### `topic_world_news`
 
-Gambling, betting, casino content.
+International news, global events.
 
-#### `finance`
+##### `topic_local_news`
+
+Local/regional news coverage.
+
+##### `topic_war_conflict`
+
+War, military conflict, armed disputes. Users often want to reduce exposure even when accurate.
+
+##### `topic_crime_truecrime`
+
+Crime reporting, true crime content, criminal cases.
+
+##### `topic_disasters_tragedy`
+
+Accidents, deaths, natural disasters, tragedies. Distinct from `graphic_violence`.
+
+##### `topic_law_courts`
+
+Legal proceedings, court cases, judicial content.
+
+##### `topic_environment_climate`
+
+Environmental issues, climate change, sustainability.
+
+##### `topic_social_issues`
+
+Activism, protests, culture-war adjacent content. Separate from `topic_politics`.
+
+#### Politics and governance
+
+##### `topic_politics`
+
+Political content, partisan discussion, government affairs.
+
+##### `topic_elections`
+
+Election-related content. Often treated as a special mode; can coexist with `civic_misinfo`.
+
+#### Money and commerce
+
+##### `topic_finance`
 
 Financial advice, stock tips, investment discussion (non-crypto).
 
-#### `health`
+##### `topic_investing`
 
-Health-related content, medical advice, wellness.
+Stocks, ETFs, options discourse.
 
-#### `adult_services`
+##### `topic_personal_finance`
 
-Adult services promotion (distinct from `adult_nudity`).
+Budgeting, debt, FIRE movement, saving strategies.
 
-#### `religion`
+##### `topic_crypto`
 
-Religious content, proselytizing.
+Crypto-related content. Any mention of a specific coin, token, NFT, wallet, exchange, DeFi, or blockchain references.
 
-#### `celebrity`
+##### `topic_real_estate`
 
-Celebrity gossip, fan content, parasocial posts.
+Housing discourse, landlord/tenant content, property listings.
 
-#### `sports`
+##### `topic_shopping_deals`
 
-Sports content, game discussion, team fandom.
+Deal spam, sales, coupons. Not necessarily "spam" but users may want to filter.
 
-#### `language_other`
+##### `topic_marketing_advertising`
 
-Non-English content (for users who want English-only feeds).
+Ad industry, creator economy, marketing discourse.
+
+##### `topic_gambling`
+
+Gambling, betting, casino content.
+
+#### Technology
+
+##### `topic_technology`
+
+General technology content.
+
+##### `topic_ai`
+
+AI discourse. Separate from `ai_generated`/`ai_slop` behavior labels.
+
+##### `topic_cybersecurity`
+
+Security breaches, exploits, infosec content. Can be noisy.
+
+##### `topic_programming_dev`
+
+Developer content, coding, "dev Twitter."
+
+##### `topic_startups_vc`
+
+Founder content, VC discourse, startup ecosystem.
+
+##### `topic_consumer_electronics`
+
+Gadgets, devices, hardware reviews.
+
+#### Entertainment and fandom
+
+##### `topic_entertainment`
+
+General entertainment content (parent category).
+
+##### `topic_tv_movies`
+
+Television and film content, reviews, discussions.
+
+##### `topic_music`
+
+Music content, artist discussion, releases.
+
+##### `topic_books`
+
+Book content, reading, literary discussion.
+
+##### `topic_anime_manga`
+
+Anime and manga content, Japanese media.
+
+##### `topic_gaming`
+
+Video game content, game discussion.
+
+##### `topic_esports`
+
+Competitive gaming, esports tournaments.
+
+##### `topic_celebrity`
+
+Celebrity content, famous people.
+
+##### `topic_celebrity_gossip`
+
+Celebrity gossip specifically. More specific than `topic_celebrity`.
+
+##### `topic_comedy_memes`
+
+Meme content, comedy posts. Some users want a "no memes" mode even if not `low_effort`.
+
+#### Lifestyle
+
+##### `topic_health`
+
+General health-related content, medical advice, wellness.
+
+##### `topic_nutrition_diet`
+
+Nutrition, diet content, food health.
+
+##### `topic_fitness`
+
+Exercise, workout content, gym culture.
+
+##### `topic_mental_health`
+
+Mental health content. Optional; be careful—can correlate with sensitive user traits.
+
+##### `topic_beauty_fashion`
+
+Beauty, fashion, style content.
+
+##### `topic_food_drink`
+
+Food content, recipes, restaurants, beverages.
+
+##### `topic_travel`
+
+Travel content, destinations, trips.
+
+##### `topic_home_garden`
+
+Home improvement, gardening, domestic content.
+
+##### `topic_family_parenting`
+
+Family content, parenting, children.
+
+##### `topic_relationships_dating`
+
+Relationship content, dating, romance discussion.
+
+#### Sports
+
+##### `topic_sports`
+
+General sports content, game discussion, team fandom. Can add subtopics (`topic_soccer`, `topic_basketball`, etc.) if needed.
+
+#### Other
+
+##### `topic_religion`
+
+Religious content, faith discussion, proselytizing.
+
+##### `topic_adult_services`
+
+Adult services promotion. Distinct from `adult_nudity`.
+
+##### `topic_language_other`
+
+Non-English content. For users who want English-only feeds. Can split into per-language topics (`topic_language_es`, etc.) for fine control.
+
+---
+
+### Special modes
+
+These are not pure "topics" but behave like topic filters in user intent.
+
+#### `spoiler`
+
+Content containing spoilers for media (TV, movies, games, sports). Attribute label, not a topic. Can combine with time-box controls (24h/7d mutes) similar to X's muted words feature.
 
 ---
 
@@ -359,32 +600,39 @@ Non-English content (for users who want English-only feeds).
 
 What "comprehensive" buys you:
 
-| Example post                                                               | Labels                                                     |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| "Elon giveaway — send 0.1 BTC get 0.2 back" + deepfake clip                | `scam` + `crypto` + `impersonation` + `manipulated_media`  |
-| Blue-check reply: "Amazing post! 🚀 DM me for business"                    | `reply_spam` + `promo` + `lead_gen` (+ `bot` if automated) |
-| AI thread mill: "I analyzed 10,000 CEOs…" (obvious LLM cadence)            | `ai_slop` + `content_farm` + `clickbait`                   |
-| Election suppression: "Polling stations are closed tomorrow; vote by text" | `civic_misinfo` + `misinformation` + `politics`            |
-| Non-consensual sexual deepfake "nudification"                              | `nonconsensual_nudity` + `manipulated_media`               |
+| Example post                                                               | Labels                                                          |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| "Elon giveaway — send 0.1 BTC get 0.2 back" + deepfake clip                | `scam` + `topic_crypto` + `impersonation` + `manipulated_media` |
+| Blue-check reply: "Amazing post! 🚀 DM me for business"                    | `reply_spam` + `promo` + `lead_gen` (+ `bot` if automated)      |
+| AI thread mill: "I analyzed 10,000 CEOs…" (obvious LLM cadence)            | `ai_slop` + `content_farm` + `clickbait`                        |
+| Election suppression: "Polling stations are closed tomorrow; vote by text" | `civic_misinfo` + `misinformation` + `topic_politics`           |
+| Non-consensual sexual deepfake "nudification"                              | `nonconsensual_nudity` + `manipulated_media`                    |
+| Thread about GPT-5 capabilities with AI-generated summary                  | `topic_ai` + `ai_generated`                                     |
+| Game of Thrones finale spoiler without warning                             | `spoiler` + `topic_tv_movies`                                   |
+| Breaking news about earthquake with graphic imagery                        | `topic_disasters_tragedy` + `graphic_violence` + `topic_news`   |
 
 ---
 
 ## Multi-label rules
 
-1. Use multiple labels when **both are true** (e.g. `crypto` + `promo`).
+1. Use multiple labels when **both are true** (e.g. `topic_crypto` + `promo`).
 2. `clean` should be **exclusive** (do not combine with other labels).
-3. `scam` does not imply `crypto`; add `crypto` only when the topic is crypto.
-4. Topic labels (`crypto`, `politics`, etc.) can combine with any behavior label.
+3. `scam` does not imply `topic_crypto`; add `topic_crypto` only when the topic is crypto.
+4. Topic labels (`topic_*`) can combine with any behavior label.
+5. Use `topic_*` prefix for "aboutness" (user preference filters), keep unprefixed labels for "badness/behavior."
 
 ---
 
 ## Training notes
 
-- A 50–60 label ontology is feasible as a _schema_, but you'll likely want to:
-  - Train a **coarse model** first (top ~15–25 labels)
-  - Add **specialists** (rules/regex or smaller sub-models) for things like `phishing`, `crypto`, `adult_services`, `doxxing`, etc.
+- A 100+ label ontology is feasible as a _schema_, but you'll likely want to:
+  - Train a **coarse model** first (top ~15–25 behavior labels)
+  - Add **specialists** (rules/regex or smaller sub-models) for things like `phishing`, `topic_crypto`, `topic_adult_services`, `privacy_doxxing`, etc.
+  - Train **topic classifiers** separately from behavior classifiers
 - That keeps model size small while still letting the product present a comprehensive set of toggles.
 - You can cluster labels during training (merge into coarse super-classes) to improve performance, while keeping the dataset labels fine-grained for future remapping.
+- **Topic labels** map internally to IAB Tier-1 for complete coverage even when not all are exposed as UI toggles.
+- Consider time-boxed filtering for `spoiler` labels (24h/7d auto-expiry).
 
 ---
 
