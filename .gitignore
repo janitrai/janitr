@@ -56,3 +56,4 @@ playwright-report/
 package-lock.json
 models/
 !extension/fasttext/model.ftz
+index.html
