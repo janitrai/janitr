@@ -22,12 +22,16 @@ import sys
 from pathlib import Path
 from collections import defaultdict
 
-VALID_LABELS = {"clean", "crypto", "scam", "promo", "ai_generated_reply"}
+from labelset import load_v2026_labels_from_labels_md
+
+VALID_LABELS = set(load_v2026_labels_from_labels_md())
 ID_PATTERN = re.compile(r"^x_\d+(_dup\d+)?$|^x_auto_\d+$")
 
 
-def check_integrity(path: Path, fix_suggestions: bool = False) -> tuple[int, int]:
-    """Run all integrity checks. Returns (error_count, warning_count)."""
+def check_integrity(
+    path: Path, fix_suggestions: bool = False
+) -> tuple[list[str], list[str]]:
+    """Run all integrity checks. Returns (errors, warnings)."""
     errors = []
     warnings = []
 
@@ -72,6 +76,10 @@ def check_integrity(path: Path, fix_suggestions: bool = False) -> tuple[int, int
 
                 # Check 4: Valid labels
                 if labels is not None and isinstance(labels, list):
+                    if len(labels) != len(set(labels)):
+                        errors.append(
+                            f"Line {line_num} (id={id_}): Duplicate labels (labels={labels})"
+                        )
                     for label in labels:
                         if label not in VALID_LABELS:
                             errors.append(

@@ -10,7 +10,7 @@ REPO_ROOT = Path(__file__).parent.parent
 DEFAULT_MODEL = REPO_ROOT / "models" / "reduced" / "quant-cutoff10k.ftz"
 DEFAULT_VALID = REPO_ROOT / "data" / "valid.txt"
 
-CLASSES = ["clean", "crypto", "scam"]
+CLASSES = ["clean", "topic_crypto", "scam"]
 THRESHOLDS = [0.90, 0.92, 0.94, 0.95, 0.96, 0.98, 0.985, 0.99, 0.995]
 TARGET_FPR = 0.05
 
@@ -92,7 +92,7 @@ def main() -> None:
         import fasttext  # type: ignore
     except ImportError as exc:
         raise SystemExit(
-            "fasttext is not installed. Install with: pip install fasttext-wheel"
+            "fasttext is not installed. Install Python deps with: cd scripts && uv sync"
         ) from exc
 
     model = fasttext.load_model(str(args.model))

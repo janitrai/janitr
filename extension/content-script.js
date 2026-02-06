@@ -166,7 +166,7 @@ const applyHighlight = (el, label, score, pScam, labels = [], scores = {}) => {
   if (!el) return;
   el.classList.add("ic-flagged");
   el.classList.toggle("ic-scam", label === "scam");
-  el.classList.toggle("ic-crypto", label === "crypto");
+  el.classList.toggle("ic-crypto", label === "topic_crypto");
   el.classList.toggle("ic-promo", label === "promo");
   el.dataset.icLabel = label;
   if (labels.length > 0) {

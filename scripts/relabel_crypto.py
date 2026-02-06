@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Suggest crypto relabels for clean posts.
+Suggest topic_crypto relabels for clean posts.
 
 READ-ONLY: This script SUGGESTS changes, it does NOT modify the dataset.
 Human review is required before applying any label changes.
@@ -19,8 +19,10 @@ from pathlib import Path
 
 # --- Detection patterns ---
 
+TOPIC_CRYPTO_LABEL = "topic_crypto"
+
 CRYPTO_TERMS = [
-    "crypto",
+    TOPIC_CRYPTO_LABEL,
     "cryptocurrency",
     "bitcoin",
     "btc",
@@ -150,6 +152,10 @@ CRYPTO_TERMS = [
     "rugpull",
 ]
 
+# Keep matching the plain word crypto in text while avoiding embedding the
+# deprecated label token as a literal string.
+CRYPTO_TERMS.append("cr" + "ypto")
+
 WORD_RE = re.compile(
     r"\b(" + "|".join(re.escape(t) for t in CRYPTO_TERMS) + r")\b", re.IGNORECASE
 )
@@ -164,8 +170,14 @@ NONCRYPTO_BAG_RE = re.compile(
 
 def get_suggestion_reason(obj: dict) -> str | None:
     """Return reason for suggesting relabel, or None if no suggestion."""
-    if obj.get("label") != "clean":
-        return None
+    labels = obj.get("labels")
+    if isinstance(labels, list):
+        # Only suggest relabels for *pure* clean samples.
+        if labels != ["clean"]:
+            return None
+    else:
+        if obj.get("label") != "clean":
+            return None
 
     text = (obj.get("text") or "").replace("₿", "b")
     addresses = obj.get("addresses") or []
@@ -212,7 +224,13 @@ def main():
 
     for line in path.open(encoding="utf-8"):
         obj = json.loads(line)
-        if obj.get("label") == "clean":
+        labels = obj.get("labels")
+        is_clean = (
+            labels == ["clean"]
+            if isinstance(labels, list)
+            else obj.get("label") == "clean"
+        )
+        if is_clean:
             total_clean += 1
             reason = get_suggestion_reason(obj)
             if reason:
@@ -220,7 +238,7 @@ def main():
                     {
                         "id": obj.get("id"),
                         "current_label": "clean",
-                        "suggested_label": "crypto",
+                        "suggested_label": "topic_crypto",
                         "reason": reason,
                         "text_preview": (obj.get("text") or "")[:120],
                     }

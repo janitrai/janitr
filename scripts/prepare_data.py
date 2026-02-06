@@ -4,7 +4,7 @@ Prepare data for fastText training.
 
 Converts data/sample.jsonl to data/train.txt and data/valid.txt
 with fastText labels (supports multiple labels per line):
-  __label__scam __label__crypto <text>
+  __label__scam __label__topic_crypto <text>
   __label__promo <text>
   __label__clean <text>
 """
@@ -40,14 +40,14 @@ def clean_text(text: str, *, normalize: bool, lowercase: bool, strip_urls: bool)
     return text
 
 
-VALID_LABELS = {"clean", "crypto", "scam", "promo", "ai_generated_reply"}
+VALID_LABELS = {"clean", "topic_crypto", "scam", "promo", "ai_generated_reply"}
 
 
 def normalize_labels(labels: list[str]) -> list[str]:
     normalized: list[str] = []
     for label in labels:
         if label == "crypto_scam":
-            normalized.extend(["crypto", "scam"])
+            normalized.extend(["topic_crypto", "scam"])
             continue
         if label in VALID_LABELS:
             normalized.append(label)

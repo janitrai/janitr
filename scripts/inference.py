@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Production inference for multi-label scam/crypto classification.
+Production inference for multi-label scam/topic_crypto classification.
 """
 
 import argparse
@@ -14,7 +14,7 @@ DEFAULT_MODEL = REPO_ROOT / "models" / "scam_detector.bin"
 DEFAULT_THRESHOLDS = REPO_ROOT / "config" / "thresholds.json"
 DEFAULT_GLOBAL_THRESHOLD = 0.5
 
-CLASSES = ["clean", "crypto", "scam", "promo"]
+CLASSES = ["clean", "topic_crypto", "scam", "promo"]
 
 
 def load_model(model_path: Path):
@@ -23,7 +23,7 @@ def load_model(model_path: Path):
         import fasttext  # type: ignore
     except ImportError as exc:
         raise SystemExit(
-            "fasttext is not installed. Install with: pip install fasttext-wheel"
+            "fasttext is not installed. Install Python deps with: cd scripts && uv sync"
         ) from exc
 
     if not model_path.exists():

@@ -82,7 +82,7 @@ def main() -> None:
     parser.add_argument(
         "--labels",
         type=str,
-        default="crypto,scam,promo",
+        default="topic_crypto,scam,promo",
         help="Comma-separated labels to evaluate",
     )
     parser.add_argument(
@@ -97,7 +97,7 @@ def main() -> None:
         import fasttext  # type: ignore
     except ImportError as exc:
         raise SystemExit(
-            "fasttext is not installed. Install with: pip install fasttext-wheel"
+            "fasttext is not installed. Install Python deps with: cd scripts && uv sync"
         ) from exc
 
     rows = load_rows(args.holdout)

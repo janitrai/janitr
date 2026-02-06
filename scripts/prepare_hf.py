@@ -20,7 +20,7 @@ OUTPUT_DIR = REPO_ROOT / "dataset"
 
 LABEL_TO_ID = {
     "clean": 0,
-    "crypto": 1,
+    "topic_crypto": 1,
     "scam": 2,
     "ai_generated_reply": 3,
     "promo": 4,
@@ -30,7 +30,7 @@ LABEL_TO_ID = {
 def load_samples(path: Path) -> list[dict]:
     """Load JSONL file."""
     samples = []
-    with open(path) as f:
+    with open(path, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line:
@@ -66,7 +66,7 @@ def convert_to_hf_format(sample: dict) -> dict:
 
 def write_jsonl(samples: list[dict], path: Path):
     """Write samples to JSONL file."""
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
         for sample in samples:
             f.write(json.dumps(sample, ensure_ascii=False) + "\n")
 
@@ -115,7 +115,8 @@ def main():
     for split_name, split_samples in [("train", train_samples), ("test", test_samples)]:
         counts = {}
         for s in split_samples:
-            counts[s["label"]] = counts.get(s["label"], 0) + 1
+            for label in s.get("labels", []):
+                counts[label] = counts.get(label, 0) + 1
         print(f"  {split_name}: {counts}")
 
 

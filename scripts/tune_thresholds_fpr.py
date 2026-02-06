@@ -15,7 +15,7 @@ DEFAULT_MODEL = REPO_ROOT / "models" / "scam_detector.bin"
 DEFAULT_DATA = REPO_ROOT / "data" / "calib.txt"
 DEFAULT_OUT = REPO_ROOT / "config" / "thresholds.json"
 
-CLASSES = ["clean", "crypto", "scam", "promo"]
+CLASSES = ["clean", "topic_crypto", "scam", "promo"]
 
 from evaluate import get_scores, parse_line  # type: ignore
 
@@ -91,7 +91,7 @@ def main() -> None:
     parser.add_argument(
         "--labels",
         type=str,
-        default="crypto,scam,promo",
+        default="topic_crypto,scam,promo",
         help="Comma-separated labels to tune",
     )
     parser.add_argument("--clean-threshold", type=float, default=0.1)
@@ -106,7 +106,7 @@ def main() -> None:
         import fasttext  # type: ignore
     except ImportError as exc:
         raise SystemExit(
-            "fasttext is not installed. Install with: pip install fasttext-wheel"
+            "fasttext is not installed. Install Python deps with: cd scripts && uv sync"
         ) from exc
 
     rows = load_rows(args.data)

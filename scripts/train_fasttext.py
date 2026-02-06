@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Train a fastText supervised model for multi-label scam/crypto classification.
+Train a fastText supervised model for multi-label scam/topic_crypto classification.
 """
 
 import argparse
@@ -96,7 +96,7 @@ def main() -> None:
         import fasttext  # type: ignore
     except ImportError as exc:
         raise SystemExit(
-            "fasttext is not installed. Install with: pip install fasttext-wheel"
+            "fasttext is not installed. Install Python deps with: cd scripts && uv sync"
         ) from exc
 
     args.model_out.parent.mkdir(parents=True, exist_ok=True)

@@ -5,7 +5,7 @@ import {
 
 const MODEL_FILENAME = "model.ftz";
 const THRESHOLDS_FILENAME = "thresholds.json";
-const CLASSES = ["clean", "crypto", "scam", "promo"];
+const CLASSES = ["clean", "topic_crypto", "scam", "promo"];
 
 let modelPromise = null;
 let thresholdsPromise = null;

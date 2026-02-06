@@ -10,91 +10,35 @@ Usage:
 
 import argparse
 import json
-import re
 import sys
 from pathlib import Path
 from typing import Any
+
+from labelset import load_v2026_labels_from_labels_md
 
 try:
     import jsonschema
     from jsonschema import Draft202012Validator
 except ImportError:
     print(
-        "Error: jsonschema not installed. Run: pip install jsonschema", file=sys.stderr
+        "Error: jsonschema not installed. Install Python deps with: cd scripts && uv sync",
+        file=sys.stderr,
     )
     sys.exit(1)
 
 REPO_ROOT = Path(__file__).parent.parent
 SCHEMAS_DIR = REPO_ROOT / "docs" / "schemas"
-LABELS_MD_PATH = REPO_ROOT / "docs" / "LABELS.md"
-
-
-def load_v2026_labels_from_labels_md(
-    labels_md_path: Path = LABELS_MD_PATH,
-) -> list[str]:
-    """
-    Extract the canonical v2026 label set from the YAML block in docs/LABELS.md.
-
-    We intentionally avoid a YAML dependency here; the LABELS.md block is a simple
-    mapping from group -> list of labels, so we just extract all `- label_name`
-    entries from the fenced ```yaml block.
-    """
-
-    try:
-        lines = labels_md_path.read_text(encoding="utf-8").splitlines()
-    except FileNotFoundError as e:
-        raise FileNotFoundError(
-            f"Label guide not found at {labels_md_path}. "
-            "Expected docs/LABELS.md to exist in the repo."
-        ) from e
-
-    in_yaml_block = False
-    labels: list[str] = []
-    seen: set[str] = set()
-
-    for line in lines:
-        if not in_yaml_block:
-            if line.strip() == "```yaml":
-                in_yaml_block = True
-            continue
-
-        if line.strip() == "```":
-            break
-
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#"):
-            continue
-
-        m = re.match(r"^-\s*([a-z0-9_]+)\s*(?:#.*)?$", stripped)
-        if not m:
-            continue
-
-        label = m.group(1)
-        if label in seen:
-            continue
-
-        labels.append(label)
-        seen.add(label)
-
-    if not in_yaml_block:
-        raise RuntimeError(
-            f"Could not find a fenced ```yaml block in {labels_md_path} "
-            "to extract the v2026 label set."
-        )
-
-    if not labels:
-        raise RuntimeError(
-            f"Found fenced ```yaml block in {labels_md_path}, but extracted 0 labels. "
-            "Expected list items like `- scam` / `- topic_crypto`."
-        )
-
-    return labels
 
 
 def build_labeled_sample_schema() -> dict[str, Any]:
     """JSON Schema for labeled samples, using the canonical v2026 label set."""
 
-    labels = load_v2026_labels_from_labels_md()
+    try:
+        labels = load_v2026_labels_from_labels_md()
+    except FileNotFoundError as e:
+        raise FileNotFoundError(
+            "Label guide not found. Expected docs/LABELS.md to exist in the repo."
+        ) from e
 
     return {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -122,12 +66,23 @@ def build_labeled_sample_schema() -> dict[str, Any]:
             "labels": {
                 "type": "array",
                 "minItems": 1,
+                "uniqueItems": True,
                 "items": {
                     "type": "string",
                     "enum": labels,
                 },
+                # `clean` is exclusive: if present, it must be the only label.
+                "allOf": [
+                    {
+                        "if": {"contains": {"const": "clean"}},
+                        "then": {"maxItems": 1},
+                    }
+                ],
             },
             "notes": {"type": "string"},
+            # Deprecated single-label field from older tooling. If present, it must
+            # still be a valid v2026 label.
+            "label": {"type": "string", "enum": labels},
         },
     }
 

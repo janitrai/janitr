@@ -14,7 +14,7 @@ DEFAULT_MODEL = REPO_ROOT / "models" / "scam_detector.bin"
 DEFAULT_VALID = REPO_ROOT / "data" / "valid.txt"
 DEFAULT_THRESHOLDS = REPO_ROOT / "config" / "thresholds.json"
 
-CLASSES = ["clean", "crypto", "scam", "promo"]
+CLASSES = ["clean", "topic_crypto", "scam", "promo"]
 DEFAULT_GLOBAL_THRESHOLD = 0.5
 
 

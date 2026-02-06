@@ -13,11 +13,11 @@ Usage:
 
 Changes file format (one per line):
     # Single label
-    x_0001 crypto
+    x_0001 topic_crypto
 
     # Multiple labels (space or comma separated)
-    x_0394 crypto scam
-    x_0397 crypto,scam
+    x_0394 topic_crypto scam
+    x_0397 topic_crypto,scam
 """
 
 import argparse
@@ -28,14 +28,14 @@ import tempfile
 from pathlib import Path
 
 
-VALID_LABELS = {"clean", "crypto", "scam", "promo", "ai_generated_reply"}
+VALID_LABELS = {"clean", "topic_crypto", "scam", "promo", "ai_generated_reply"}
 
 
 def normalize_labels(labels: list[str]) -> list[str]:
     normalized: list[str] = []
     for label in labels:
         if label == "crypto_scam":
-            normalized.extend(["crypto", "scam"])
+            normalized.extend(["topic_crypto", "scam"])
             continue
         if label in VALID_LABELS:
             normalized.append(label)
