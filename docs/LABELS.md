@@ -6,7 +6,7 @@
 
 - **Multi-label**: apply _all_ labels that match a post.
 - **`clean` is exclusive**: use `clean` only if **no other label applies**.
-- **Separate "topic" vs "behavior"**: e.g., a crypto scam is `crypto` + `scam` (+ often `impersonation`, `manipulated_media`, etc.).
+- **Separate "topic" vs "behavior"**: e.g., a crypto scam is `topic_crypto` + `scam` (+ often `impersonation`, `manipulated_media`, etc.).
 - If you need to reduce complexity later, you can collapse labels by group (e.g., treat `reply_spam` as `spam`).
 
 ## Canonical labels (grouped)
