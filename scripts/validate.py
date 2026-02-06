@@ -10,13 +10,14 @@ Usage:
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
 
 try:
     import jsonschema
-    from jsonschema import Draft202012Validator, ValidationError
+    from jsonschema import Draft202012Validator
 except ImportError:
     print(
         "Error: jsonschema not installed. Run: pip install jsonschema", file=sys.stderr
@@ -25,40 +26,116 @@ except ImportError:
 
 REPO_ROOT = Path(__file__).parent.parent
 SCHEMAS_DIR = REPO_ROOT / "docs" / "schemas"
+LABELS_MD_PATH = REPO_ROOT / "docs" / "LABELS.md"
 
-# Inline schema for labeled samples (from LABELS.md)
-LABELED_SAMPLE_SCHEMA = {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "title": "Labeled Sample",
-    "type": "object",
-    "required": ["id", "platform", "source_id", "collected_at", "text", "labels"],
-    "additionalProperties": True,
-    "properties": {
-        "id": {"type": "string", "minLength": 1},
-        "platform": {"type": "string", "enum": ["x", "discord", "web", "dm", "other"]},
-        "source_id": {"type": "string"},
-        "source_url": {"type": "string"},
-        "collected_at": {"type": "string", "format": "date-time"},
-        "text": {"type": "string"},
-        "urls": {"type": "array", "items": {"type": "string"}},
-        "addresses": {"type": "array", "items": {"type": "string"}},
-        "labels": {
-            "type": "array",
-            "minItems": 1,
-            "items": {
+
+def load_v2026_labels_from_labels_md(
+    labels_md_path: Path = LABELS_MD_PATH,
+) -> list[str]:
+    """
+    Extract the canonical v2026 label set from the YAML block in docs/LABELS.md.
+
+    We intentionally avoid a YAML dependency here; the LABELS.md block is a simple
+    mapping from group -> list of labels, so we just extract all `- label_name`
+    entries from the fenced ```yaml block.
+    """
+
+    try:
+        lines = labels_md_path.read_text(encoding="utf-8").splitlines()
+    except FileNotFoundError as e:
+        raise FileNotFoundError(
+            f"Label guide not found at {labels_md_path}. "
+            "Expected docs/LABELS.md to exist in the repo."
+        ) from e
+
+    in_yaml_block = False
+    labels: list[str] = []
+    seen: set[str] = set()
+
+    for line in lines:
+        if not in_yaml_block:
+            if line.strip() == "```yaml":
+                in_yaml_block = True
+            continue
+
+        if line.strip() == "```":
+            break
+
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+
+        m = re.match(r"^-\s*([a-z0-9_]+)\s*(?:#.*)?$", stripped)
+        if not m:
+            continue
+
+        label = m.group(1)
+        if label in seen:
+            continue
+
+        labels.append(label)
+        seen.add(label)
+
+    if not in_yaml_block:
+        raise RuntimeError(
+            f"Could not find a fenced ```yaml block in {labels_md_path} "
+            "to extract the v2026 label set."
+        )
+
+    if not labels:
+        raise RuntimeError(
+            f"Found fenced ```yaml block in {labels_md_path}, but extracted 0 labels. "
+            "Expected list items like `- scam` / `- topic_crypto`."
+        )
+
+    return labels
+
+
+def build_labeled_sample_schema() -> dict[str, Any]:
+    """JSON Schema for labeled samples, using the canonical v2026 label set."""
+
+    labels = load_v2026_labels_from_labels_md()
+
+    return {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Labeled Sample",
+        "type": "object",
+        # Labeled samples are often produced from partial UI scrapes; require only
+        # the minimum needed for training/inference workflows.
+        "required": ["id", "text", "labels"],
+        "additionalProperties": True,
+        "properties": {
+            "id": {"type": "string", "minLength": 1},
+            "platform": {
                 "type": "string",
-                "enum": ["crypto", "scam", "promo", "ai_generated_reply", "clean"],
+                "enum": ["x", "discord", "web", "dm", "other"],
             },
+            "source_id": {"type": "string"},
+            "source_url": {"type": "string"},
+            "collected_at": {"type": "string", "format": "date-time"},
+            # Common alternate fields in some pipelines.
+            "source": {"type": "string"},
+            "collected": {"type": "string"},
+            "text": {"type": "string"},
+            "urls": {"type": "array", "items": {"type": "string"}},
+            "addresses": {"type": "array", "items": {"type": "string"}},
+            "labels": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "string",
+                    "enum": labels,
+                },
+            },
+            "notes": {"type": "string"},
         },
-        "notes": {"type": "string"},
-    },
-}
+    }
 
 
 def load_schema(schema_name: str) -> dict[str, Any]:
     """Load a schema by name."""
     if schema_name == "labeled":
-        return LABELED_SAMPLE_SCHEMA
+        return build_labeled_sample_schema()
 
     schema_path = SCHEMAS_DIR / f"{schema_name}.schema.json"
     if not schema_path.exists():
