@@ -71,13 +71,6 @@ def build_labeled_sample_schema() -> dict[str, Any]:
                     "type": "string",
                     "enum": labels,
                 },
-                # `clean` is exclusive: if present, it must be the only label.
-                "allOf": [
-                    {
-                        "if": {"contains": {"const": "clean"}},
-                        "then": {"maxItems": 1},
-                    }
-                ],
             },
             "notes": {"type": "string"},
             # Deprecated single-label field from older tooling. If present, it must
