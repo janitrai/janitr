@@ -171,7 +171,7 @@ Key rules:
 
 ## Daily Logs (SimpleLog) — NON-NEGOTIABLE
 
-**You MUST use `simpledoc log` to record everything worth noting.** This is not optional. Every significant change, decision, discovery, tradeoff, assumption, error, workaround, and clarification gets logged. If in doubt, log it.
+**You MUST use `npx @simpledoc/simpledoc log` to record everything worth noting.** This is not optional. Every significant change, decision, discovery, tradeoff, assumption, error, workaround, and clarification gets logged. If in doubt, log it.
 
 The spec lives at `docs/SIMPLELOG_SPEC.md`.
 
@@ -186,7 +186,7 @@ The spec lives at `docs/SIMPLELOG_SPEC.md`.
 Use the CLI to create the file and append entries:
 
 ```bash
-simpledoc log "Entry text here"
+npx @simpledoc/simpledoc log "Entry text here"
 ```
 
 Notes:
@@ -200,7 +200,7 @@ Notes:
 Pipe or heredoc input (stdin) for multiline entries:
 
 ```bash
-cat <<'EOF' | simpledoc log
+cat <<'EOF' | npx @simpledoc/simpledoc log
 Multiline entry.
 - line two
 - line three
@@ -210,7 +210,7 @@ EOF
 You can also use `--stdin` explicitly:
 
 ```bash
-simpledoc log --stdin <<'EOF'
+npx @simpledoc/simpledoc log --stdin <<'EOF'
 Another multiline entry.
 EOF
 ```
