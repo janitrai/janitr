@@ -1,6 +1,6 @@
 # Janitr
 
-<img src="assets/logo-white.svg" alt="Janitr logo" width="200">
+<img src="assets/logo.svg" alt="Janitr logo" width="200">
 
 A browser extension that filters crypto scams, AI-generated replies, and promotional spam from your social media feeds — entirely locally, with no network calls.
 
