@@ -3,10 +3,13 @@
 Prepare data for fastText training.
 
 Converts data/sample.jsonl to data/train.txt and data/valid.txt
-with fastText labels (supports multiple labels per line):
-  __label__scam __label__topic_crypto <text>
-  __label__promo <text>
+with consolidated fastText labels (single training label per line):
+  __label__scam <text>
+  __label__topic_crypto <text>
   __label__clean <text>
+
+Raw JSONL labels are preserved; consolidation happens only here during training
+data preparation.
 """
 
 import argparse
@@ -40,37 +43,84 @@ def clean_text(text: str, *, normalize: bool, lowercase: bool, strip_urls: bool)
     return text
 
 
-VALID_LABELS = {"clean", "topic_crypto", "scam", "promo", "ai_generated_reply"}
+TRAINING_CLASSES = ["clean", "topic_crypto", "scam"]
+
+# Consolidate a detailed label taxonomy into 3 training classes.
+# Priority: scam > topic_crypto > clean.
+SCAM_RAW_LABELS = {
+    # User-provided scam bucket
+    "phishing",
+    "malware",
+    "fake_support",
+    "recovery_scam",
+    "job_scam",
+    "romance_scam",
+    "impersonation",
+    "account_compromise",
+    "spam",
+    "reply_spam",
+    "dm_spam",
+    "promo",
+    "affiliate",
+    "lead_gen",
+    "engagement_bait",
+    "follow_train",
+    "giveaway",
+    "bot",
+    # Common/legacy labels
+    "scam",
+    "crypto_scam",
+}
 
 
-def normalize_labels(labels: list[str]) -> list[str]:
-    normalized: list[str] = []
-    for label in labels:
-        if label == "crypto_scam":
-            normalized.extend(["topic_crypto", "scam"])
-            continue
-        if label in VALID_LABELS:
-            normalized.append(label)
-    # De-duplicate while preserving order
-    seen = set()
-    deduped = []
-    for label in normalized:
-        if label in seen:
-            continue
-        seen.add(label)
-        deduped.append(label)
-    if "clean" in deduped and len(deduped) > 1:
-        deduped = [label for label in deduped if label != "clean"]
-    return deduped
+def _normalize_label(label: str) -> str:
+    return label.strip().lower()
+
+
+def extract_raw_labels(sample: dict) -> list[str]:
+    """Extract raw labels from a JSONL sample without consolidation."""
+    raw: list[str] = []
+    if isinstance(sample.get("labels"), list):
+        for item in sample["labels"]:
+            if not isinstance(item, str):
+                continue
+            normalized = _normalize_label(item)
+            if normalized:
+                raw.append(normalized)
+        return raw
+
+    label = sample.get("label")
+    if isinstance(label, str):
+        normalized = _normalize_label(label)
+        if normalized:
+            raw.append(normalized)
+    return raw
+
+
+def consolidate_training_label(raw_labels: list[str]) -> str:
+    """Map raw labels to a single training class."""
+    raw_set = set(raw_labels)
+    if raw_set & SCAM_RAW_LABELS:
+        return "scam"
+    if "topic_crypto" in raw_set or "crypto" in raw_set:
+        return "topic_crypto"
+    return "clean"
 
 
 def extract_labels(sample: dict) -> list[str]:
-    if isinstance(sample.get("labels"), list):
-        return normalize_labels(sample["labels"])
-    label = sample.get("label")
-    if isinstance(label, str):
-        return normalize_labels([label])
-    return []
+    """Extract consolidated training labels (always one label)."""
+    raw_labels = extract_raw_labels(sample)
+    return [consolidate_training_label(raw_labels)]
+
+
+def map_label(label: str | None) -> str:
+    """Legacy helper for scripts that expect a single consolidated label."""
+    if not label:
+        return "clean"
+    normalized = _normalize_label(label)
+    if not normalized:
+        return "clean"
+    return consolidate_training_label([normalized])
 
 
 def load_samples(path: Path) -> list[dict]:
@@ -145,14 +195,17 @@ def main() -> None:
     print(f"Loaded {len(samples)} samples from {args.input}")
 
     rows: list[tuple[list[str], str]] = []
-    skipped_unknown = 0
     skipped_empty = 0
+    mapped_clean_unlabeled = 0
+    mapped_clean_other = 0
 
     for sample in samples:
-        labels = extract_labels(sample)
-        if not labels:
-            skipped_unknown += 1
-            continue
+        raw_labels = extract_raw_labels(sample)
+        training_label = consolidate_training_label(raw_labels)
+        if not raw_labels:
+            mapped_clean_unlabeled += 1
+        elif training_label == "clean":
+            mapped_clean_other += 1
 
         text = sample.get("text") or sample.get("raw_text") or ""
         cleaned = clean_text(
@@ -166,7 +219,7 @@ def main() -> None:
             skipped_empty += 1
             continue
 
-        rows.append((labels, cleaned))
+        rows.append(([training_label], cleaned))
 
     if not rows:
         raise SystemExit("No valid rows found after cleaning.")
@@ -229,9 +282,13 @@ def main() -> None:
             print(f"    non-clean label: {hard_skipped_unknown}")
             print(f"    empty after cleaning: {hard_skipped_empty}")
 
-    if skipped_unknown or skipped_empty:
+    if mapped_clean_unlabeled or mapped_clean_other:
+        print("\nLabel notes:")
+        print(f"  unlabeled -> clean: {mapped_clean_unlabeled}")
+        print(f"  other labels -> clean: {mapped_clean_other}")
+
+    if skipped_empty:
         print("\nSkipped rows:")
-        print(f"  unknown label: {skipped_unknown}")
         print(f"  empty after cleaning: {skipped_empty}")
 
 

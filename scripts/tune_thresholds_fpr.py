@@ -15,7 +15,7 @@ DEFAULT_MODEL = REPO_ROOT / "models" / "scam_detector.bin"
 DEFAULT_DATA = REPO_ROOT / "data" / "calib.txt"
 DEFAULT_OUT = REPO_ROOT / "config" / "thresholds.json"
 
-CLASSES = ["clean", "topic_crypto", "scam", "promo"]
+CLASSES = ["clean", "topic_crypto", "scam"]
 
 from evaluate import get_scores, parse_line  # type: ignore
 
@@ -91,7 +91,7 @@ def main() -> None:
     parser.add_argument(
         "--labels",
         type=str,
-        default="topic_crypto,scam,promo",
+        default="topic_crypto,scam",
         help="Comma-separated labels to tune",
     )
     parser.add_argument("--clean-threshold", type=float, default=0.1)
@@ -147,7 +147,7 @@ def main() -> None:
         print(f"{label:10s} {thr:7.4f} {fpr:7.4f} {recall:7.4f} {precision:7.4f}")
 
     payload = {
-        "version": 1,
+        "version": 2,
         "classes": CLASSES,
         "thresholds": thresholds,
         "tune_target_fpr": args.target_fpr,

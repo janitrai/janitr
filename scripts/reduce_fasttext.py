@@ -10,6 +10,7 @@ import argparse
 import csv
 from dataclasses import dataclass
 from pathlib import Path
+import shutil
 import sys
 from typing import Any
 
@@ -19,6 +20,7 @@ DEFAULT_VALID = REPO_ROOT / "data" / "valid.txt"
 DEFAULT_OUT_DIR = REPO_ROOT / "models" / "reduced"
 DEFAULT_RESULTS = DEFAULT_OUT_DIR / "reduction_results.csv"
 DEFAULT_THRESHOLD = 0.90
+DEFAULT_OUT_MODEL = REPO_ROOT / "models" / "scam_detector.ftz"
 
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 import evaluate as eval_mod  # type: ignore
@@ -250,6 +252,36 @@ def main() -> None:
         default=DEFAULT_THRESHOLD,
         help="Predict scam when p(scam) >= threshold",
     )
+    # Compatibility mode: historically we used `--cutoff/--dsub` to generate a
+    # single compact model for the extension.
+    parser.add_argument(
+        "--cutoff",
+        type=int,
+        default=None,
+        help="Quantize a single model with this cutoff (requires --dsub)",
+    )
+    parser.add_argument(
+        "--dsub",
+        type=int,
+        default=None,
+        help="Quantize a single model with this dsub (requires --cutoff)",
+    )
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=DEFAULT_OUT_MODEL,
+        help="Output path for single-model quantization (--cutoff/--dsub)",
+    )
+    parser.add_argument(
+        "--qout",
+        action="store_true",
+        help="Enable qout for single-model quantization (--cutoff/--dsub)",
+    )
+    parser.add_argument(
+        "--qnorm",
+        action="store_true",
+        help="Enable qnorm for single-model quantization (--cutoff/--dsub)",
+    )
     parser.add_argument(
         "--profile",
         choices=("compact", "grid"),
@@ -271,7 +303,23 @@ def main() -> None:
     qnorms = parse_bool_list(args.qnorm_options)
     pca_dims = parse_int_list(args.pca_dims)
 
-    specs = build_specs(args.profile, cutoffs, dsubs, qouts, qnorms, pca_dims)
+    single_mode = args.cutoff is not None or args.dsub is not None
+    if single_mode:
+        if args.cutoff is None or args.dsub is None:
+            raise SystemExit("--cutoff and --dsub must be provided together")
+        specs = [
+            ReductionSpec(
+                name=f"quant-cutoff{args.cutoff}-dsub{args.dsub}",
+                quant_args={
+                    "cutoff": int(args.cutoff),
+                    "dsub": int(args.dsub),
+                    "qout": bool(args.qout),
+                    "qnorm": bool(args.qnorm),
+                },
+            )
+        ]
+    else:
+        specs = build_specs(args.profile, cutoffs, dsubs, qouts, qnorms, pca_dims)
 
     if args.list:
         for spec in specs:
@@ -306,6 +354,14 @@ def main() -> None:
             f"{result['name']}: size={result['size_mb']}MB "
             f"prec={result['precision']} rec={result['recall']} fpr={result['fpr']}"
         )
+
+    if single_mode:
+        if len(results) != 1:
+            raise SystemExit("Single-model mode expected exactly 1 result")
+        src = Path(results[0]["model_path"])
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src, args.out)
+        print(f"Exported single model to {args.out}")
 
     if str(args.results) != "-":
         args.results.parent.mkdir(parents=True, exist_ok=True)
