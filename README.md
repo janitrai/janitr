@@ -10,19 +10,21 @@ A browser extension that filters crypto scams, AI-generated replies, and promoti
 
 ## Vision
 
-Janitr currently focuses on **crypto scams**, but the goal is much broader: build a comprehensive filtering system for all types of unwanted social media content.
+Janitr currently detects **crypto scams, spam, and promotional noise**, but the goal is much broader: build a comprehensive filtering system for all types of unwanted social media content.
 
-**Planned content categories:**
+**Content categories** ([full label guide](docs/LABELS.md)):
 
-- 🪙 Crypto scams & pump-and-dump schemes (current focus)
-- 🤖 AI-generated spam replies
-- 📢 Promotional spam & engagement bait
-- 🗳️ Political content & partisan rage-bait
-- 😶‍🌫️ Vagueposting & attention-seeking posts
-- 🔥 Rage-bait & outrage farming
-- 🤬 Profanities & toxic language
-- 👊 Online harassment & pile-ons
+The dataset uses a multi-label taxonomy of 100+ labels, grouped into:
+
+- 🔒 **Security & fraud** — scam, phishing, impersonation, fake support, recovery scam, and more
+- 📢 **Spam & manipulation** — spam, reply spam, promo, affiliate, engagement bait, bots, astroturf
+- 🤖 **AI-generated content** — AI-generated replies, AI slop, content farms
+- 🧩 **Information integrity** — misinformation, civic misinfo, manipulated media, conspiracy, pseudoscience
+- 🛡️ **Safety & sensitive** — hate, harassment, threats, graphic violence, self-harm, doxxing, profanity
+- 🏷️ **Topic filters** — 40+ optional `topic_*` labels (crypto, politics, news, AI, gaming, sports, etc.)
 - 💡 **Your idea here** — propose new categories via [@onusoz](https://x.com/onusoz)
+
+For training, these collapse into **3 mutually-exclusive classes**: `scam` (all bad-behavior labels), `topic_crypto` (crypto content without bad behavior), and `clean` (everything else). See [LABELS.md](docs/LABELS.md) for the full mapping.
 
 **Local-first, lightweight models:**
 
@@ -32,14 +34,27 @@ The current implementation uses **fastText** (122KB quantized model running via 
 
 **Current dataset:**
 
-| Label  | Samples |
-| ------ | ------- |
-| clean  | 1,482   |
-| crypto | 1,249   |
-| scam   | 572     |
-| promo  | 368     |
+~2,900 multi-label samples, all sourced from X via browser automation and human-verified.
 
-~2,900 labeled samples total (multi-label, so counts overlap). All sourced from X via browser automation, labeled with AI assistance, human-verified for edge cases.
+_Training classes (3-class collapsed):_
+
+| Class        | Samples |
+| ------------ | ------- |
+| clean        | 1,344   |
+| topic_crypto | 1,334   |
+| scam         | 568     |
+
+_Top raw labels (multi-label, counts overlap):_
+
+| Label      | Samples |
+| ---------- | ------- |
+| spam       | 478     |
+| promo      | 362     |
+| topic_news | 354     |
+| topic_ai   | 227     |
+| affiliate  | 139     |
+| phishing   | 111     |
+| + 50 more  | …       |
 
 This entire project — data collection, labeling, model training, and the extension itself — was built using [OpenClaw](https://github.com/openclaw/openclaw), an open framework for personal AI assistants.
 
@@ -61,23 +76,25 @@ The approach: start narrow (crypto scams have clear ground truth), prove the pip
 
 - **fastText model** runs in-browser via WebAssembly
 - **Content scripts** scan posts and DMs as you scroll
-- **Classification** into: `scam`, `crypto`, `promo`, `clean`
+- **3-class detection**: `scam`, `topic_crypto`, `clean` (backed by a [100+ label taxonomy](docs/LABELS.md))
 - **Thresholds** are tunable per-class to control false positive rate
 - **Zero network calls** — all inference happens on your CPU
 
 ## Model Performance
 
-| Metric              | Value              |
-| ------------------- | ------------------ |
-| Model size          | 122 KB (quantized) |
-| Crypto recall       | 89%                |
-| False positive rate | < 2%               |
+| Metric                 | Value              |
+| ---------------------- | ------------------ |
+| Model size             | 123 KB (quantized) |
+| Scam precision         | 95%                |
+| Scam recall            | 64%                |
+| topic_crypto precision | 79%                |
+| topic_crypto recall    | 37%                |
+| Target FPR             | ≤ 2%               |
 
-Current thresholds (`extension/fasttext/thresholds.json`):
+Current thresholds (`extension/fasttext/thresholds.json`), tuned for ≤ 2% FPR:
 
-- `crypto`: 0.74
 - `scam`: 0.93
-- `promo`: 1.0 (disabled)
+- `topic_crypto`: 0.91
 - `clean`: 0.1
 
 ## Development
