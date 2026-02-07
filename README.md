@@ -4,7 +4,7 @@
 
 A browser extension that filters crypto scams, AI-generated replies, and promotional spam from your social media feeds — entirely locally, with no network calls.
 
-> **⚠️ Work in Progress**: This is an MVP. Currently it only works on X (Twitter) for demoing scam detection. Try it out, and if you have ideas for new content categories or improvements, tag or DM [@onusoz](https://x.com/onusoz) on X.
+> **⚠️ Work in Progress**: This is an MVP. Currently it only works on X (Twitter) for demoing scam detection. Try it out, and if you have ideas for new content categories or improvements, tag or DM [@janitr_ai](https://x.com/janitr_ai) on X.
 
 **Website:** [janitr.ai](https://janitr.ai)
 
@@ -18,7 +18,7 @@ Every sample in the dataset is labeled with the full, fine-grained [label taxono
 
 Models trained on top of this dataset are a separate concern. Different models will collapse, group, or subset these labels in whatever way is most practical for their use case. The current fastText model, for example, uses a simple 3-class scheme (`scam`, `topic_crypto`, `clean`), but future models may use more classes, different groupings, or the full label set — the data supports all of these.
 
-- 💡 **Have an idea for a new category?** — propose it via [@onusoz](https://x.com/onusoz)
+- 💡 **Have an idea for a new category?** — propose it via [@janitr_ai](https://x.com/janitr_ai)
 
 **Local-first, lightweight models:**
 
