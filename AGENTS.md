@@ -12,12 +12,15 @@
 
 ### Labels
 
-| Label    | Description                                        |
-| -------- | -------------------------------------------------- |
-| `crypto` | Crypto-related content (not necessarily scam)      |
-| `scam`   | Malicious: phishing, wallet drainers, rug pulls    |
-| `promo`  | Promotional/marketing content (currently disabled) |
-| `clean`  | Normal, benign content                             |
+The dataset uses a **100+ label multi-label taxonomy** (see [LABELS.md](docs/LABELS.md) for the full guide). Ground truth is always preserved at full granularity.
+
+For training, labels are collapsed into **3 mutually-exclusive classes**:
+
+| Training class | Description                                                            |
+| -------------- | ---------------------------------------------------------------------- |
+| `scam`         | All bad-behavior labels (phishing, spam, promo, affiliate, bots, etc.) |
+| `topic_crypto` | Crypto-related content with no bad behavior                            |
+| `clean`        | Everything else                                                        |
 
 ---
 
@@ -90,8 +93,8 @@ Chrome MV3 extension that:
 **Key files:**
 
 - `fasttext/scam-detector.js` — main detection API (`predictScam()`)
-- `fasttext/thresholds.json` — per-label thresholds (crypto: 0.7432, scam: 0.9305)
-- `fasttext/model.ftz` — quantized model (122KB)
+- `fasttext/thresholds.json` — per-label thresholds (scam: 0.93, topic_crypto: 0.91)
+- `fasttext/model.ftz` — quantized model (123KB)
 
 ### 2. ML Pipeline (`scripts/`)
 
@@ -115,9 +118,10 @@ python scripts/reduce_fasttext.py --cutoff 1000 --dsub 8
 
 **Key metrics to watch:**
 
-- **FPR (False Positive Rate)** — must stay < 2%
-- **Crypto Recall** — target > 60% (currently 89.2%)
-- **Model Size** — target < 6MB for extension
+- **FPR (False Positive Rate)** — must stay ≤ 2%
+- **Scam Precision** — currently 95%
+- **Scam Recall** — currently 64%
+- **Model Size** — target < 6MB for extension (currently 123KB)
 
 ### 3. Data (`data/`, `dataset/`)
 
@@ -165,9 +169,11 @@ Key rules:
 
 ---
 
-## Daily Logs (SimpleLog)
+## Daily Logs (SimpleLog) — NON-NEGOTIABLE
 
-Use SimpleLog for daily logs. The spec lives at `docs/SIMPLELOG_SPEC.md`.
+**You MUST use `simpledoc log` to record everything worth noting.** This is not optional. Every significant change, decision, discovery, tradeoff, assumption, error, workaround, and clarification gets logged. If in doubt, log it.
+
+The spec lives at `docs/SIMPLELOG_SPEC.md`.
 
 ### Where logs live
 
@@ -175,7 +181,7 @@ Use SimpleLog for daily logs. The spec lives at `docs/SIMPLELOG_SPEC.md`.
 - The CLI writes to `<repo-root>/docs/logs/` by default when inside a git repo.
 - You can set a shared default in `simpledoc.json` and override locally in `.simpledoc.local.json` (see `docs/SIMPLEDOC_CONFIG_SPEC.md`).
 
-### Create a daily log entry (recommended)
+### Create a daily log entry
 
 Use the CLI to create the file and append entries:
 
@@ -215,12 +221,11 @@ EOF
 - Ensure a blank line separates entries.
 - Session sections must be `## HH:MM` (local time of the first entry in that section).
 
-### Ongoing logging (agent behavior)
+### What to log
 
-Once this skill is active in a repo, the agent SHOULD log anything worth noting as it goes. This includes:
+- Significant changes, decisions, discoveries, tradeoffs, and assumptions
+- Ongoing progress and small but real steps (changes, commands, tests, doc updates)
+- Errors, failures, workarounds, and clarifications
+- Anything you'd want to know if you came back to this in a week
 
-- Significant changes, decisions, discoveries, tradeoffs, and assumptions.
-- Ongoing progress and small but real steps (changes, commands, tests, doc updates).
-- Errors, failures, workarounds, and clarifications.
-
-Log each entry after completing the step or realizing the insight.
+Log each entry after completing the step or realizing the insight. No exceptions.
