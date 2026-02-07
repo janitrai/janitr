@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Production inference for multi-label scam/topic_crypto classification.
+Production inference for consolidated 3-class scam/topic_crypto/clean classification.
 """
 
 import argparse
@@ -14,7 +14,7 @@ DEFAULT_MODEL = REPO_ROOT / "models" / "scam_detector.bin"
 DEFAULT_THRESHOLDS = REPO_ROOT / "config" / "thresholds.json"
 DEFAULT_GLOBAL_THRESHOLD = 0.5
 
-CLASSES = ["clean", "topic_crypto", "scam", "promo"]
+CLASSES = ["clean", "topic_crypto", "scam"]
 
 
 def load_model(model_path: Path):

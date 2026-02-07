@@ -9,6 +9,21 @@
 - **Separate "topic" vs "behavior"**: e.g., a crypto scam is `topic_crypto` + `scam` (+ often `impersonation`, `manipulated_media`, etc.).
 - If you need to reduce complexity later, you can collapse labels by group (e.g., treat `reply_spam` as `spam`).
 
+## 3-class training scheme (fastText)
+
+The raw dataset (`*.jsonl`) keeps the **full, multi-label taxonomy** from this document. For fastText training we collapse those raw labels into **3 mutually-exclusive training classes** during data preparation (`scripts/prepare_data.py`):
+
+- `scam`
+  - `phishing`, `malware`, `fake_support`, `recovery_scam`, `job_scam`, `romance_scam`, `impersonation`, `account_compromise`
+  - `spam`, `reply_spam`, `dm_spam`
+  - `promo`, `affiliate`, `lead_gen`, `engagement_bait`, `follow_train`, `giveaway`, `bot`
+- `topic_crypto`
+  - `topic_crypto` (only when no `scam`-bucket label is present)
+- `clean`
+  - everything else, including samples with empty labels or just `clean`
+
+**Priority rule (when multiple raw labels are present):** `scam` > `topic_crypto` > `clean`.
+
 ## Canonical labels (grouped)
 
 ```yaml
