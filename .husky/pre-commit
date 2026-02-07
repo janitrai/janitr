@@ -1,6 +1,5 @@
 # Format staged files
 npx lint-staged
 
-# Run simpledoc conventions check (generates index.html as side effect, clean it up)
-npx simpledoc check
-rm -f index.html
+# Run simpledoc conventions check
+npx @simpledoc/simpledoc check
