@@ -12,49 +12,23 @@ A browser extension that filters crypto scams, AI-generated replies, and promoti
 
 Janitr currently detects **crypto scams, spam, and promotional noise**, but the goal is much broader: build a comprehensive filtering system for all types of unwanted social media content.
 
-**Content categories** ([full label guide](docs/LABELS.md)):
+**Ground-truth dataset:**
 
-The dataset uses a multi-label taxonomy of 100+ labels, grouped into:
+Every sample in the dataset is labeled with the full, fine-grained [label taxonomy](docs/LABELS.md) — 100+ labels spanning security & fraud, spam & manipulation, AI-generated content, information integrity, safety, and 40+ topic filters. This rich ground truth is preserved as-is and never simplified at the data layer.
 
-- 🔒 **Security & fraud** — scam, phishing, impersonation, fake support, recovery scam, and more
-- 📢 **Spam & manipulation** — spam, reply spam, promo, affiliate, engagement bait, bots, astroturf
-- 🤖 **AI-generated content** — AI-generated replies, AI slop, content farms
-- 🧩 **Information integrity** — misinformation, civic misinfo, manipulated media, conspiracy, pseudoscience
-- 🛡️ **Safety & sensitive** — hate, harassment, threats, graphic violence, self-harm, doxxing, profanity
-- 🏷️ **Topic filters** — 40+ optional `topic_*` labels (crypto, politics, news, AI, gaming, sports, etc.)
-- 💡 **Your idea here** — propose new categories via [@onusoz](https://x.com/onusoz)
+Models trained on top of this dataset are a separate concern. Different models will collapse, group, or subset these labels in whatever way is most practical for their use case. The current fastText model, for example, uses a simple 3-class scheme (`scam`, `topic_crypto`, `clean`), but future models may use more classes, different groupings, or the full label set — the data supports all of these.
 
-For training, these collapse into **3 mutually-exclusive classes**: `scam` (all bad-behavior labels), `topic_crypto` (crypto content without bad behavior), and `clean` (everything else). See [LABELS.md](docs/LABELS.md) for the full mapping.
+- 💡 **Have an idea for a new category?** — propose it via [@onusoz](https://x.com/onusoz)
 
 **Local-first, lightweight models:**
 
 A core principle is that models must run **locally on your device** — no cloud, no API calls, no data leaving your browser. This means optimizing for small model sizes and fast inference so detection works on everything from phones to older laptops. Privacy isn't optional.
 
-The current implementation uses **fastText** (122KB quantized model running via WebAssembly), but the underlying ML approach may evolve in future iterations as we expand to more content categories.
+The current implementation uses **fastText** (123KB quantized model running via WebAssembly), but the underlying ML approach may evolve as we expand to more content categories.
 
 **Current dataset:**
 
-~2,900 multi-label samples, all sourced from X via browser automation and human-verified.
-
-_Training classes (3-class collapsed):_
-
-| Class        | Samples |
-| ------------ | ------- |
-| clean        | 1,344   |
-| topic_crypto | 1,334   |
-| scam         | 568     |
-
-_Top raw labels (multi-label, counts overlap):_
-
-| Label      | Samples |
-| ---------- | ------- |
-| spam       | 478     |
-| promo      | 362     |
-| topic_news | 354     |
-| topic_ai   | 227     |
-| affiliate  | 139     |
-| phishing   | 111     |
-| + 50 more  | …       |
+~2,900 multi-label samples, all sourced from X via browser automation and human-verified. See [LABELS.md](docs/LABELS.md) for the full label guide.
 
 This entire project — data collection, labeling, model training, and the extension itself — was built using [OpenClaw](https://github.com/openclaw/openclaw), an open framework for personal AI assistants.
 
