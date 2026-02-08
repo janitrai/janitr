@@ -209,6 +209,60 @@ python scripts/validate.py data/sample.jsonl --schema labeled
 - **Long posts** — check `note_tweet` for full text
 - **Metrics are snapshots** — store timestamps if you need history
 
+## Account Schema
+
+Accounts are stored in `data/accounts.jsonl`. Each line is a JSON object representing an X account we track for scraping or analysis.
+
+### Required fields
+
+| Field      | Type   | Description                                  |
+| ---------- | ------ | -------------------------------------------- |
+| `handle`   | string | X username without @ (e.g. `VitalikButerin`) |
+| `category` | string | Account category (see values below)          |
+
+### Optional fields
+
+| Field             | Type     | Description                                        |
+| ----------------- | -------- | -------------------------------------------------- |
+| `user_id`         | string   | Twitter numeric user ID                            |
+| `display_name`    | string   | Display name as shown on profile                   |
+| `bio`             | string   | Profile bio text                                   |
+| `follower_count`  | integer  | Follower count at time of collection               |
+| `following_count` | integer  | Following count at time of collection              |
+| `verified`        | boolean  | Whether the account has a verification badge       |
+| `created_at`      | string   | Account creation date (ISO 8601)                   |
+| `collected_at`    | string   | When this record was collected/updated (ISO 8601)  |
+| `scrape_priority` | string   | `high`, `medium`, or `low`                         |
+| `labels`          | string[] | Labels that describe content this account produces |
+| `notes`           | string   | Free-text notes                                    |
+| `suspended`       | boolean  | Whether the account is currently suspended         |
+| `url`             | string   | Profile URL or linked website                      |
+
+### Category values
+
+| Category     | Description                                          |
+| ------------ | ---------------------------------------------------- |
+| `clean`      | Mainstream, non-crypto accounts (news, sports, etc.) |
+| `crypto`     | Legitimate crypto projects, exchanges, analysts      |
+| `scam_hub`   | Known scam operation hubs                            |
+| `scam_reply` | Accounts that post scam replies under popular tweets |
+| `bot`        | Automated/bot accounts                               |
+| `researcher` | Security researchers, scam trackers                  |
+| `media`      | News/media outlets (crypto or mainstream)            |
+| `influencer` | High-follower accounts, opinion leaders              |
+
+### Example
+
+```json
+{"handle": "VitalikButerin", "category": "crypto", "display_name": "vitalik.eth", "follower_count": 5200000, "verified": true, "scrape_priority": "high", "labels": ["topic_crypto"], "notes": "Ethereum co-founder"}
+{"handle": "BBCBreaking", "category": "clean", "display_name": "BBC Breaking News", "follower_count": 47000000, "verified": true, "scrape_priority": "high", "labels": ["topic_news"], "notes": "Hard news, global"}
+{"handle": "ttdomarinho", "category": "scam_hub", "scrape_priority": "low", "labels": ["scam", "phishing", "topic_crypto"], "notes": "USOR coordinated campaign hub"}
+```
+
+### Validation
+
+Run `python scripts/validate_accounts.py` to check `data/accounts.jsonl` against this schema.
+
 ## References
 
 - [X API Fields](https://docs.x.com/x-api/fundamentals/fields)
