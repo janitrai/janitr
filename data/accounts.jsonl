@@ -84,3 +84,71 @@
 {"handle": "glassnode", "category": "crypto", "scrape_priority": "medium", "labels": ["topic_crypto"], "notes": "On-chain analytics"}
 {"handle": "DuneAnalytics", "category": "crypto", "scrape_priority": "low", "labels": ["topic_crypto"], "notes": "On-chain data"}
 {"handle": "Bankless", "category": "media", "scrape_priority": "medium", "labels": ["topic_crypto"], "notes": "Crypto media"}
+{"handle": "BarackObama", "category": "influencer", "scrape_priority": "high", "labels": ["topic_politics"], "notes": "Former US president, 130M+ followers"}
+{"handle": "Cristiano", "category": "influencer", "scrape_priority": "high", "labels": ["topic_sports"], "notes": "Cristiano Ronaldo, most-followed athlete"}
+{"handle": "justinbieber", "category": "influencer", "scrape_priority": "low", "labels": ["topic_music"], "notes": "Pop musician"}
+{"handle": "rihanna", "category": "influencer", "scrape_priority": "low", "labels": ["topic_music", "topic_beauty_fashion"], "notes": "Most-followed woman on X"}
+{"handle": "taylorswift13", "category": "influencer", "scrape_priority": "medium", "labels": ["topic_music"], "notes": "Pop musician, huge following"}
+{"handle": "narendramodi", "category": "influencer", "scrape_priority": "medium", "labels": ["topic_politics"], "notes": "Indian PM, most-followed Asian on X"}
+{"handle": "KimKardashian", "category": "influencer", "scrape_priority": "low", "labels": ["topic_celebrity", "topic_beauty_fashion"], "notes": "Celebrity, lifestyle"}
+{"handle": "neymarjr", "category": "influencer", "scrape_priority": "low", "labels": ["topic_sports"], "notes": "Brazilian footballer"}
+{"handle": "LeBronJames", "category": "influencer", "scrape_priority": "medium", "labels": ["topic_sports"], "notes": "NBA player"}
+{"handle": "Oprah", "category": "influencer", "scrape_priority": "low", "labels": ["topic_entertainment", "topic_celebrity"], "notes": "Media personality"}
+{"handle": "business", "category": "media", "scrape_priority": "medium", "labels": ["topic_finance", "topic_news"], "notes": "Bloomberg Business"}
+{"handle": "FT", "category": "media", "scrape_priority": "medium", "labels": ["topic_finance", "topic_news"], "notes": "Financial Times"}
+{"handle": "CNBC", "category": "media", "scrape_priority": "high", "labels": ["topic_finance", "topic_news"], "notes": "Business news, sometimes crypto-adjacent"}
+{"handle": "MarketWatch", "category": "media", "scrape_priority": "medium", "labels": ["topic_finance", "topic_investing"], "notes": "Market news"}
+{"handle": "StockMKTNewz", "category": "clean", "scrape_priority": "medium", "labels": ["topic_finance", "topic_investing"], "notes": "Stock market news aggregator"}
+{"handle": "neiltyson", "category": "influencer", "scrape_priority": "medium", "labels": ["topic_technology"], "notes": "Neil deGrasse Tyson, science communicator"}
+{"handle": "BillNye", "category": "influencer", "scrape_priority": "low", "labels": ["topic_technology"], "notes": "Science communicator"}
+{"handle": "WHO", "category": "clean", "scrape_priority": "medium", "labels": ["topic_health"], "notes": "World Health Organization"}
+{"handle": "CDCgov", "category": "clean", "scrape_priority": "low", "labels": ["topic_health"], "notes": "US CDC"}
+{"handle": "TEDTalks", "category": "clean", "scrape_priority": "medium", "labels": ["topic_technology", "topic_entertainment"], "notes": "TED conference talks"}
+{"handle": "Harvard", "category": "clean", "scrape_priority": "low", "labels": ["topic_technology"], "notes": "Harvard University"}
+{"handle": "Stanford", "category": "clean", "scrape_priority": "low", "labels": ["topic_technology"], "notes": "Stanford University"}
+{"handle": "Xbox", "category": "clean", "scrape_priority": "medium", "labels": ["topic_gaming"], "notes": "Xbox/Microsoft gaming"}
+{"handle": "Steam", "category": "clean", "scrape_priority": "medium", "labels": ["topic_gaming"], "notes": "PC gaming platform"}
+{"handle": "Kotaku", "category": "media", "scrape_priority": "low", "labels": ["topic_gaming"], "notes": "Gaming journalism"}
+{"handle": "GameSpot", "category": "media", "scrape_priority": "low", "labels": ["topic_gaming"], "notes": "Gaming reviews/news"}
+{"handle": "bonappetit", "category": "clean", "scrape_priority": "medium", "labels": ["topic_food_drink"], "notes": "Food/cooking magazine"}
+{"handle": "Yelp", "category": "clean", "scrape_priority": "low", "labels": ["topic_food_drink"], "notes": "Restaurant/food reviews"}
+{"handle": "lonelyplanet", "category": "clean", "scrape_priority": "low", "labels": ["topic_travel"], "notes": "Travel guide"}
+{"handle": "TIME", "category": "media", "scrape_priority": "medium", "labels": ["topic_news"], "notes": "TIME magazine"}
+{"handle": "Forbes", "category": "media", "scrape_priority": "medium", "labels": ["topic_finance", "topic_news"], "notes": "Business/culture magazine"}
+{"handle": "Vogue", "category": "clean", "scrape_priority": "low", "labels": ["topic_beauty_fashion"], "notes": "Fashion magazine"}
+{"handle": "GQ", "category": "clean", "scrape_priority": "low", "labels": ["topic_beauty_fashion"], "notes": "Men's lifestyle magazine"}
+{"handle": "Wendys", "category": "clean", "scrape_priority": "medium", "labels": ["topic_food_drink", "topic_comedy_memes"], "notes": "Brand account, famously snarky"}
+{"handle": "MrBeast", "category": "influencer", "scrape_priority": "medium", "labels": ["topic_entertainment"], "notes": "YouTuber, huge following"}
+{"handle": "pewdiepie", "category": "influencer", "scrape_priority": "low", "labels": ["topic_entertainment", "topic_gaming"], "notes": "YouTuber/creator"}
+{"handle": "AvrilLavigne", "category": "influencer", "scrape_priority": "low", "labels": ["topic_music"], "notes": "Pop/rock musician"}
+{"handle": "satyanadella", "category": "influencer", "scrape_priority": "medium", "labels": ["topic_technology", "topic_ai"], "notes": "Microsoft CEO"}
+{"handle": "tim_cook", "category": "influencer", "scrape_priority": "low", "labels": ["topic_technology"], "notes": "Apple CEO"}
+{"handle": "lexfridman", "category": "influencer", "scrape_priority": "medium", "labels": ["topic_ai", "topic_technology"], "notes": "AI researcher, podcaster"}
+{"handle": "karpathy", "category": "influencer", "scrape_priority": "medium", "labels": ["topic_ai", "topic_technology"], "notes": "AI researcher (Andrej Karpathy)"}
+{"handle": "ylecun", "category": "influencer", "scrape_priority": "medium", "labels": ["topic_ai", "topic_technology"], "notes": "Meta AI chief, Turing award winner"}
+{"handle": "ilyasut", "category": "influencer", "scrape_priority": "medium", "labels": ["topic_ai", "topic_technology"], "notes": "SSI co-founder, ex-OpenAI"}
+{"handle": "sama", "category": "influencer", "scrape_priority": "high", "labels": ["topic_ai", "topic_technology", "topic_startups_vc"], "notes": "OpenAI CEO"}
+{"handle": "demishassabis", "category": "influencer", "scrape_priority": "medium", "labels": ["topic_ai", "topic_technology"], "notes": "Google DeepMind CEO"}
+{"handle": "CurveFinance", "category": "crypto", "scrape_priority": "medium", "labels": ["topic_crypto"], "notes": "DeFi AMM"}
+{"handle": "LidoFinance", "category": "crypto", "scrape_priority": "medium", "labels": ["topic_crypto"], "notes": "Liquid staking"}
+{"handle": "eigenlayer", "category": "crypto", "scrape_priority": "medium", "labels": ["topic_crypto"], "notes": "Restaking protocol"}
+{"handle": "pendle_fi", "category": "crypto", "scrape_priority": "low", "labels": ["topic_crypto"], "notes": "DeFi yield protocol"}
+{"handle": "GMX_IO", "category": "crypto", "scrape_priority": "low", "labels": ["topic_crypto"], "notes": "Perp DEX"}
+{"handle": "dYdX", "category": "crypto", "scrape_priority": "low", "labels": ["topic_crypto"], "notes": "Perp DEX"}
+{"handle": "synthetix_io", "category": "crypto", "scrape_priority": "low", "labels": ["topic_crypto"], "notes": "Synthetic assets"}
+{"handle": "1inch", "category": "crypto", "scrape_priority": "low", "labels": ["topic_crypto"], "notes": "DEX aggregator"}
+{"handle": "Aptos", "category": "crypto", "scrape_priority": "medium", "labels": ["topic_crypto"], "notes": "L1, Move language"}
+{"handle": "monad_xyz", "category": "crypto", "scrape_priority": "medium", "labels": ["topic_crypto"], "notes": "L2, parallel EVM"}
+{"handle": "zksync", "category": "crypto", "scrape_priority": "medium", "labels": ["topic_crypto"], "notes": "L2, ZK rollup (Matter Labs)"}
+{"handle": "Scroll_ZKP", "category": "crypto", "scrape_priority": "low", "labels": ["topic_crypto"], "notes": "L2, ZK rollup"}
+{"handle": "lineabuild", "category": "crypto", "scrape_priority": "low", "labels": ["topic_crypto"], "notes": "L2, ConsenSys"}
+{"handle": "0xMantle", "category": "crypto", "scrape_priority": "low", "labels": ["topic_crypto"], "notes": "L2, BitDAO"}
+{"handle": "NEARProtocol", "category": "crypto", "scrape_priority": "medium", "labels": ["topic_crypto"], "notes": "L1, sharded"}
+{"handle": "polkadot", "category": "crypto", "scrape_priority": "medium", "labels": ["topic_crypto"], "notes": "L0/L1, parachains"}
+{"handle": "iamDCinvestor", "category": "crypto", "scrape_priority": "medium", "labels": ["topic_crypto"], "notes": "Ethereum investor/analyst"}
+{"handle": "DegenSpartan", "category": "crypto", "scrape_priority": "medium", "labels": ["topic_crypto"], "notes": "Crypto trader/analyst"}
+{"handle": "cobie", "category": "crypto", "scrape_priority": "high", "labels": ["topic_crypto"], "notes": "Crypto trader, large following"}
+{"handle": "inversebrah", "category": "crypto", "scrape_priority": "medium", "labels": ["topic_crypto"], "notes": "DeFi analyst"}
+{"handle": "WuBlockchain", "category": "media", "scrape_priority": "medium", "labels": ["topic_crypto", "topic_news"], "notes": "Chinese crypto news"}
+{"handle": "thedefiedge", "category": "crypto", "scrape_priority": "medium", "labels": ["topic_crypto"], "notes": "DeFi educator/analyst"}
+{"handle": "Route2FI", "category": "crypto", "scrape_priority": "medium", "labels": ["topic_crypto"], "notes": "DeFi strategies"}
