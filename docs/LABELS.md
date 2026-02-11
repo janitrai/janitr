@@ -5,7 +5,7 @@
 ## How to use these labels
 
 - **Multi-label**: apply _all_ labels that match a post.
-- **`clean` is exclusive**: use `clean` only if **no other label applies**.
+- **`clean`**: marks a post as benign/safe. Can be combined with topic labels (e.g., `clean` + `topic_crypto` = a normal crypto tweet).
 - **Separate "topic" vs "behavior"**: e.g., a crypto scam is `topic_crypto` + `scam` (+ often `impersonation`, `manipulated_media`, etc.).
 - If you need to reduce complexity later, you can collapse labels by group (e.g., treat `reply_spam` as `spam`).
 
@@ -647,7 +647,7 @@ What "comprehensive" buys you:
 ## Multi-label rules
 
 1. Use multiple labels when **both are true** (e.g. `topic_crypto` + `promo`).
-2. `clean` should be **exclusive** (do not combine with other labels).
+2. `clean` can combine with topic labels (e.g. `clean` + `topic_crypto` = a normal crypto tweet).
 3. `scam` does not imply `topic_crypto`; add `topic_crypto` only when the topic is crypto.
 4. Topic labels (`topic_*`) can combine with any behavior label.
 5. Use `topic_*` prefix for "aboutness" (user preference filters), keep unprefixed labels for "badness/behavior."

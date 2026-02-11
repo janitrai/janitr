@@ -122,11 +122,6 @@ def check_integrity(
                             errors.append(
                                 f"Line {line_num} (id={id_}): Invalid label '{label}' (valid: {VALID_LABELS})"
                             )
-                    if "clean" in labels and len(labels) > 1:
-                        errors.append(
-                            f"Line {line_num} (id={id_}): 'clean' must be exclusive (labels={labels})"
-                        )
-
                 # Check 5: Empty text
                 if text is not None and not text.strip():
                     warnings.append(f"Line {line_num} (id={id_}): Empty text")
