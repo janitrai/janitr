@@ -156,6 +156,16 @@
       "priority": "medium"
     },
     {
+      "handle": "iannuttall",
+      "name": "Ian Nuttall",
+      "category": "vocal_complainers",
+      "followers_approx": "50K+",
+      "why": "Built 'Reply Bye' Chrome extension to highlight/hide/block AI spam reply guys. Uses heuristics + AI scoring + community votes. Very similar to janitr. Active in indie hacker scene, high engagement.",
+      "evidence": "Feb 10 2026: 'Built myself a tiny Chrome extension called Reply Bye to highlight, hide, and/or block AI spam reply guys' (165 replies, 376 likes, 28.6K views). Landing page: replybye.run. Also called out em-dash usage as detection signal.",
+      "priority": "high",
+      "similar_project": "replybye.run"
+    },
+    {
       "handle": "MateoVogt",
       "name": "Mateo Vogt",
       "category": "vocal_complainers",

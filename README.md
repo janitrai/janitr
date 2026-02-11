@@ -126,6 +126,15 @@ See `docs/DATA_LABELING.md` for the labeling workflow.
 
 No network calls. No telemetry. No cloud. Your browsing stays private.
 
+## Similar Projects
+
+| Project                                          | Author                                          | Approach                                                                                                                                         |
+| ------------------------------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [Reply Bye](https://replybye.run)                | [@iannuttall](https://x.com/iannuttall)         | Chrome extension that scores replies using language detection, AI analysis, and community votes. Highlights, hides, or blocks AI spam reply guys |
+| [AI Slop Reporter](https://x.com/AiSpamReporter) | [@AiSpamReporter](https://x.com/AiSpamReporter) | X account that calls out AI-generated comments and maintains a running mute list                                                                 |
+
+> Know of another project fighting AI spam on social media? Open an issue or DM [@janitr_ai](https://x.com/janitr_ai)
+
 ## Origin Story
 
 This project was originally called **Internet Condom**, inspired by [@tszzl](https://x.com/tszzl)'s "internet condom" concept from mid-2025 — the idea of an AI layer between you and the web that filters, rewrites, and protects you from ads, spam, dark patterns, and low-signal content. We liked the metaphor (a protective barrier so _your agent_ touches the web, not you), but renamed to **Janitr** because... well, try explaining "Internet Condom" in a work meeting.
