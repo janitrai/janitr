@@ -5,10 +5,10 @@
     "categories": {
       "vocal_complainers": "Accounts that have publicly and repeatedly complained about AI bot replies",
       "tech_founders": "High-engagement tech founders/builders whose threads attract AI reply bots",
-      "crypto_web3": "Crypto/web3 accounts — ground zero for scam bots AND AI slop replies",
-      "ai_ml": "AI/ML researchers and companies — attract both fans and AI-generated hype replies",
-      "media_journalists": "High-follower journalists/media — attract rage-bait and engagement-farming bots",
-      "politics": "Political figures/commentators — attract coordinated bot campaigns",
+      "crypto_web3": "Crypto/web3 accounts \u2014 ground zero for scam bots AND AI slop replies",
+      "ai_ml": "AI/ML researchers and companies \u2014 attract both fans and AI-generated hype replies",
+      "media_journalists": "High-follower journalists/media \u2014 attract rage-bait and engagement-farming bots",
+      "politics": "Political figures/commentators \u2014 attract coordinated bot campaigns",
       "anti_slop": "Accounts specifically dedicated to fighting AI slop"
     }
   },
@@ -19,7 +19,7 @@
       "category": "vocal_complainers",
       "followers_approx": "500K+",
       "why": "Most vocal complainer about AI reply bots. Actively flags suspected bot accounts. Built bot detection heuristics. Every tweet gets flooded with AI replies due to high engagement in indie hacker space.",
-      "evidence": "Feb 10 2026: 'I think many AI replies are just using some front end hack' (4.6K views). Flagged @CanKirsallioba as AI reply bot (false positive — real human, non-native English).",
+      "evidence": "Feb 10 2026: 'I think many AI replies are just using some front end hack' (4.6K views). Flagged @CanKirsallioba as AI reply bot (false positive \u2014 real human, non-native English).",
       "priority": "high"
     },
     {
@@ -114,16 +114,8 @@
       "priority": "medium"
     },
     {
-      "handle": "AiSpamReporter",
-      "name": "AI Slop Reporter",
-      "category": "anti_slop",
-      "followers_approx": "unknown",
-      "why": "Dedicated account calling out AI-generated comments. Maintains running list of accounts to mute. Bio: 'Make your timeline human again'. Good source for identifying bot accounts.",
-      "priority": "high"
-    },
-    {
       "handle": "InsaneAISlop",
-      "name": "Insane AI Slop (Théodore Cazals)",
+      "name": "Insane AI Slop (Th\u00e9odore Cazals)",
       "category": "anti_slop",
       "followers_approx": "133K+",
       "why": "20yo Parisian student who became face of AI slop backlash. Documents and mocks AI-generated content. Flooded with submissions from users.",
@@ -136,7 +128,7 @@
       "category": "anti_slop",
       "followers_approx": "unknown",
       "why": "Debunks fake/AI-generated historical content. Replies contain both AI slop defenders and more AI bots.",
-      "evidence": "Referenced in X search results — users replying 'I hate AI slop man' to their posts.",
+      "evidence": "Referenced in X search results \u2014 users replying 'I hate AI slop man' to their posts.",
       "priority": "medium"
     },
     {
@@ -144,7 +136,7 @@
       "name": "Donald Trump",
       "category": "politics",
       "followers_approx": "90M+",
-      "why": "Every post generates massive bot activity — political bots, engagement farming, crypto scam replies.",
+      "why": "Every post generates massive bot activity \u2014 political bots, engagement farming, crypto scam replies.",
       "priority": "medium"
     },
     {

@@ -128,10 +128,9 @@ No network calls. No telemetry. No cloud. Your browsing stays private.
 
 ## Similar Projects
 
-| Project                                          | Author                                          | Approach                                                                                                                                         |
-| ------------------------------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [Reply Bye](https://replybye.run)                | [@iannuttall](https://x.com/iannuttall)         | Chrome extension that scores replies using language detection, AI analysis, and community votes. Highlights, hides, or blocks AI spam reply guys |
-| [AI Slop Reporter](https://x.com/AiSpamReporter) | [@AiSpamReporter](https://x.com/AiSpamReporter) | X account that calls out AI-generated comments and maintains a running mute list                                                                 |
+| Project                           | Author                                  | Approach                                                                                                                                         |
+| --------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [Reply Bye](https://replybye.run) | [@iannuttall](https://x.com/iannuttall) | Chrome extension that scores replies using language detection, AI analysis, and community votes. Highlights, hides, or blocks AI spam reply guys |
 
 > Know of another project fighting AI spam on social media? Open an issue or DM [@janitr_ai](https://x.com/janitr_ai)
 
