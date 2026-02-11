@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  data-quality:
+    name: Data Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Data integrity check
+        run: python scripts/check_integrity.py data/sample.jsonl
+
+      - name: Duplicate ID dry-run check
+        run: |
+          output="$(python scripts/fix_duplicate_ids.py data/sample.jsonl)"
+          echo "$output"
+
+          duplicate_count="$(echo "$output" | awk -F': ' '/^Duplicate IDs:/ {print $2; exit}')"
+          if [ -z "$duplicate_count" ]; then
+            echo "Could not parse duplicate count from fix_duplicate_ids output"
+            exit 1
+          fi
+
+          if [ "$duplicate_count" -gt 0 ]; then
+            echo "Duplicate IDs found: $duplicate_count"
+            exit 1
+          fi
+
+  lint-and-docs:
+    name: Lint And Docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          npm ci --prefer-offline --no-audit
+          python -m pip install --upgrade pip
+          python -m pip install ruff
+
+      - name: Prepare SimpleDoc CLI
+        run: |
+          npm install --no-save @simpledoc/simpledoc --prefer-offline --no-audit
+          mkdir -p "$HOME/SimpleDoc/dist/bin"
+          ln -sf "$GITHUB_WORKSPACE/node_modules/@simpledoc/simpledoc/dist/bin/simpledoc.js" "$HOME/SimpleDoc/dist/bin/simpledoc.js"
+
+      - name: Lint check
+        run: npm run format:check
+
+      - name: SimpleDoc check
+        run: npm run simpledoc -- check
