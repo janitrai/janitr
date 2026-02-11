@@ -4,12 +4,17 @@ import {
 } from "../vendor/fasttext/main/common.mjs";
 
 const MODEL_FILENAME = "model.ftz";
+const MODEL_STAGE1_FILENAME = "model.stage1.ftz";
+const MODEL_STAGE2_FILENAME = "model.stage2.ftz";
 const THRESHOLDS_FILENAME = "thresholds.json";
+const MODE_SINGLE = "single_stage";
+const MODE_TWO_STAGE = "two_stage";
 const CLASSES = ["clean", "topic_crypto", "scam", "promo"];
 
 let modelPromise = null;
-let thresholdsPromise = null;
+let configPromise = null;
 let cachedThresholds = null;
+let cachedConfig = null;
 
 const normalizeText = (text) => {
   if (!text) return "";
@@ -30,6 +35,15 @@ const defaultThresholdsUrl = (modelUrl) => {
     }
   }
   return defaultAssetUrl(THRESHOLDS_FILENAME);
+};
+
+const resolveAssetUrl = (assetRef, baseUrl, fallbackFilename) => {
+  const candidate = assetRef || fallbackFilename;
+  try {
+    return new URL(candidate, baseUrl || defaultModelUrl()).toString();
+  } catch (err) {
+    return defaultAssetUrl(fallbackFilename);
+  }
 };
 
 const defaultWasmUrl = () => {
@@ -71,7 +85,40 @@ const parseThresholds = (payload) => {
   return Object.keys(parsed).length > 0 ? parsed : null;
 };
 
-const loadThresholds = async ({ thresholdsUrl, modelUrl } = {}) => {
+const parseMode = (payload) => {
+  const mode = String(payload?.mode || "").toLowerCase();
+  return mode === MODE_TWO_STAGE ? MODE_TWO_STAGE : MODE_SINGLE;
+};
+
+const parseModels = (payload) => {
+  const raw = payload?.models;
+  if (!raw || typeof raw !== "object") {
+    return {
+      stage1: MODEL_STAGE1_FILENAME,
+      stage2: MODEL_STAGE2_FILENAME,
+    };
+  }
+  return {
+    stage1: raw.stage1 || raw.scam || MODEL_STAGE1_FILENAME,
+    stage2: raw.stage2 || raw.topic_crypto || MODEL_STAGE2_FILENAME,
+  };
+};
+
+const parseConfig = (payload, url) => {
+  const thresholds = parseThresholds(payload);
+  if (!thresholds) {
+    throw new Error(`Invalid thresholds payload from ${url}`);
+  }
+  const fallbackThresholds = parseThresholds(payload?.fallback_thresholds);
+  return {
+    mode: parseMode(payload),
+    thresholds,
+    models: parseModels(payload),
+    fallbackThresholds,
+  };
+};
+
+const loadConfig = async ({ thresholdsUrl, modelUrl } = {}) => {
   const url = thresholdsUrl || defaultThresholdsUrl(modelUrl);
   const response = await fetch(url);
   if (!response.ok) {
@@ -80,11 +127,7 @@ const loadThresholds = async ({ thresholdsUrl, modelUrl } = {}) => {
     );
   }
   const payload = await response.json();
-  const parsed = parseThresholds(payload);
-  if (!parsed) {
-    throw new Error(`Invalid thresholds payload from ${url}`);
-  }
-  return parsed;
+  return parseConfig(payload, url);
 };
 
 const buildThresholds = (perLabel, globalThreshold) => {
@@ -103,54 +146,23 @@ const buildThresholds = (perLabel, globalThreshold) => {
 };
 
 export const loadScamThresholds = async ({ thresholdsUrl, modelUrl } = {}) => {
-  if (!thresholdsPromise) {
-    thresholdsPromise = loadThresholds({ thresholdsUrl, modelUrl }).then(
-      (thresholds) => {
-        cachedThresholds = thresholds;
-        return thresholds;
-      },
-    );
+  if (!configPromise) {
+    configPromise = loadConfig({ thresholdsUrl, modelUrl }).then((config) => {
+      cachedConfig = config;
+      cachedThresholds = config.thresholds;
+      return config;
+    });
   }
-  return thresholdsPromise;
+  const config = await configPromise;
+  return cachedThresholds || config.thresholds;
 };
 
 export const getScamThresholds = () => cachedThresholds;
+export const getScamConfig = () => cachedConfig;
 
-export const loadScamModel = async ({ modelUrl, thresholdsUrl } = {}) => {
-  const resolvedModelUrl = modelUrl || defaultModelUrl();
-  if (!modelPromise) {
-    modelPromise = (async () => {
-      const wasmUrl = defaultWasmUrl();
-      const getFastTextModuleWithPath = () =>
-        getFastTextModule({ wasmPath: wasmUrl });
-      const FastText = await getFastTextClass({
-        getFastTextModule: getFastTextModuleWithPath,
-      });
-      const ft = new FastText();
-      return ft.loadModel(resolvedModelUrl);
-    })();
-  }
-  await loadScamThresholds({ thresholdsUrl, modelUrl: resolvedModelUrl });
-  return modelPromise;
-};
-
-export const resetScamModel = () => {
-  modelPromise = null;
-  thresholdsPromise = null;
-  cachedThresholds = null;
-};
-
-export const predictScam = async (
-  text,
-  { thresholds, threshold, k = CLASSES.length, allowEmpty = false } = {},
-) => {
-  const model = await loadScamModel();
-  const cleaned = normalizeText(text).replace(/\n/g, " ");
-  const rawPredictions = model.predict(cleaned, k, 0.0);
+const readPredictionScores = (model, text, k) => {
+  const rawPredictions = model.predict(text, k, 0.0);
   const scores = {};
-  for (const label of CLASSES) {
-    scores[label] = 0;
-  }
   if (rawPredictions && typeof rawPredictions.size === "function") {
     try {
       for (let i = 0; i < rawPredictions.size(); i += 1) {
@@ -160,10 +172,7 @@ export const predictScam = async (
         const label = String(item[1]);
         const key = label.replace(/^__label__/, "");
         if (Number.isFinite(prob)) {
-          const bounded = Math.min(1, Math.max(0, prob));
-          if (key in scores) {
-            scores[key] = bounded;
-          }
+          scores[key] = Math.min(1, Math.max(0, prob));
         }
       }
     } finally {
@@ -172,8 +181,50 @@ export const predictScam = async (
       }
     }
   }
-  const perLabelThresholds = thresholds || (await loadScamThresholds());
-  const appliedThresholds = buildThresholds(perLabelThresholds, threshold);
+  return scores;
+};
+
+const buildSingleScores = (model, text, k) => {
+  const rawScores = readPredictionScores(model, text, k);
+  const scores = {};
+  for (const label of CLASSES) {
+    const value = Number(rawScores[label]);
+    scores[label] = Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
+  }
+  return scores;
+};
+
+const buildTwoStageScores = (stage1Model, stage2Model, text) => {
+  const stage1Scores = readPredictionScores(stage1Model, text, 2);
+  const stage2Scores = readPredictionScores(stage2Model, text, 2);
+  const scamScore = Number(stage1Scores.scam);
+  const topicScore = Number(stage2Scores.topic_crypto);
+  const scam = Number.isFinite(scamScore)
+    ? Math.min(1, Math.max(0, scamScore))
+    : 0;
+  const topic = Number.isFinite(topicScore)
+    ? Math.min(1, Math.max(0, topicScore))
+    : 0;
+  const clean = Math.min(1, Math.max(0, 1 - Math.max(scam, topic)));
+  return {
+    clean,
+    topic_crypto: topic,
+    scam,
+    promo: 0,
+  };
+};
+
+const pickLabels = (scores, appliedThresholds, { allowEmpty, mode }) => {
+  if (mode === MODE_TWO_STAGE) {
+    if ((scores.scam ?? 0) >= appliedThresholds.scam) {
+      return ["scam"];
+    }
+    if ((scores.topic_crypto ?? 0) >= appliedThresholds.topic_crypto) {
+      return ["topic_crypto"];
+    }
+    return allowEmpty ? [] : ["clean"];
+  }
+
   const predicted = new Set();
   for (const label of CLASSES) {
     if ((scores[label] ?? 0) >= appliedThresholds[label]) {
@@ -196,7 +247,102 @@ export const predictScam = async (
   if (predicted.has("clean") && predicted.size > 1) {
     predicted.delete("clean");
   }
-  const labels = CLASSES.filter((label) => predicted.has(label));
+  return CLASSES.filter((label) => predicted.has(label));
+};
+
+export const loadScamModel = async ({ modelUrl, thresholdsUrl } = {}) => {
+  const resolvedModelUrl = modelUrl || defaultModelUrl();
+  await loadScamThresholds({ thresholdsUrl, modelUrl: resolvedModelUrl });
+  if (!modelPromise) {
+    modelPromise = (async () => {
+      const config = cachedConfig || {
+        mode: MODE_SINGLE,
+        models: {
+          stage1: MODEL_STAGE1_FILENAME,
+          stage2: MODEL_STAGE2_FILENAME,
+        },
+      };
+      const wasmUrl = defaultWasmUrl();
+      const getFastTextModuleWithPath = () =>
+        getFastTextModule({ wasmPath: wasmUrl });
+      const FastText = await getFastTextClass({
+        getFastTextModule: getFastTextModuleWithPath,
+      });
+
+      const loadModelFromUrl = async (url) => {
+        const ft = new FastText();
+        return ft.loadModel(url);
+      };
+
+      if (config.mode === MODE_TWO_STAGE) {
+        const stage1Url = resolveAssetUrl(
+          config.models.stage1,
+          resolvedModelUrl,
+          MODEL_STAGE1_FILENAME,
+        );
+        const stage2Url = resolveAssetUrl(
+          config.models.stage2,
+          resolvedModelUrl,
+          MODEL_STAGE2_FILENAME,
+        );
+        try {
+          const [stage1, stage2] = await Promise.all([
+            loadModelFromUrl(stage1Url),
+            loadModelFromUrl(stage2Url),
+          ]);
+          return {
+            mode: MODE_TWO_STAGE,
+            stage1,
+            stage2,
+          };
+        } catch (err) {
+          if (config.fallbackThresholds) {
+            cachedThresholds = config.fallbackThresholds;
+          }
+          if (typeof console !== "undefined" && console.warn) {
+            console.warn(
+              "Failed to load two-stage models, falling back to single model:",
+              err,
+            );
+          }
+        }
+      }
+
+      const model = await loadModelFromUrl(resolvedModelUrl);
+      return {
+        mode: MODE_SINGLE,
+        model,
+      };
+    })();
+  }
+  return modelPromise;
+};
+
+export const resetScamModel = () => {
+  modelPromise = null;
+  configPromise = null;
+  cachedThresholds = null;
+  cachedConfig = null;
+};
+
+export const predictScam = async (
+  text,
+  { thresholds, threshold, k = CLASSES.length, allowEmpty = false } = {},
+) => {
+  const modelBundle = await loadScamModel();
+  const cleaned = normalizeText(text).replace(/\n/g, " ");
+  const perLabelThresholds = thresholds || (await loadScamThresholds());
+  const appliedThresholds = buildThresholds(perLabelThresholds, threshold);
+  const scores =
+    modelBundle.mode === MODE_TWO_STAGE
+      ? buildTwoStageScores(modelBundle.stage1, modelBundle.stage2, cleaned)
+      : buildSingleScores(modelBundle.model, cleaned, k);
+
+  const labels = pickLabels(scores, appliedThresholds, {
+    allowEmpty,
+    mode: modelBundle.mode,
+  });
+  const predicted = new Set(labels);
   const pScam = scores.scam ?? 0;
   const isScam = predicted.has("scam");
 
