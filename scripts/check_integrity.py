@@ -9,8 +9,7 @@ Checks:
 4. Valid label values
 5. No empty text
 6. ID format consistency
-7. ID numeric parts are within JavaScript MAX_SAFE_INTEGER
-8. IDs are not raw X status IDs used as dataset IDs
+7. id/source_id consistency for numeric tweet IDs
 
 Exit codes:
 - 0: All checks passed
@@ -27,25 +26,12 @@ from collections import defaultdict
 from labelset import load_v2026_labels_from_labels_md
 
 VALID_LABELS = set(load_v2026_labels_from_labels_md())
-ID_PATTERN = re.compile(r"^x_\d+(_dup\d+)?$|^x_auto_\d+$")
-MAX_SAFE_INTEGER = 9007199254740991
-RAW_STATUS_ID_PATTERN = re.compile(r"^\d{16,20}$")
-X_LARGE_ID_PATTERN = re.compile(r"^x_(\d+)(?:_dup\d+)?$")
+ID_PATTERN = re.compile(r"^\d{16,20}$|^x_\d+(_dup\d+)?$|^x_auto_\d+$")
+TWEET_STATUS_ID_PATTERN = re.compile(r"^\d{16,20}$")
 
 
-def _numeric_parts(value: str) -> list[str]:
-    """Return all contiguous numeric substrings from an ID value."""
-    return re.findall(r"\d+", value)
-
-
-def _looks_like_raw_status_id(value: str) -> bool:
-    """Detect likely raw X status IDs being used as dataset IDs."""
-    if RAW_STATUS_ID_PATTERN.fullmatch(value):
-        return True
-
-    # Also catch prefixed IDs like x_2018816407056605400.
-    match = X_LARGE_ID_PATTERN.fullmatch(value)
-    return bool(match and len(match.group(1)) >= 16)
+def _is_tweet_status_id(value: object) -> bool:
+    return isinstance(value, str) and bool(TWEET_STATUS_ID_PATTERN.fullmatch(value))
 
 
 def check_integrity(
@@ -96,18 +82,6 @@ def check_integrity(
                         errors.append(
                             f"Line {line_num}: 'id' must be a string or null (got {type(id_).__name__})"
                         )
-                    else:
-                        for part in _numeric_parts(id_):
-                            if int(part) > MAX_SAFE_INTEGER:
-                                errors.append(
-                                    f"Line {line_num} (id={id_}): Numeric ID part '{part}' exceeds JavaScript MAX_SAFE_INTEGER ({MAX_SAFE_INTEGER})"
-                                )
-                                break
-
-                        if _looks_like_raw_status_id(id_):
-                            errors.append(
-                                f"Line {line_num} (id={id_}): ID looks like a raw X status ID; use sequential dataset IDs (e.g., x_0001)"
-                            )
                 else:
                     warnings.append(f"Line {line_num}: Null ID")
 
@@ -129,6 +103,20 @@ def check_integrity(
                 # Check 6: ID format (warning only)
                 if isinstance(id_, str) and not ID_PATTERN.match(id_):
                     warnings.append(f"Line {line_num}: Non-standard ID format '{id_}'")
+
+                # Check 7: id/source_id consistency for numeric tweet IDs
+                source_id = obj.get("source_id")
+                source_is_status_id = _is_tweet_status_id(source_id)
+                id_is_status_id = _is_tweet_status_id(id_)
+
+                if source_is_status_id and id_ != source_id:
+                    errors.append(
+                        f"Line {line_num}: Numeric source_id must match id (id={id_}, source_id={source_id})"
+                    )
+                elif id_is_status_id and source_id is not None and source_id != id_:
+                    errors.append(
+                        f"Line {line_num}: Numeric id must match source_id when source_id is present (id={id_}, source_id={source_id})"
+                    )
 
     except FileNotFoundError:
         errors.append(f"File not found: {path}")
