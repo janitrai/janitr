@@ -1,0 +1,92 @@
+{
+  "single_best": {
+    "model_type": "single",
+    "name": "single_nochar_ng2",
+    "train_sec": 1.21,
+    "quant_sec": 1.16,
+    "ftz_path": "/tmp/janitr_postsplit_bakeoff/single_nochar_ng2.ftz",
+    "ftz_kb": 165.9,
+    "target_scam": 0.02,
+    "target_topic": 0.1,
+    "thr_scam": 0.9669240117073059,
+    "thr_topic": 0.8634016513824463,
+    "calib_scam_fpr": 0.006060606060606061,
+    "calib_topic_fpr": 0.09009009009009009,
+    "holdout_scam_precision": 0.8571428571428571,
+    "holdout_scam_recall": 0.6,
+    "holdout_scam_fpr": 0.03048780487804878,
+    "holdout_topic_precision": 0.8791208791208791,
+    "holdout_topic_recall": 0.7843137254901961,
+    "holdout_topic_fpr": 0.09821428571428571,
+    "holdout_micro_f1": 0.8072289156626505,
+    "holdout_macro_f1": 0.7873902080851183,
+    "holdout_exact": 0.7476635514018691
+  },
+  "two_stage_best": {
+    "model_type": "two_stage",
+    "name": "s1_char__s2_char",
+    "s1_train_sec": 4.88,
+    "s2_train_sec": 7.43,
+    "target_scam": 0.02,
+    "target_topic": 0.2,
+    "thr_scam": 0.8774868249893188,
+    "thr_topic": 0.1520422399044037,
+    "calib_scam_fpr": 0.01818181818181818,
+    "calib_topic_fpr": 0.15315315315315314,
+    "holdout_scam_precision": 0.8857142857142857,
+    "holdout_scam_recall": 0.62,
+    "holdout_scam_fpr": 0.024390243902439025,
+    "holdout_topic_precision": 0.7899159663865546,
+    "holdout_topic_recall": 0.9215686274509803,
+    "holdout_topic_fpr": 0.22321428571428573,
+    "holdout_micro_f1": 0.8256513026052104,
+    "holdout_macro_f1": 0.8064895786931752,
+    "holdout_exact": 0.7570093457943925
+  },
+  "overall_winner_by_gate": {
+    "model_type": "two_stage",
+    "name": "s1_char__s2_char",
+    "s1_train_sec": 4.88,
+    "s2_train_sec": 7.43,
+    "target_scam": 0.02,
+    "target_topic": 0.2,
+    "thr_scam": 0.8774868249893188,
+    "thr_topic": 0.1520422399044037,
+    "calib_scam_fpr": 0.01818181818181818,
+    "calib_topic_fpr": 0.15315315315315314,
+    "holdout_scam_precision": 0.8857142857142857,
+    "holdout_scam_recall": 0.62,
+    "holdout_scam_fpr": 0.024390243902439025,
+    "holdout_topic_precision": 0.7899159663865546,
+    "holdout_topic_recall": 0.9215686274509803,
+    "holdout_topic_fpr": 0.22321428571428573,
+    "holdout_micro_f1": 0.8256513026052104,
+    "holdout_macro_f1": 0.8064895786931752,
+    "holdout_exact": 0.7570093457943925
+  },
+  "gate_order": [
+    "holdout_scam_fpr asc",
+    "holdout_scam_recall desc",
+    "holdout_micro_f1 desc",
+    "holdout_macro_f1 desc"
+  ],
+  "single_models_tested": [
+    "single_char_ng2",
+    "single_nochar_ng2",
+    "single_char_ng1"
+  ],
+  "two_stage_models_tested": [
+    {
+      "stage1": [
+        "s1_char",
+        "s1_nochar"
+      ]
+    },
+    {
+      "stage2": [
+        "s2_char"
+      ]
+    }
+  ],
+  "work_dir": "/tmp/janitr_postsplit_bakeoff"
+}

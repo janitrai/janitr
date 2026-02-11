@@ -1,0 +1,125 @@
+{
+  "model": "s1_char_softmax__s2_char_softmax",
+  "results": [
+    {
+      "target_scam": 0.02,
+      "target_topic": 0.03,
+      "thr_scam": 0.9505936503410339,
+      "thr_topic": 0.9977572560310364,
+      "calib_scam_fpr": 0.01818181818181818,
+      "calib_scam_recall": 0.6326530612244898,
+      "calib_scam_precision": 0.9117647058823529,
+      "calib_topic_fpr": 0.0297029702970297,
+      "calib_topic_recall": 0.75,
+      "calib_topic_precision": 0.9411764705882353,
+      "holdout": {
+        "clean": {
+          "precision": 0.7251908396946565,
+          "recall": 0.9405940594059405,
+          "fpr": 0.3185840707964602,
+          "f1": 0.8189655172413793,
+          "support": 101
+        },
+        "topic_crypto": {
+          "precision": 0.8478260869565217,
+          "recall": 0.38235294117647056,
+          "fpr": 0.0625,
+          "f1": 0.5270270270270271,
+          "support": 102
+        },
+        "scam": {
+          "precision": 0.8648648648648649,
+          "recall": 0.64,
+          "fpr": 0.03048780487804878,
+          "f1": 0.7356321839080459,
+          "support": 50
+        }
+      },
+      "aggregate": {
+        "exact": 0.616822429906542,
+        "micro_f1": 0.7109207708779443,
+        "macro_f1": 0.6938749093921507
+      }
+    },
+    {
+      "target_scam": 0.02,
+      "target_topic": 0.1,
+      "thr_scam": 0.9505936503410339,
+      "thr_topic": 0.24765117466449738,
+      "calib_scam_fpr": 0.01818181818181818,
+      "calib_scam_recall": 0.6326530612244898,
+      "calib_scam_precision": 0.9117647058823529,
+      "calib_topic_fpr": 0.0594059405940594,
+      "calib_topic_recall": 0.828125,
+      "calib_topic_precision": 0.8983050847457628,
+      "holdout": {
+        "clean": {
+          "precision": 0.8252427184466019,
+          "recall": 0.8415841584158416,
+          "fpr": 0.1592920353982301,
+          "f1": 0.8333333333333333,
+          "support": 101
+        },
+        "topic_crypto": {
+          "precision": 0.7297297297297297,
+          "recall": 0.5294117647058824,
+          "fpr": 0.17857142857142858,
+          "f1": 0.6136363636363636,
+          "support": 102
+        },
+        "scam": {
+          "precision": 0.8648648648648649,
+          "recall": 0.64,
+          "fpr": 0.03048780487804878,
+          "f1": 0.7356321839080459,
+          "support": 50
+        }
+      },
+      "aggregate": {
+        "exact": 0.6214953271028038,
+        "micro_f1": 0.7323340471092076,
+        "macro_f1": 0.7275339602925809
+      }
+    },
+    {
+      "target_scam": 0.02,
+      "target_topic": 0.2,
+      "thr_scam": 0.9505936503410339,
+      "thr_topic": 0.00024640484480187297,
+      "calib_scam_fpr": 0.01818181818181818,
+      "calib_scam_recall": 0.6326530612244898,
+      "calib_scam_precision": 0.9117647058823529,
+      "calib_topic_fpr": 0.18811881188118812,
+      "calib_topic_recall": 0.890625,
+      "calib_topic_precision": 0.75,
+      "holdout": {
+        "clean": {
+          "precision": 0.8571428571428571,
+          "recall": 0.6534653465346535,
+          "fpr": 0.09734513274336283,
+          "f1": 0.7415730337078652,
+          "support": 101
+        },
+        "topic_crypto": {
+          "precision": 0.59,
+          "recall": 0.5784313725490197,
+          "fpr": 0.36607142857142855,
+          "f1": 0.5841584158415842,
+          "support": 102
+        },
+        "scam": {
+          "precision": 0.8648648648648649,
+          "recall": 0.64,
+          "fpr": 0.03048780487804878,
+          "f1": 0.7356321839080459,
+          "support": 50
+        }
+      },
+      "aggregate": {
+        "exact": 0.5560747663551402,
+        "micro_f1": 0.6723768736616702,
+        "macro_f1": 0.6871212111524985
+      }
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "mode": "two_stage",
+  "targets": {
+    "scam": 0.02,
+    "topic_crypto": 0.2
+  },
+  "thresholds": {
+    "clean": 0.1,
+    "scam": 0.9626831412315369,
+    "topic_crypto": 1.0
+  },
+  "calib": {
+    "scam": {
+      "fpr": 0.01818181818181818,
+      "recall": 0.6530612244897959,
+      "precision": 0.9142857142857143,
+      "threshold": 0.9626831412315369
+    },
+    "topic_crypto": {
+      "fpr": 0.0,
+      "recall": 0.0,
+      "precision": 0.0,
+      "threshold": 1.0
+    }
+  },
+  "holdout_metrics": {
+    "clean": {
+      "precision": 0.5706214689265536,
+      "recall": 1.0,
+      "fpr": 0.672566371681416,
+      "support": 101,
+      "tp": 101,
+      "fp": 76,
+      "fn": 0
+    },
+    "topic_crypto": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "fpr": 0.0,
+      "support": 102,
+      "tp": 0,
+      "fp": 0,
+      "fn": 102
+    },
+    "scam": {
+      "precision": 0.8648648648648649,
+      "recall": 0.64,
+      "fpr": 0.03048780487804878,
+      "support": 50,
+      "tp": 32,
+      "fp": 5,
+      "fn": 18
+    }
+  }
+}

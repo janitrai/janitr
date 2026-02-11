@@ -1,0 +1,12 @@
+Evaluated 214 samples
+Thresholds: per-label
+
+Overall:
+  exact match accuracy: 0.706
+  micro precision/recall/f1: 0.779 0.751 0.765
+  macro precision/recall/f1: 0.826 0.726 0.751
+
+Per-class metrics:
+  clean              p=0.681 r=0.950 f1=0.793 fpr=0.398 fnr=0.050 support= 101 thr=0.10
+  topic_crypto       p=0.941 r=0.627 f1=0.753 fpr=0.036 fnr=0.373 support= 102 thr=1.00
+  scam               p=0.857 r=0.600 f1=0.706 fpr=0.030 fnr=0.400 support=  50 thr=0.97
