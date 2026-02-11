@@ -1,23 +1,13 @@
 {
-  "version": 4,
-  "mode": "two_stage",
+  "version": 5,
+  "mode": "single_stage",
   "classes": [
     "clean",
     "topic_crypto",
     "scam",
     "promo"
   ],
-  "models": {
-    "stage1": "model.stage1.ftz",
-    "stage2": "model.stage2.ftz"
-  },
   "thresholds": {
-    "clean": 0.1,
-    "topic_crypto": 0.940906822681427,
-    "scam": 0.9716432094573975,
-    "promo": 1.0
-  },
-  "fallback_thresholds": {
     "clean": 0.1,
     "topic_crypto": 1.0,
     "scam": 0.9669240117073059,
@@ -29,20 +19,21 @@
   },
   "label_stats": {
     "scam": {
-      "threshold": 0.9716432094573975,
-      "holdout_precision": 0.9117647058823529,
-      "holdout_recall": 0.62,
-      "holdout_fpr": 0.018292682926829267
+      "threshold": 0.9669240117073059,
+      "holdout_precision": 0.8571428571428571,
+      "holdout_recall": 0.6,
+      "holdout_fpr": 0.03048780487804878
     },
     "topic_crypto": {
-      "threshold": 0.940906822681427,
-      "holdout_precision": 0.8571428571428571,
-      "holdout_recall": 0.47058823529411764,
-      "holdout_fpr": 0.07142857142857142
+      "threshold": 1.0,
+      "holdout_precision": 0.9411764705882353,
+      "holdout_recall": 0.6274509803921569,
+      "holdout_fpr": 0.03571428571428571
     }
   },
   "tuned_on": "data/calib.txt",
-  "selected_model": "two_stage_softmax_quantized",
-  "selected_from": "reports/experiments/2026-02-11-postsplit-bakeoff/two_stage_quant_sweep_softmax.json",
-  "selected_at": "2026-02-11"
+  "selected_model": "single_nochar_ng2",
+  "selected_from": "reports/experiments/2026-02-11-postsplit-bakeoff/single_stage_candidates.csv",
+  "selected_at": "2026-02-11",
+  "rollback_reason": "topic_crypto recall regressed in two-stage production setting"
 }
