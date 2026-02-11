@@ -1,0 +1,4 @@
+interface:
+  display_name: "Public Metrics Reporter"
+  short_description: "Turn Janitr eval numbers into plain-language public updates with deltas"
+  default_prompt: "Summarize Janitr results for public audiences with before/after metrics, false alarm rates, and tradeoffs in simple language."
