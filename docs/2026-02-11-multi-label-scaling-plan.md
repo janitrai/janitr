@@ -25,7 +25,7 @@ This document explains, in plain language, what we should change and why.
 
 ## What we learned from recent experiments
 
-From `reports/experiments/2026-02-11/`:
+From `docs/reports/experiments/2026-02-11/`:
 
 - Single-stage model improved with tuning, but could not hit low scam FPR on holdout.
 - Two-stage prototype worked much better than single-stage.

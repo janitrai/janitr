@@ -28,7 +28,7 @@
   },
   "tuned_on": "data/calib.txt",
   "selected_model": "single_nochar_ng2",
-  "selected_from": "reports/experiments/2026-02-11-postsplit-bakeoff/single_stage_candidates.csv",
+  "selected_from": "docs/reports/experiments/2026-02-11-postsplit-bakeoff/2026-02-11-single_stage_candidates.csv",
   "selected_at": "2026-02-11",
   "rollback_reason": "topic_crypto recall regressed in two-stage production setting"
 }
