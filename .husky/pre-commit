@@ -1,5 +1,28 @@
+#!/usr/bin/env sh
+set -e
+
 # Format staged files
 npx lint-staged
 
-# Run simpledoc conventions check
-npx @simpledoc/simpledoc check
+# Run SimpleDoc conventions check
+npm run simpledoc -- check
+
+# Run data integrity checks
+python scripts/check_integrity.py data/sample.jsonl
+
+# Run duplicate ID checks
+dup_check_output="$(python scripts/fix_duplicate_ids.py data/sample.jsonl)"
+printf '%s\n' "$dup_check_output"
+
+dup_count="$(printf '%s\n' "$dup_check_output" | sed -n 's/^Duplicate IDs:[[:space:]]*//p' | head -n 1 | tr -d '[:space:]')"
+case "$dup_count" in
+'' | *[!0-9]*)
+  echo "❌ Failed to parse duplicate ID count from scripts/fix_duplicate_ids.py output."
+  exit 1
+  ;;
+esac
+
+if [ "$dup_count" -gt 0 ]; then
+  echo "❌ Duplicate IDs detected ($dup_count). Resolve duplicates before committing."
+  exit 1
+fi
