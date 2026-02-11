@@ -55,7 +55,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: npm
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -64,7 +63,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci --prefer-offline --no-audit
+          npm install --no-audit
           python -m pip install --upgrade pip
           python -m pip install ruff
 
