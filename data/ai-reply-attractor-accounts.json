@@ -137,33 +137,6 @@
       "evidence": "Feb 10 2026: 'Built myself a tiny Chrome extension called Reply Bye to highlight, hide, and/or block AI spam reply guys' (165 replies, 376 likes, 28.6K views). Landing page: replybye.run. Also called out em-dash usage as detection signal.",
       "priority": "high",
       "similar_project": "replybye.run"
-    },
-    {
-      "handle": "MateoVogt",
-      "name": "Mateo Vogt",
-      "category": "vocal_complainers",
-      "followers_approx": "unknown",
-      "why": "Building Threadwise specifically to fight bot replies. Active voice in the anti-bot-reply space.",
-      "evidence": "Feb 11 2026: 'I hate bot replies. Great insight! This! Love this take! I'm building Threadwise to fix it.'",
-      "priority": "low"
-    },
-    {
-      "handle": "MattBanXI",
-      "name": "MattBanXI",
-      "category": "vocal_complainers",
-      "followers_approx": "unknown",
-      "why": "Vocal about internet degradation from AI slop.",
-      "evidence": "Feb 1 2026: 'I hate the state of the internet. - AI Slop - constant soft porn - negativity everywhere' (664 views).",
-      "priority": "low"
-    },
-    {
-      "handle": "C2IRIS",
-      "name": "IRIS C2",
-      "category": "vocal_complainers",
-      "followers_approx": "unknown",
-      "why": "Complained about AI reply bots specifically.",
-      "evidence": "Feb 7 2026: 'The AI reply bots on this website are so annoying' (1K views).",
-      "priority": "low"
     }
   ],
   "scraping_notes": {
