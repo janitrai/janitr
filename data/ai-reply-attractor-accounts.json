@@ -1,0 +1,207 @@
+{
+  "_meta": {
+    "description": "X/Twitter accounts that attract high volumes of AI-generated replies. Use as scraping targets to collect AI reply samples for classifier training.",
+    "created": "2026-02-12",
+    "categories": {
+      "vocal_complainers": "Accounts that have publicly and repeatedly complained about AI bot replies",
+      "tech_founders": "High-engagement tech founders/builders whose threads attract AI reply bots",
+      "crypto_web3": "Crypto/web3 accounts — ground zero for scam bots AND AI slop replies",
+      "ai_ml": "AI/ML researchers and companies — attract both fans and AI-generated hype replies",
+      "media_journalists": "High-follower journalists/media — attract rage-bait and engagement-farming bots",
+      "politics": "Political figures/commentators — attract coordinated bot campaigns",
+      "anti_slop": "Accounts specifically dedicated to fighting AI slop"
+    }
+  },
+  "accounts": [
+    {
+      "handle": "levelsio",
+      "name": "Pieter Levels",
+      "category": "vocal_complainers",
+      "followers_approx": "500K+",
+      "why": "Most vocal complainer about AI reply bots. Actively flags suspected bot accounts. Built bot detection heuristics. Every tweet gets flooded with AI replies due to high engagement in indie hacker space.",
+      "evidence": "Feb 10 2026: 'I think many AI replies are just using some front end hack' (4.6K views). Flagged @CanKirsallioba as AI reply bot (false positive — real human, non-native English).",
+      "priority": "high"
+    },
+    {
+      "handle": "steipete",
+      "name": "Peter Steinberger",
+      "category": "vocal_complainers",
+      "followers_approx": "100K+",
+      "why": "OpenClaw/Clawd creator. Extremely high engagement tech posts (100K-350K views). Actively complains about AI replies and blocks aggressively.",
+      "evidence": "Feb 9 2026: 'The amount of AI generated posts and replies here is wild. Can barely keep up with blocking.' (398 replies, 96K views). Jan 26: 'Pet peeve: security experts opening AI slop issues' (60K views).",
+      "priority": "high"
+    },
+    {
+      "handle": "adamscochran",
+      "name": "Adam Cochran",
+      "category": "vocal_complainers",
+      "followers_approx": "200K+",
+      "why": "Crypto/finance commentator. Complains about AI slop comments being realistic enough to waste reading time.",
+      "evidence": "Feb 11 2026: 'The amount of nonsense AI slop comments on Twitter is insane these days. It's exhausting because they are real enough that you have to at least start reading them before you realize it's spam. Absolute dead internet theory' (3.7K views).",
+      "priority": "high"
+    },
+    {
+      "handle": "elonmusk",
+      "name": "Elon Musk",
+      "category": "politics",
+      "followers_approx": "200M+",
+      "why": "Highest-follower account on the platform. Every tweet gets thousands of bot replies. Mix of crypto scam bots, AI engagement farming, political bots.",
+      "evidence": "Platform owner; r/Twitter users report up to 95% bot-generated content. Ground zero for all bot types.",
+      "priority": "high"
+    },
+    {
+      "handle": "paulg",
+      "name": "Paul Graham",
+      "category": "tech_founders",
+      "followers_approx": "1.5M+",
+      "why": "YC founder, extremely high engagement on startup/tech/AI topics. Replies attract AI-generated 'thought leadership' spam.",
+      "priority": "high"
+    },
+    {
+      "handle": "sama",
+      "name": "Sam Altman",
+      "category": "ai_ml",
+      "followers_approx": "3M+",
+      "why": "OpenAI CEO. Every AI-related tweet gets massive engagement and attracts both genuine and AI-generated hype replies.",
+      "priority": "high"
+    },
+    {
+      "handle": "VitalikButerin",
+      "name": "Vitalik Buterin",
+      "category": "crypto_web3",
+      "followers_approx": "5M+",
+      "why": "Ethereum co-founder. Replies are a mix of crypto scam bots, AI-generated agreement/hype, and phishing links.",
+      "priority": "high"
+    },
+    {
+      "handle": "karpathy",
+      "name": "Andrej Karpathy",
+      "category": "ai_ml",
+      "followers_approx": "1M+",
+      "why": "Former Tesla AI director, prolific AI educator. Technical threads attract AI-generated summaries and parroting replies.",
+      "priority": "high"
+    },
+    {
+      "handle": "naval",
+      "name": "Naval Ravikant",
+      "category": "tech_founders",
+      "followers_approx": "2M+",
+      "why": "Angel investor, philosophical tech tweets. Attracts AI-generated 'wisdom' reply bots that mimic his style.",
+      "priority": "medium"
+    },
+    {
+      "handle": "marc_louvion",
+      "name": "Marc Lou",
+      "category": "tech_founders",
+      "followers_approx": "200K+",
+      "why": "Indie hacker, ship fast culture. High engagement threads attract 'build in public' AI reply bots.",
+      "priority": "medium"
+    },
+    {
+      "handle": "ylecun",
+      "name": "Yann LeCun",
+      "category": "ai_ml",
+      "followers_approx": "700K+",
+      "why": "Meta AI chief. Controversial AI takes generate massive reply threads with bot engagement.",
+      "priority": "medium"
+    },
+    {
+      "handle": "balajis",
+      "name": "Balaji Srinivasan",
+      "category": "crypto_web3",
+      "followers_approx": "1M+",
+      "why": "Crypto/network state advocate. Long threads attract crypto bot replies and AI-generated agreement.",
+      "priority": "medium"
+    },
+    {
+      "handle": "AiSpamReporter",
+      "name": "AI Slop Reporter",
+      "category": "anti_slop",
+      "followers_approx": "unknown",
+      "why": "Dedicated account calling out AI-generated comments. Maintains running list of accounts to mute. Bio: 'Make your timeline human again'. Good source for identifying bot accounts.",
+      "priority": "high"
+    },
+    {
+      "handle": "InsaneAISlop",
+      "name": "Insane AI Slop (Théodore Cazals)",
+      "category": "anti_slop",
+      "followers_approx": "133K+",
+      "why": "20yo Parisian student who became face of AI slop backlash. Documents and mocks AI-generated content. Flooded with submissions from users.",
+      "evidence": "Featured in BBC article (Feb 2026). Got YouTube to remove disturbing AI cartoon channels.",
+      "priority": "medium"
+    },
+    {
+      "handle": "fakehistoryhunt",
+      "name": "Fake History Hunter",
+      "category": "anti_slop",
+      "followers_approx": "unknown",
+      "why": "Debunks fake/AI-generated historical content. Replies contain both AI slop defenders and more AI bots.",
+      "evidence": "Referenced in X search results — users replying 'I hate AI slop man' to their posts.",
+      "priority": "medium"
+    },
+    {
+      "handle": "realDonaldTrump",
+      "name": "Donald Trump",
+      "category": "politics",
+      "followers_approx": "90M+",
+      "why": "Every post generates massive bot activity — political bots, engagement farming, crypto scam replies.",
+      "priority": "medium"
+    },
+    {
+      "handle": "cz_binance",
+      "name": "CZ (Changpeng Zhao)",
+      "category": "crypto_web3",
+      "followers_approx": "10M+",
+      "why": "Former Binance CEO. Crypto posts attract massive scam bot and AI reply activity.",
+      "priority": "medium"
+    },
+    {
+      "handle": "MateoVogt",
+      "name": "Mateo Vogt",
+      "category": "vocal_complainers",
+      "followers_approx": "unknown",
+      "why": "Building Threadwise specifically to fight bot replies. Active voice in the anti-bot-reply space.",
+      "evidence": "Feb 11 2026: 'I hate bot replies. Great insight! This! Love this take! I'm building Threadwise to fix it.'",
+      "priority": "low"
+    },
+    {
+      "handle": "MattBanXI",
+      "name": "MattBanXI",
+      "category": "vocal_complainers",
+      "followers_approx": "unknown",
+      "why": "Vocal about internet degradation from AI slop.",
+      "evidence": "Feb 1 2026: 'I hate the state of the internet. - AI Slop - constant soft porn - negativity everywhere' (664 views).",
+      "priority": "low"
+    },
+    {
+      "handle": "C2IRIS",
+      "name": "IRIS C2",
+      "category": "vocal_complainers",
+      "followers_approx": "unknown",
+      "why": "Complained about AI reply bots specifically.",
+      "evidence": "Feb 7 2026: 'The AI reply bots on this website are so annoying' (1K views).",
+      "priority": "low"
+    }
+  ],
+  "scraping_notes": {
+    "strategy": "For each high-priority account, scrape their recent popular tweets (>1K views) and collect ALL replies. Then classify replies as human vs AI-generated to build training data.",
+    "bot_patterns_observed": [
+      "Generic agreement: 'Great insight!', 'This!', 'Love this take!', 'So true!'",
+      "Parroting: restating the original tweet in slightly different words",
+      "Engagement farming: asking obvious follow-up questions to generate thread",
+      "Crypto scam injection: pivoting any topic to crypto/trading links",
+      "Promotional: 'I built X that solves this' with link",
+      "Grok summaries: users replying with 'Grok, is this true?' triggering AI responses",
+      "Front-end hacks: levelsio suspects many bots use browser automation, not API"
+    ],
+    "detection_signals": [
+      "Account age < 30 days with high reply volume",
+      "Verified badge but low follower/following ratio",
+      "Reply posted within seconds of original tweet",
+      "Generic praise with no specific reference to tweet content",
+      "Em-dash usage (ChatGPT tell)",
+      "Perfect grammar from accounts claiming non-English native language",
+      "Profile bio matches 'build in public' / 'AI enthusiast' / 'crypto trader' templates"
+    ]
+  }
+}
