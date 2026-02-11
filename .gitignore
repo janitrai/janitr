@@ -20,6 +20,11 @@ data/holdout_time.txt
 data/holdout_time.jsonl
 data/train_pool.jsonl
 data/train_valid.jsonl
+data/train.jsonl
+data/valid.jsonl
+data/stratified_split_meta.json
+data/stratified_split_report.json
+data/split_drift_report.json
 data/*_rebalanced*.txt
 data/hardneg_*.txt
 data/train_time_hn*.txt
