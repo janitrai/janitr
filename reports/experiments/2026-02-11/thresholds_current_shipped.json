@@ -1,9 +1,5 @@
 {
-  "classes": [
-    "clean",
-    "topic_crypto",
-    "scam"
-  ],
+  "classes": ["clean", "topic_crypto", "scam"],
   "label_stats": {
     "scam": {
       "fpr": 0.019637462235649546,

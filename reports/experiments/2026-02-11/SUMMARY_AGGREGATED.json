@@ -191,132 +191,42 @@
     "scam_fp_count": 15,
     "scam_fn_count": 45,
     "scam_top_fp_tokens": [
-      [
-        "sosovalue",
-        10
-      ],
-      [
-        "join",
-        9
-      ],
-      [
-        "free",
-        8
-      ],
-      [
-        "soso",
-        8
-      ],
-      [
-        "airdrop",
-        8
-      ],
-      [
-        "exp",
-        7
-      ],
-      [
-        "crypto",
-        6
-      ],
-      [
-        "mint",
-        5
-      ],
-      [
-        "claim",
-        5
-      ],
-      [
-        "nft",
-        4
-      ]
+      ["sosovalue", 10],
+      ["join", 9],
+      ["free", 8],
+      ["soso", 8],
+      ["airdrop", 8],
+      ["exp", 7],
+      ["crypto", 6],
+      ["mint", 5],
+      ["claim", 5],
+      ["nft", 4]
     ],
     "scam_top_fn_tokens": [
-      [
-        "send",
-        32
-      ],
-      [
-        "stocks",
-        32
-      ],
-      [
-        "free",
-        28
-      ],
-      [
-        "whatsapp",
-        26
-      ],
-      [
-        "stock",
-        15
-      ],
-      [
-        "fundamentals",
-        11
-      ],
-      [
-        "link",
-        10
-      ],
-      [
-        "research",
-        10
-      ],
-      [
-        "analysis",
-        8
-      ],
-      [
-        "professional",
-        8
-      ]
+      ["send", 32],
+      ["stocks", 32],
+      ["free", 28],
+      ["whatsapp", 26],
+      ["stock", 15],
+      ["fundamentals", 11],
+      ["link", 10],
+      ["research", 10],
+      ["analysis", 8],
+      ["professional", 8]
     ],
     "topic_fp_count": 10,
     "topic_fn_count": 111,
     "topic_top_fn_tokens": [
-      [
-        "free",
-        39
-      ],
-      [
-        "deploy",
-        28
-      ],
-      [
-        "send",
-        27
-      ],
-      [
-        "airdrop",
-        26
-      ],
-      [
-        "stocks",
-        25
-      ],
-      [
-        "bankrbot",
-        25
-      ],
-      [
-        "token",
-        23
-      ],
-      [
-        "whatsapp",
-        21
-      ],
-      [
-        "crypto",
-        17
-      ],
-      [
-        "ticker",
-        17
-      ]
+      ["free", 39],
+      ["deploy", 28],
+      ["send", 27],
+      ["airdrop", 26],
+      ["stocks", 25],
+      ["bankrbot", 25],
+      ["token", 23],
+      ["whatsapp", 21],
+      ["crypto", 17],
+      ["ticker", 17]
     ]
   }
 }

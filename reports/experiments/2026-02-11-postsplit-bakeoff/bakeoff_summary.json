@@ -77,15 +77,10 @@
   ],
   "two_stage_models_tested": [
     {
-      "stage1": [
-        "s1_char",
-        "s1_nochar"
-      ]
+      "stage1": ["s1_char", "s1_nochar"]
     },
     {
-      "stage2": [
-        "s2_char"
-      ]
+      "stage2": ["s2_char"]
     }
   ],
   "work_dir": "/tmp/janitr_postsplit_bakeoff"

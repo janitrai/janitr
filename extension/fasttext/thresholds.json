@@ -1,12 +1,7 @@
 {
   "version": 5,
   "mode": "single_stage",
-  "classes": [
-    "clean",
-    "topic_crypto",
-    "scam",
-    "promo"
-  ],
+  "classes": ["clean", "topic_crypto", "scam", "promo"],
   "thresholds": {
     "clean": 0.1,
     "topic_crypto": 1.0,

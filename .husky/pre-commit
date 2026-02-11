@@ -1,11 +1,11 @@
 #!/usr/bin/env sh
 set -e
 
-# Format staged files
-npx lint-staged
+# Auto-format staged files with local dev dependency versions
+npm exec lint-staged
 
 # Run SimpleDoc conventions check
-npm run simpledoc -- check
+npm run simpledoc:check
 
 # Run data integrity checks
 python scripts/check_integrity.py data/sample.jsonl

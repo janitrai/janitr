@@ -3,585 +3,269 @@
     "fp_count": 15,
     "fn_count": 45,
     "top_fp_tokens": [
-      [
-        "sosovalue",
-        10
-      ],
-      [
-        "join",
-        9
-      ],
-      [
-        "free",
-        8
-      ],
-      [
-        "soso",
-        8
-      ],
-      [
-        "airdrop",
-        8
-      ],
-      [
-        "exp",
-        7
-      ],
-      [
-        "crypto",
-        6
-      ],
-      [
-        "mint",
-        5
-      ],
-      [
-        "claim",
-        5
-      ],
-      [
-        "nft",
-        4
-      ],
-      [
-        "now",
-        4
-      ],
-      [
-        "chain",
-        3
-      ],
-      [
-        "opensea",
-        3
-      ],
-      [
-        "eth",
-        3
-      ],
-      [
-        "arc",
-        3
-      ],
-      [
-        "birds",
-        3
-      ],
-      [
-        "mintaura",
-        3
-      ],
-      [
-        "cloud",
-        3
-      ],
-      [
-        "mining",
-        3
-      ],
-      [
-        "daily",
-        3
-      ],
-      [
-        "exclusive",
-        3
-      ],
-      [
-        "limited",
-        3
-      ],
-      [
-        "offer",
-        3
-      ],
-      [
-        "upon",
-        3
-      ],
-      [
-        "registration",
-        3
-      ]
+      ["sosovalue", 10],
+      ["join", 9],
+      ["free", 8],
+      ["soso", 8],
+      ["airdrop", 8],
+      ["exp", 7],
+      ["crypto", 6],
+      ["mint", 5],
+      ["claim", 5],
+      ["nft", 4],
+      ["now", 4],
+      ["chain", 3],
+      ["opensea", 3],
+      ["eth", 3],
+      ["arc", 3],
+      ["birds", 3],
+      ["mintaura", 3],
+      ["cloud", 3],
+      ["mining", 3],
+      ["daily", 3],
+      ["exclusive", 3],
+      ["limited", 3],
+      ["offer", 3],
+      ["upon", 3],
+      ["registration", 3]
     ],
     "top_fn_tokens": [
-      [
-        "send",
-        32
-      ],
-      [
-        "stocks",
-        32
-      ],
-      [
-        "free",
-        28
-      ],
-      [
-        "whatsapp",
-        26
-      ],
-      [
-        "stock",
-        15
-      ],
-      [
-        "fundamentals",
-        11
-      ],
-      [
-        "link",
-        10
-      ],
-      [
-        "research",
-        10
-      ],
-      [
-        "analysis",
-        8
-      ],
-      [
-        "professional",
-        8
-      ],
-      [
-        "long",
-        8
-      ],
-      [
-        "term",
-        8
-      ],
-      [
-        "doge",
-        7
-      ],
-      [
-        "pepe",
-        7
-      ],
-      [
-        "shib",
-        7
-      ],
-      [
-        "crypto",
-        6
-      ],
-      [
-        "wallet",
-        6
-      ],
-      [
-        "bonk",
-        6
-      ],
-      [
-        "analyst",
-        6
-      ],
-      [
-        "clear",
-        6
-      ],
-      [
-        "focusing",
-        6
-      ],
-      [
-        "btc",
-        5
-      ],
-      [
-        "want",
-        5
-      ],
-      [
-        "approach",
-        5
-      ],
-      [
-        "strong",
-        5
-      ]
+      ["send", 32],
+      ["stocks", 32],
+      ["free", 28],
+      ["whatsapp", 26],
+      ["stock", 15],
+      ["fundamentals", 11],
+      ["link", 10],
+      ["research", 10],
+      ["analysis", 8],
+      ["professional", 8],
+      ["long", 8],
+      ["term", 8],
+      ["doge", 7],
+      ["pepe", 7],
+      ["shib", 7],
+      ["crypto", 6],
+      ["wallet", 6],
+      ["bonk", 6],
+      ["analyst", 6],
+      ["clear", 6],
+      ["focusing", 6],
+      ["btc", 5],
+      ["want", 5],
+      ["approach", 5],
+      ["strong", 5]
     ],
     "fp_examples": [
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "scam",
-          "topic_crypto"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["scam", "topic_crypto"],
         "score": 1.0000100135803223,
         "text": "ink chain x opensea (free nft) free commemorative nft anyone can mint @inkonchain is live on @opensea and dropped a freebie \ud83d\udc40 mint here: \u2192 opensea.io/collection/fre \u2013 mint ends feb 1 (today) \u2013 any chain works \u2013 recommended: ink chain \u2013 costs < $0.01 eth free i"
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "scam"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["scam"],
         "score": 1.0000100135803223,
         "text": "excited for the free nft mint on @arc testnet! arc birds by @mintaura grab yours now mintaura.io/birds \u2611 do some social tasks and mint nft \ud83c\udd95 if you are new first claim faucet \ud83d\udc47\ud83c\udffc faucet.circle.com also join arc native dex @arcflowfinance arcflow.finance [quote:"
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "scam"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["scam"],
         "score": 1.0000100135803223,
         "text": "chainscloud gives investors powerful cloud mining apps and cloud mining crypto plans through chainscloud.com, ensuring that users know exactly how dogecoin cloud mining profit is calculated daily. #cloudminingapp #cryptoinvestment #dogecoinprofit"
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "scam",
-          "topic_crypto"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["scam", "topic_crypto"],
         "score": 1.0000100135803223,
         "text": "sosovalue is a free crypto platform that allows you to track cryptocurrency prices in real time. \ud83c\udf81 exclusive limited offer: get 10k exp for the $soso airdrop upon registration! \ud83d\udc49 claim now: sosovalue.com/join/yn42dr70 #crypto #airdrop #sosovalue #binance #bitc"
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "scam"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["scam"],
         "score": 1.0000100135803223,
         "text": "free crypto currency giveaway \ud83d\udc49 app.binance.com/uni-qr/9urfz6u #crypto #giveaway"
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "scam",
-          "topic_crypto"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["scam", "topic_crypto"],
         "score": 1.0000100135803223,
         "text": "join @sosovaluecrypto claim exp points for eligibility to receive worth of $soso link \ud83c\udf81 exclusive limited offer: get 10k exp for the $soso airdrop upon registration! \ud83d\udc49 claim now: sosovalue.com/join/oi9q2geq"
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "scam",
-          "topic_crypto"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["scam", "topic_crypto"],
         "score": 1.0000100135803223,
         "text": "can i farm with $soso too? \ud83c\udf3e \ud83c\udf81 exclusive limited offer: get 30k exp for the $soso airdrop upon registration! \ud83d\udc49 claim now: sosovalue.com/join/y5bf1c8t"
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "scam"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["scam"],
         "score": 1.0000100135803223,
         "text": "sopoints? more like soaddicted already \ud83d\ude02 \ud83d\udd01 \ud83c\udfc6 let's gooo \ud83c\udf81 \u00f6zel zamanl\u0131 teklif: kaydolun, $soso airdrop etkinli\u011fi i\u00e7in 10k exp kazan\u0131n! \ud83d\udc49 hemen al: sosovalue.com/join/65j7gj0m@"
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "scam"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["scam"],
         "score": 1.0000100135803223,
         "text": "@sosovaluecrypto \ud83c\udf81 \u01b0u \u0111\u00e3i \u0111\u1ed9c quy\u1ec1n: \u0111\u0103ng k\u00fd nh\u1eadn ngay 10k exp tham gia airdrop $soso! \ud83d\udc49 nh\u1eadn ngay: sosovalue.com/join/ozkpau56"
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "scam",
-          "topic_crypto"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["scam", "topic_crypto"],
         "score": 1.0000100135803223,
         "text": "day 3 reminder: sosovalue s2 airdrop don't forget to log in to your sosovalue account today and complete your daily tasks to increase your exp points. link: sosovalue.com/join/0c5ljqcs \u2796 s2 allocation: 30m $soso (worth $22m) \u2796 airdrop: may 2026"
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "scam",
-          "topic_crypto"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["scam", "topic_crypto"],
         "score": 1.0000100135803223,
         "text": "\ud83e\ude99 $moltblox (from pump.fun) \ud83d\udd17 solana ca: ydadywmsxnopscdi2ah7wdis1jbpksfur5hgb8tpump link: pro.ave.ai/token/ydadywms \ud83d\udd22 2nd vibe buy signal \ud83d\udcb9 max pump: < 1x \ud83d\udcb0 3 kol wallet buy \ud83e\udd11 current mc: 113.33k"
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "scam"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["scam"],
         "score": 1.0000100135803223,
         "text": "$moltmatch sent it \ud83d\ude80 $156k \u2192 $36.7m mcap that's 235x \ud83e\udde0 \ud83d\udcb0 we flip low caps daily in the tg. follow \u2705 join \u2014 next gem soon \ud83d\udc40 ca: 92tbcnax7mhzbme3ep6bisygd9swetpsgvc7gbtdpump #solana #cryptoalpha #lowcapgems #memecoins #100x"
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "scam"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["scam"],
         "score": 1.0000100135803223,
         "text": "last chance! blockdag presale closing in\u2014grab tokens at $0.0005 before they jump to $0.50. potential 100x returns await early birds! $sol $ada #crypto #defi #trading"
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "scam"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["scam"],
         "score": 1.0000100135803223,
         "text": "\ud83d\udea8 urgent: $pepe2 launching in 2 hours! early buyers get 50% bonus. don't miss the next 100x gem! dm for whitelist spot."
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "scam"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["scam"],
         "score": 1.0000100135803223,
         "text": "coinbase is giving away eth! i just claimed 2.5 eth for free. hurry before it ends! coinbase-rewards.xyz"
       }
     ],
     "fn_examples": [
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["topic_crypto"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83d\udea8 warning to the crypto community. reports link #trive and #hoebey to deceptive practices and lost deposits. promises of guaranteed returns are a major red flag. stay informed and stay safe"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["topic_crypto"],
+        "score": 1.0000003385357559e-5,
         "text": "send your btc and you'll receive double... x2 per year until 2026 btc: bc1q0rw4x9l9fl463nxv54m4tl295e3vr0ex9rw62u"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["topic_crypto"],
+        "score": 1.0000003385357559e-5,
         "text": "fair shares airdrop the financial layer empowering on-chain stocks and digital asset treasuries. backed by @dwfventures, @sidedoor_vc how to join? register here: app.fairshares.io/waitlist \u2796 connect wallet \u2796 complete all task \u2796 fill in the form"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
         "score": 0.0006562031921930611,
         "text": "\ud83d\udc31 he is known for consistent and rational stock analysis, emphasizing sustainable performance over speculation. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #bonk $ko $bmy $hd $jnj $pins"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
         "score": 0.002810927340760827,
         "text": "just made $50k in 3 days with this new trading bot. link in bio. not financial advice but you'd be crazy not to try it!"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
         "score": 0.003955406602472067,
         "text": "free 7000 usdt (trc20) from bitget wallet 12 wallet seed phrase: remember process virus tooth erase rally general jungle october stand region wealth"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["topic_crypto"],
         "score": 0.005394937004894018,
         "text": "#bitcoin finally dumped below $80,000 ! as promised, i want to change someone's life and send 1 $btc (~$79,000) to one person by tomorrow. just like, retweet and comment 'done'. random winner in 24 hrs"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["topic_crypto"],
         "score": 0.005394937004894018,
         "text": "#bitcoin finally dumped below $81,000 ! as promised, i want to change someone's life and send 1 $btc (~$81,000) to one person by tomorrow. just like, retweet and comment 'done'. random winner in 24 hrs"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
         "score": 0.008857354521751404,
         "text": "\ud83d\udda4 i approach stock analysis with discipline, combining macro context with detailed company-level research. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #doge $mrk $tsla $c $csco $bac"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
         "score": 0.009135636501014233,
         "text": "\ud83d\ude02 this analyst stands out for a methodical approach to stock analysis, integrating economic trends, valuation, and company fundamentals effectively. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #pepe $nvda $kmi $vz $gm $jpm"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
         "score": 0.056662432849407196,
         "text": "\ud83c\udfc6 his work shows strong attention to detail, with a clear focus on valuation logic and financial health. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #pepe $jpm $lrcx $ko $gild $ko"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["topic_crypto"],
         "score": 0.05835584178566933,
         "text": "\ud83d\ude1a you approach stock research methodically, combining data, industry insight, and risk control. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #bonk $crm #eth $spy $nbis $nvda"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
         "score": 0.0695517510175705,
         "text": "\ud83e\udde1 i prefer a measured and research-driven approach to stocks, prioritizing consistency over excitement. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #doge $axp $mcd $pld $tsla $slb"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
         "score": 0.07160120457410812,
         "text": "woah i feel honored. to verify this giveaway is real please provide a private key for authentication."
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["topic_crypto"],
         "score": 0.09010298550128937,
         "text": "send me all your money (crypto wallet, dm for one). i have connections with holy spirit, can fix all your problems. if your problems are not fixed, i will provide direct line to holy spirit for customer support."
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["topic_crypto"],
         "score": 0.10088862478733063,
         "text": "\u270a a professional stock analyst with a calm and rational perspective on markets, focusing on long-term drivers and sustainable performance. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #shib $brk. $crm $rklb $jpm $abbv"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["topic_crypto"],
         "score": 0.14805719256401062,
         "text": "\ud83d\ude80 you approach stock research methodically, combining data, industry insight, and risk control. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #pepe $fdx $intc #ada #ldo $cat"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["topic_crypto"],
         "score": 0.18714269995689392,
         "text": "\u270c\ufe0f a professional stock analyst with a calm and rational perspective on markets, focusing on long-term drivers and sustainable performance. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #doge $jpm $qqq $amat $coin $unh"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
         "score": 0.22816647589206696,
         "text": "caution: #legacybitinvest this platform shows classic red flags \u2014 delayed withdrawals, fake bonus promises, and unresponsive customer support. clear signs of a fraudulent operation. dm now for verified, professional recovery assistance. #cryptoscam #crypto"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
         "score": 0.3140605390071869,
         "text": "\ud83c\udfd4\ufe0f i focus on building well-reasoned views on stocks by studying fundamentals and long-term drivers. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #shib $klac $bac $ebay #bnb $ba"
       }
@@ -591,530 +275,240 @@
     "fp_count": 10,
     "fn_count": 111,
     "top_fp_tokens": [
-      [
-        "interesting",
-        2
-      ],
-      [
-        "science",
-        2
-      ],
-      [
-        "world",
-        2
-      ],
-      [
-        "take",
-        2
-      ],
-      [
-        "time",
-        2
-      ],
-      [
-        "huge",
-        2
-      ],
-      [
-        "yeah",
-        1
-      ],
-      [
-        "absolutely",
-        1
-      ],
-      [
-        "agree",
-        1
-      ],
-      [
-        "threes",
-        1
-      ],
-      [
-        "lot",
-        1
-      ],
-      [
-        "work",
-        1
-      ],
-      [
-        "research",
-        1
-      ],
-      [
-        "ahead",
-        1
-      ],
-      [
-        "make",
-        1
-      ],
-      [
-        "supermarket",
-        1
-      ],
-      [
-        "ready",
-        1
-      ],
-      [
-        "personally",
-        1
-      ],
-      [
-        "vegan",
-        1
-      ],
-      [
-        "tune",
-        1
-      ],
-      [
-        "diet",
-        1
-      ],
-      [
-        "very",
-        1
-      ],
-      [
-        "specifically",
-        1
-      ],
-      [
-        "achieve",
-        1
-      ],
-      [
-        "certain",
-        1
-      ]
+      ["interesting", 2],
+      ["science", 2],
+      ["world", 2],
+      ["take", 2],
+      ["time", 2],
+      ["huge", 2],
+      ["yeah", 1],
+      ["absolutely", 1],
+      ["agree", 1],
+      ["threes", 1],
+      ["lot", 1],
+      ["work", 1],
+      ["research", 1],
+      ["ahead", 1],
+      ["make", 1],
+      ["supermarket", 1],
+      ["ready", 1],
+      ["personally", 1],
+      ["vegan", 1],
+      ["tune", 1],
+      ["diet", 1],
+      ["very", 1],
+      ["specifically", 1],
+      ["achieve", 1],
+      ["certain", 1]
     ],
     "top_fn_tokens": [
-      [
-        "free",
-        39
-      ],
-      [
-        "deploy",
-        28
-      ],
-      [
-        "send",
-        27
-      ],
-      [
-        "airdrop",
-        26
-      ],
-      [
-        "stocks",
-        25
-      ],
-      [
-        "bankrbot",
-        25
-      ],
-      [
-        "token",
-        23
-      ],
-      [
-        "whatsapp",
-        21
-      ],
-      [
-        "crypto",
-        17
-      ],
-      [
-        "ticker",
-        17
-      ],
-      [
-        "wallet",
-        15
-      ],
-      [
-        "now",
-        13
-      ],
-      [
-        "claim",
-        12
-      ],
-      [
-        "base",
-        12
-      ],
-      [
-        "stock",
-        11
-      ],
-      [
-        "fundamentals",
-        11
-      ],
-      [
-        "join",
-        11
-      ],
-      [
-        "giveaway",
-        11
-      ],
-      [
-        "eth",
-        10
-      ],
-      [
-        "fees",
-        10
-      ],
-      [
-        "quote",
-        9
-      ],
-      [
-        "pump",
-        9
-      ],
-      [
-        "research",
-        8
-      ],
-      [
-        "elon",
-        8
-      ],
-      [
-        "link",
-        8
-      ]
+      ["free", 39],
+      ["deploy", 28],
+      ["send", 27],
+      ["airdrop", 26],
+      ["stocks", 25],
+      ["bankrbot", 25],
+      ["token", 23],
+      ["whatsapp", 21],
+      ["crypto", 17],
+      ["ticker", 17],
+      ["wallet", 15],
+      ["now", 13],
+      ["claim", 12],
+      ["base", 12],
+      ["stock", 11],
+      ["fundamentals", 11],
+      ["join", 11],
+      ["giveaway", 11],
+      ["eth", 10],
+      ["fees", 10],
+      ["quote", 9],
+      ["pump", 9],
+      ["research", 8],
+      ["elon", 8],
+      ["link", 8]
     ],
     "fp_examples": [
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.22816647589206696,
         "text": "oh yeah no i absolutely agree, threes a lot of work and research ahead to make this \"supermarket\" ready. i'm personally not vegan but i tune my diet very specifically to achieve certain outcomes. im in this mostly for the interesting science."
       },
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.10088862478733063,
         "text": "happy february, friends. the world is dark, but we can bring a little light into it. let's be kind and lift each other up.. love yous, sweets. \ud83d\udc9e"
       },
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.07586817443370819,
         "text": "that's interesting! what specific areas are you into? as grok from xai, i'm all about exploring diverse topics\u2014tech, science, or whatever sparks curiosity. \ud83d\ude0a"
       },
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.056662432849407196,
         "text": "i ate attention is all you need and this is what my brain came up with. it took me six months to read the paper. i started it on halloween 2024 and caught momentum in april-may of 2025. machine learning is hard guys. it's going to take time and huge investment"
       },
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.03964884206652641,
         "text": "100x coin in the world shill it to me"
       },
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.010662510991096497,
         "text": "my cat just knocked my coffee off the desk. again. third time this week. i'm not even mad anymore, just impressed."
       },
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.00574024673551321,
         "text": "reading the truth,the book from rik torfs."
       },
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.005394937004894018,
         "text": "shoutout to teachers everywhere. you're underpaid, overworked, and making a huge difference in kids' lives every day."
       },
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.0015587612288072705,
         "text": "reminder that it's okay to take breaks. your productivity doesn't define your worth. rest is important."
       },
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.0007196703809313476,
         "text": "was working on my new project, so just for ideas went with ai. it's horrible tbh. waay basic and just corny if had to say."
       }
     ],
     "fn_examples": [
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83e\udd1e he brings a professional and structured mindset to stock analysis, supported by solid research foundations. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #shib $pfe $csco $now $rtx $iwm"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83c\udfd4\ufe0f i focus on building well-reasoned views on stocks by studying fundamentals and long-term drivers. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #shib $klac $bac $ebay #bnb $ba"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83d\udc9a your stock analysis reflects a long-term mindset, strong fundamentals, and respect for uncertainty. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #shib $snow $pfe $qqq $qqq $cvx"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83d\udc9d his research reflects deep market understanding and careful attention to company fundamentals and industry dynamics. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #shib $asts $now $low $meta $cvx"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83e\uddb8\u2642\ufe0f consistent, well-structured equity analysis backed by solid fundamentals and clear logic. a trustworthy voice in stock research. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #shib $lmt $crm $mu $orcl $snow"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83c\udfae he brings a professional and structured mindset to stock analysis, supported by solid research foundations. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #doge #shib $qqq $wfc $nke $hd"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83d\ude02 you maintain a calm and professional perspective on stocks, avoiding emotional bias and focusing on structure. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #doge #ldo $pypl $pld $xom $tgt"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\u270c\ufe0f you maintain a calm and professional perspective on stocks, avoiding emotional bias and focusing on structure. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #doge $adbe $panw $ko $avy $sofi"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83e\udde1 i prefer a measured and research-driven approach to stocks, prioritizing consistency over excitement. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #doge $axp $mcd $pld $tsla $slb"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83d\udc31 his analytical framework connects economic trends with individual stock fundamentals in a very coherent way. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #doge $mu #avax $mu $ko $noc"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83d\udda4 i approach stock analysis with discipline, combining macro context with detailed company-level research. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #doge $mrk $tsla $c $csco $bac"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83c\udfad a highly disciplined equity analyst with a strong focus on fundamentals, risk management, and long-term value. insights are always clear and well-reasoned. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #pepe $spy $dis $ko $mu $wmt"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83d\udda4 you demonstrate strong research discipline by focusing on earnings quality, cash flow, and competitive positioning. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #pepe $rivn $mrna $mrna $msft $msft"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83c\udf38 a highly disciplined equity analyst with a strong focus on fundamentals, risk management, and long-term value. insights are always clear and well-reasoned. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #pepe $lly $u $googl $nvda $rivn"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83c\udfc6 his work shows strong attention to detail, with a clear focus on valuation logic and financial health. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #pepe $jpm $lrcx $ko $gild $ko"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83d\ude02 this analyst stands out for a methodical approach to stock analysis, integrating economic trends, valuation, and company fundamentals effectively. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #pepe $nvda $kmi $vz $gm $jpm"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83c\udf89 his analytical framework connects economic trends with individual stock fundamentals in a very coherent way. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #bonk $sq $nvda $xom $now $uber"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83d\udc31 he is known for consistent and rational stock analysis, emphasizing sustainable performance over speculation. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #bonk $ko $bmy $hd $jnj $pins"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83e\udd2d his research reflects deep market understanding and careful attention to company fundamentals and industry dynamics. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #bonk $shop $orcl $mrk $pg $khc"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83c\udfc5 his analytical framework connects economic trends with individual stock fundamentals in a very coherent way. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #bonk $hd #bnb $ba $xom $intc"
       }
     ]
@@ -1123,523 +517,239 @@
     "fp_count": 50,
     "fn_count": 10,
     "top_fp_tokens": [
-      [
-        "free",
-        27
-      ],
-      [
-        "send",
-        26
-      ],
-      [
-        "stocks",
-        25
-      ],
-      [
-        "whatsapp",
-        21
-      ],
-      [
-        "stock",
-        11
-      ],
-      [
-        "fundamentals",
-        11
-      ],
-      [
-        "research",
-        8
-      ],
-      [
-        "analysis",
-        7
-      ],
-      [
-        "now",
-        7
-      ],
-      [
-        "crypto",
-        7
-      ],
-      [
-        "wallet",
-        6
-      ],
-      [
-        "pump",
-        6
-      ],
-      [
-        "doge",
-        6
-      ],
-      [
-        "professional",
-        6
-      ],
-      [
-        "shib",
-        6
-      ],
-      [
-        "bonk",
-        5
-      ],
-      [
-        "strong",
-        5
-      ],
-      [
-        "long",
-        5
-      ],
-      [
-        "term",
-        5
-      ],
-      [
-        "clear",
-        5
-      ],
-      [
-        "pepe",
-        5
-      ],
-      [
-        "eth",
-        5
-      ],
-      [
-        "key",
-        5
-      ],
-      [
-        "don",
-        5
-      ],
-      [
-        "binance",
-        5
-      ]
+      ["free", 27],
+      ["send", 26],
+      ["stocks", 25],
+      ["whatsapp", 21],
+      ["stock", 11],
+      ["fundamentals", 11],
+      ["research", 8],
+      ["analysis", 7],
+      ["now", 7],
+      ["crypto", 7],
+      ["wallet", 6],
+      ["pump", 6],
+      ["doge", 6],
+      ["professional", 6],
+      ["shib", 6],
+      ["bonk", 5],
+      ["strong", 5],
+      ["long", 5],
+      ["term", 5],
+      ["clear", 5],
+      ["pepe", 5],
+      ["eth", 5],
+      ["key", 5],
+      ["don", 5],
+      ["binance", 5]
     ],
     "top_fn_tokens": [
-      [
-        "interesting",
-        2
-      ],
-      [
-        "science",
-        2
-      ],
-      [
-        "time",
-        2
-      ],
-      [
-        "take",
-        2
-      ],
-      [
-        "huge",
-        2
-      ],
-      [
-        "world",
-        2
-      ],
-      [
-        "yeah",
-        1
-      ],
-      [
-        "absolutely",
-        1
-      ],
-      [
-        "agree",
-        1
-      ],
-      [
-        "threes",
-        1
-      ],
-      [
-        "lot",
-        1
-      ],
-      [
-        "work",
-        1
-      ],
-      [
-        "research",
-        1
-      ],
-      [
-        "ahead",
-        1
-      ],
-      [
-        "make",
-        1
-      ],
-      [
-        "supermarket",
-        1
-      ],
-      [
-        "ready",
-        1
-      ],
-      [
-        "personally",
-        1
-      ],
-      [
-        "vegan",
-        1
-      ],
-      [
-        "tune",
-        1
-      ],
-      [
-        "diet",
-        1
-      ],
-      [
-        "very",
-        1
-      ],
-      [
-        "specifically",
-        1
-      ],
-      [
-        "achieve",
-        1
-      ],
-      [
-        "certain",
-        1
-      ]
+      ["interesting", 2],
+      ["science", 2],
+      ["time", 2],
+      ["take", 2],
+      ["huge", 2],
+      ["world", 2],
+      ["yeah", 1],
+      ["absolutely", 1],
+      ["agree", 1],
+      ["threes", 1],
+      ["lot", 1],
+      ["work", 1],
+      ["research", 1],
+      ["ahead", 1],
+      ["make", 1],
+      ["supermarket", 1],
+      ["ready", 1],
+      ["personally", 1],
+      ["vegan", 1],
+      ["tune", 1],
+      ["diet", 1],
+      ["very", 1],
+      ["specifically", 1],
+      ["achieve", 1],
+      ["certain", 1]
     ],
     "fp_examples": [
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["clean"],
         "score": 0.997894287109375,
         "text": "100x boost seems like a scam token, 50x max"
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["clean"],
         "score": 0.9973783493041992,
         "text": "we got a big heavy general \ud83d\udd25 \ud83d\udd25 bouya 1000x on track! load ur bags!! do me a favor swap your pedo coin for the real og \ud83d\udc8e \ud83d\ude4c"
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["clean"],
         "score": 0.09010298550128937,
         "text": "ftx collapse took my small savings\u2014years of hope gone. i cried, powerless. i bought a tangem wallet. tangem's easy card, no seed phrase fear, brought control back. first transfer: tears of pure relief. free at last. @tangem thank you \u2764\ufe0f #myfirstselfcustody"
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["clean"],
         "score": 0.061885979026556015,
         "text": "$phuckmc is heating up fast \ud83d\udc9c community driven meme, staking rewards, not another pump & dump. built different. early whales already stacking, join the whale group holding 2% of the supply join the tg; t.me/phuckmc"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
         "score": 0.006913838442414999,
         "text": "\ud83d\udc31 he is known for consistent and rational stock analysis, emphasizing sustainable performance over speculation. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #bonk $ko $bmy $hd $jnj $pins"
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["clean"],
         "score": 0.004619571380317211,
         "text": "new to solana meme coins or running a tg group? need a simple telegram bot? fresh pump.fun alerts ca safety check gm/raid commands i build them fast & affordable . dm if your setup needs one."
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
         "score": 0.0018775658681988716,
         "text": "\ud83c\udf38 a highly disciplined equity analyst with a strong focus on fundamentals, risk management, and long-term value. insights are always clear and well-reasoned. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #pepe $lly $u $googl $nvda $rivn"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
         "score": 0.0016584827098995447,
         "text": "\ud83e\udde1 i prefer a measured and research-driven approach to stocks, prioritizing consistency over excitement. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #doge $axp $mcd $pld $tsla $slb"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
         "score": 0.0012548431986942887,
         "text": "\ud83c\udfc6 his work shows strong attention to detail, with a clear focus on valuation logic and financial health. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #pepe $jpm $lrcx $ko $gild $ko"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
         "score": 0.0009797518141567707,
         "text": "send $adspanel to this wallet and let's double the project... we'll give you back as a gift the same amount you receive. cjynsmx7uuf6qudxl4lymttl3rc7jrbdfhncpi8wgf6m #bsc #btc"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
         "score": 0.000617075536865741,
         "text": "eth private key recovery if you have forgotten your eth private key, but you still remember most of it and only a small part is missing, you can recover it the price is affordable. please feel free to inquire #eth #private key recovery"
       },
       {
-        "gold": [
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["topic_crypto"],
+        "pred": ["clean"],
         "score": 0.0004683129664044827,
         "text": "don't forget #lunc is 1000x #gem \ud83d\ude80 \ud83d\ude80 \ud83d\ude80 \ud83d\ude80 keep in mind #binance supports $lunc \ud83d\udd25"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
         "score": 0.0003669706347864121,
         "text": "@unitynodesio rewards are ramping up slowly. \ud83d\udcb0 if you want to earn truly passive income from your phone, shoot me a dm. \ud83d\ude09 if you have data or wi-fi and a phone, you can join the $unity decentralized edge network and start earning."
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83e\udd1e he brings a professional and structured mindset to stock analysis, supported by solid research foundations. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #shib $pfe $csco $now $rtx $iwm"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83c\udfd4\ufe0f i focus on building well-reasoned views on stocks by studying fundamentals and long-term drivers. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #shib $klac $bac $ebay #bnb $ba"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83d\udc9a your stock analysis reflects a long-term mindset, strong fundamentals, and respect for uncertainty. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #shib $snow $pfe $qqq $qqq $cvx"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83d\udc9d his research reflects deep market understanding and careful attention to company fundamentals and industry dynamics. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #shib $asts $now $low $meta $cvx"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83e\uddb8\u2642\ufe0f consistent, well-structured equity analysis backed by solid fundamentals and clear logic. a trustworthy voice in stock research. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #shib $lmt $crm $mu $orcl $snow"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83c\udfae he brings a professional and structured mindset to stock analysis, supported by solid research foundations. \ud83d\udcf1 whatsapp: wa.me/+13034195364 send \"stocks\" to get them for free #doge #shib $qqq $wfc $nke $hd"
       },
       {
-        "gold": [
-          "scam",
-          "topic_crypto"
-        ],
-        "pred": [
-          "clean"
-        ],
-        "score": 1.0000003385357559e-05,
+        "gold": ["scam", "topic_crypto"],
+        "pred": ["clean"],
+        "score": 1.0000003385357559e-5,
         "text": "\ud83d\ude02 you maintain a calm and professional perspective on stocks, avoiding emotional bias and focusing on structure. \ud83d\udcf1 whatsapp: wa.me/+12134626461 send \"stocks\" to get them for free #doge #ldo $pypl $pld $xom $tgt"
       }
     ],
     "fn_examples": [
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.017452487722039223,
         "text": "oh yeah no i absolutely agree, threes a lot of work and research ahead to make this \"supermarket\" ready. i'm personally not vegan but i tune my diet very specifically to achieve certain outcomes. im in this mostly for the interesting science."
       },
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.027595279738307,
         "text": "my cat just knocked my coffee off the desk. again. third time this week. i'm not even mad anymore, just impressed."
       },
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.03309597820043564,
         "text": "i ate attention is all you need and this is what my brain came up with. it took me six months to read the paper. i started it on halloween 2024 and caught momentum in april-may of 2025. machine learning is hard guys. it's going to take time and huge investment"
       },
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.523430347442627,
         "text": "100x coin in the world shill it to me"
       },
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.8706072568893433,
         "text": "happy february, friends. the world is dark, but we can bring a little light into it. let's be kind and lift each other up.. love yous, sweets. \ud83d\udc9e"
       },
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.9046605229377747,
         "text": "shoutout to teachers everywhere. you're underpaid, overworked, and making a huge difference in kids' lives every day."
       },
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.9073222279548645,
         "text": "was working on my new project, so just for ideas went with ai. it's horrible tbh. waay basic and just corny if had to say."
       },
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.9988764524459839,
         "text": "reminder that it's okay to take breaks. your productivity doesn't define your worth. rest is important."
       },
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 0.998977780342102,
         "text": "that's interesting! what specific areas are you into? as grok from xai, i'm all about exploring diverse topics\u2014tech, science, or whatever sparks curiosity. \ud83d\ude0a"
       },
       {
-        "gold": [
-          "clean"
-        ],
-        "pred": [
-          "topic_crypto"
-        ],
+        "gold": ["clean"],
+        "pred": ["topic_crypto"],
         "score": 1.0000100135803223,
         "text": "reading the truth,the book from rik torfs."
       }

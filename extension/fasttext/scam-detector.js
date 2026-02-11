@@ -189,7 +189,9 @@ const buildSingleScores = (model, text, k) => {
   const scores = {};
   for (const label of CLASSES) {
     const value = Number(rawScores[label]);
-    scores[label] = Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
+    scores[label] = Number.isFinite(value)
+      ? Math.min(1, Math.max(0, value))
+      : 0;
   }
   return scores;
 };
