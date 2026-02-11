@@ -8,8 +8,7 @@
       "crypto_web3": "Crypto/web3 accounts \u2014 ground zero for scam bots AND AI slop replies",
       "ai_ml": "AI/ML researchers and companies \u2014 attract both fans and AI-generated hype replies",
       "media_journalists": "High-follower journalists/media \u2014 attract rage-bait and engagement-farming bots",
-      "politics": "Political figures/commentators \u2014 attract coordinated bot campaigns",
-      "anti_slop": "Accounts specifically dedicated to fighting AI slop"
+      "politics": "Political figures/commentators \u2014 attract coordinated bot campaigns"
     }
   },
   "accounts": [
@@ -111,24 +110,6 @@
       "category": "crypto_web3",
       "followers_approx": "1M+",
       "why": "Crypto/network state advocate. Long threads attract crypto bot replies and AI-generated agreement.",
-      "priority": "medium"
-    },
-    {
-      "handle": "InsaneAISlop",
-      "name": "Insane AI Slop (Th\u00e9odore Cazals)",
-      "category": "anti_slop",
-      "followers_approx": "133K+",
-      "why": "20yo Parisian student who became face of AI slop backlash. Documents and mocks AI-generated content. Flooded with submissions from users.",
-      "evidence": "Featured in BBC article (Feb 2026). Got YouTube to remove disturbing AI cartoon channels.",
-      "priority": "medium"
-    },
-    {
-      "handle": "fakehistoryhunt",
-      "name": "Fake History Hunter",
-      "category": "anti_slop",
-      "followers_approx": "unknown",
-      "why": "Debunks fake/AI-generated historical content. Replies contain both AI slop defenders and more AI bots.",
-      "evidence": "Referenced in X search results \u2014 users replying 'I hate AI slop man' to their posts.",
       "priority": "medium"
     },
     {
