@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-"""
-Dataset integrity checks for replies.jsonl.
+"""Dataset integrity checks for replies.jsonl.
+
+Schema:
+- docs/REPLIES_DATA_MODEL.md
 
 Checks:
 1. Valid JSON on every line
-2. Required reply/context fields present
-3. No duplicate IDs (excluding null)
+2. Required top-level fields present
+3. No duplicate record IDs across the file
 4. Valid label values
-5. Required reply_author/parent_author metadata for heuristics
-6. Parent/reply consistency checks
-7. Optional thread_context structure checks
-8. Basic type checks for optional metrics and arrays
+5. Tweet object schema checks
+6. Tweet role enum checks
+7. parent_status_id references another tweet in-sample (or null)
+8. No duplicate tweet status_id values within a sample
+9. Basic type checks for optional tweet metadata
 
 Exit codes:
 - 0: All checks passed
@@ -21,7 +24,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from collections import defaultdict
 from datetime import datetime
@@ -30,18 +32,13 @@ from pathlib import Path
 from labelset import load_v2026_labels_from_labels_md
 
 VALID_LABELS = set(load_v2026_labels_from_labels_md())
-RECORD_ID_PATTERN = re.compile(
-    r"^\d{16,20}$|^x_reply_\d+(_dup\d+)?$|^xr_\d+(_dup\d+)?$"
-)
-SOURCE_ID_PATTERN = re.compile(r"^\d{16,20}$|^x_[a-zA-Z0-9_]+$")
-TWEET_STATUS_ID_PATTERN = re.compile(r"^\d{16,20}$")
-CONTEXT_TYPES = {"parent", "ancestor", "conversation_root", "sibling_reply"}
+
+TWEET_ROLES = {"original_post", "ai_reply", "evidence", "other_reply", "context"}
 METRIC_FIELDS = {
     "like_count",
     "reply_count",
     "repost_count",
     "quote_count",
-    "bookmark_count",
     "view_count",
 }
 
@@ -54,8 +51,9 @@ def _is_non_negative_int(value: object) -> bool:
     return isinstance(value, int) and value >= 0
 
 
-def _is_tweet_status_id(value: object) -> bool:
-    return isinstance(value, str) and bool(TWEET_STATUS_ID_PATTERN.fullmatch(value))
+def _looks_like_x_status_id(value: object) -> bool:
+    # X status IDs are numeric strings, typically 16-20 digits.
+    return isinstance(value, str) and value.isdigit() and 16 <= len(value) <= 20
 
 
 def _is_iso_datetime(value: object) -> bool:
@@ -95,177 +93,105 @@ def _validate_metrics(
             )
 
 
-def _validate_author(
-    author: object,
-    field_name: str,
+def _validate_tweet(
+    tweet: object,
+    tweet_idx: int,
     line_num: int,
     record_id: object,
     errors: list[str],
     warnings: list[str],
-) -> None:
-    if not isinstance(author, dict):
-        errors.append(
-            f"Line {line_num} (id={record_id}): '{field_name}' must be an object"
-        )
-        return
+) -> dict[str, object] | None:
+    prefix = f"Line {line_num} (id={record_id}) tweets[{tweet_idx}]"
 
-    handle = author.get("handle")
+    if not isinstance(tweet, dict):
+        errors.append(f"{prefix}: tweet must be an object")
+        return None
+
+    status_id = tweet.get("status_id")
+    if not _is_non_empty_string(status_id):
+        errors.append(f"{prefix}: 'status_id' must be a non-empty string")
+    elif not _looks_like_x_status_id(status_id):
+        warnings.append(f"{prefix}: non-standard status_id format '{status_id}'")
+
+    handle = tweet.get("handle")
     if not _is_non_empty_string(handle):
-        errors.append(
-            f"Line {line_num} (id={record_id}): '{field_name}.handle' must be a non-empty string"
-        )
+        errors.append(f"{prefix}: 'handle' must be a non-empty string")
     elif isinstance(handle, str) and handle.startswith("@"):
+        errors.append(f"{prefix}: 'handle' should not include @")
+
+    text = tweet.get("text")
+    if text is None:
+        errors.append(f"{prefix}: missing 'text' field")
+    elif not isinstance(text, str):
+        errors.append(f"{prefix}: 'text' must be a string")
+    elif not text.strip():
+        warnings.append(f"{prefix}: empty text")
+
+    role = tweet.get("role")
+    if role not in TWEET_ROLES:
+        errors.append(f"{prefix}: 'role' must be one of {sorted(TWEET_ROLES)}")
+
+    parent_status_id = tweet.get("parent_status_id")
+    if parent_status_id is not None and not _is_non_empty_string(parent_status_id):
         errors.append(
-            f"Line {line_num} (id={record_id}): '{field_name}.handle' should not include @"
+            f"{prefix}: 'parent_status_id' must be a non-empty string or null"
         )
-
-    if not isinstance(author.get("verified"), bool):
-        errors.append(
-            f"Line {line_num} (id={record_id}): '{field_name}.verified' must be a boolean"
-        )
-
-    for int_field in ("follower_count", "following_count"):
-        if not _is_non_negative_int(author.get(int_field)):
-            errors.append(
-                f"Line {line_num} (id={record_id}): '{field_name}.{int_field}' must be a non-negative integer"
-            )
-
-    bio = author.get("bio")
-    if not isinstance(bio, str):
-        errors.append(
-            f"Line {line_num} (id={record_id}): '{field_name}.bio' must be a string"
-        )
-    elif not bio.strip():
-        warnings.append(
-            f"Line {line_num} (id={record_id}): '{field_name}.bio' is empty"
-        )
-
-    created_at = author.get("created_at")
-    if not _is_iso_datetime(created_at):
-        errors.append(
-            f"Line {line_num} (id={record_id}): '{field_name}.created_at' must be an ISO 8601 timestamp"
-        )
-
-    if "user_id" in author and not isinstance(author["user_id"], str):
-        errors.append(
-            f"Line {line_num} (id={record_id}): '{field_name}.user_id' must be a string"
-        )
-
-    if "display_name" in author and not isinstance(author["display_name"], str):
-        errors.append(
-            f"Line {line_num} (id={record_id}): '{field_name}.display_name' must be a string"
-        )
-
-    for opt_int_field in ("tweet_count", "listed_count"):
-        if opt_int_field in author and not _is_non_negative_int(author[opt_int_field]):
-            errors.append(
-                f"Line {line_num} (id={record_id}): '{field_name}.{opt_int_field}' must be a non-negative integer"
-            )
-
-    if "profile_collected_at" in author and not _is_iso_datetime(
-        author["profile_collected_at"]
+    elif (
+        isinstance(status_id, str)
+        and isinstance(parent_status_id, str)
+        and status_id == parent_status_id
     ):
-        errors.append(
-            f"Line {line_num} (id={record_id}): '{field_name}.profile_collected_at' must be an ISO 8601 timestamp"
+        errors.append(f"{prefix}: 'parent_status_id' cannot equal 'status_id'")
+
+    created_at = tweet.get("created_at")
+    if not _is_iso_datetime(created_at):
+        errors.append(f"{prefix}: 'created_at' must be an ISO 8601 timestamp")
+
+    # Optional tweet fields
+    if "source_url" in tweet and not isinstance(tweet["source_url"], str):
+        errors.append(f"{prefix}: 'source_url' must be a string")
+
+    if "display_name" in tweet and not isinstance(tweet["display_name"], str):
+        errors.append(f"{prefix}: 'display_name' must be a string")
+
+    if "user_id" in tweet and not isinstance(tweet["user_id"], str):
+        errors.append(f"{prefix}: 'user_id' must be a string")
+
+    if "verified" in tweet and not isinstance(tweet["verified"], bool):
+        errors.append(f"{prefix}: 'verified' must be a boolean")
+
+    for int_field in ("follower_count", "following_count", "tweet_count"):
+        if int_field in tweet and not _is_non_negative_int(tweet[int_field]):
+            errors.append(f"{prefix}: '{int_field}' must be a non-negative integer")
+
+    if "bio" in tweet and not isinstance(tweet["bio"], str):
+        errors.append(f"{prefix}: 'bio' must be a string")
+
+    if "metrics" in tweet:
+        _validate_metrics(
+            tweet["metrics"],
+            "metrics",
+            line_num,
+            record_id,
+            errors,
+            warnings,
         )
 
-
-def _validate_thread_context(
-    thread_context: object,
-    line_num: int,
-    record_id: object,
-    parent_id: object,
-    source_id: object,
-    errors: list[str],
-    warnings: list[str],
-) -> None:
-    if not isinstance(thread_context, list):
-        errors.append(
-            f"Line {line_num} (id={record_id}): 'thread_context' must be an array"
-        )
-        return
-
-    seen_source_ids: set[str] = set()
-
-    for idx, item in enumerate(thread_context):
-        item_idx = idx + 1
-        item_prefix = f"Line {line_num} (id={record_id}) thread_context[{item_idx}]"
-
-        if not isinstance(item, dict):
-            errors.append(f"{item_prefix}: item must be an object")
-            continue
-
-        context_source_id = item.get("source_id")
-        if not _is_non_empty_string(context_source_id):
-            errors.append(f"{item_prefix}: 'source_id' must be a non-empty string")
-        else:
-            context_source_id = context_source_id.strip()
-            if context_source_id in seen_source_ids:
-                warnings.append(
-                    f"{item_prefix}: duplicate context source_id '{context_source_id}'"
-                )
-            seen_source_ids.add(context_source_id)
-            if context_source_id == source_id:
-                errors.append(
-                    f"{item_prefix}: context source_id cannot equal reply source_id"
-                )
-            if context_source_id == parent_id and item.get("context_type") != "parent":
-                warnings.append(
-                    f"{item_prefix}: source_id matches parent_id but context_type is not 'parent'"
-                )
-
-        context_type = item.get("context_type")
-        if context_type not in CONTEXT_TYPES:
-            errors.append(
-                f"{item_prefix}: 'context_type' must be one of {sorted(CONTEXT_TYPES)}"
-            )
-        elif context_type == "parent" and context_source_id != parent_id:
-            errors.append(
-                f"{item_prefix}: context_type='parent' must use source_id equal to parent_id"
-            )
-
-        distance = item.get("distance")
-        if not isinstance(distance, int) or distance < 1:
-            errors.append(f"{item_prefix}: 'distance' must be an integer >= 1")
-
-        text = item.get("text")
-        if not isinstance(text, str):
-            errors.append(f"{item_prefix}: 'text' must be a string")
-        elif not text.strip():
-            warnings.append(f"{item_prefix}: empty text")
-
-        author_handle = item.get("author_handle")
-        if not _is_non_empty_string(author_handle):
-            errors.append(f"{item_prefix}: 'author_handle' must be a non-empty string")
-        elif isinstance(author_handle, str) and author_handle.startswith("@"):
-            errors.append(f"{item_prefix}: 'author_handle' should not include @")
-
-        if "author_id" in item and not isinstance(item["author_id"], str):
-            errors.append(f"{item_prefix}: 'author_id' must be a string")
-
-        if "source_url" in item and not isinstance(item["source_url"], str):
-            errors.append(f"{item_prefix}: 'source_url' must be a string")
-
-        if "created_at" in item and not _is_iso_datetime(item["created_at"]):
-            errors.append(f"{item_prefix}: 'created_at' must be an ISO 8601 timestamp")
-
-        if "public_metrics" in item:
-            _validate_metrics(
-                item["public_metrics"],
-                f"thread_context[{item_idx}].public_metrics",
-                line_num,
-                record_id,
-                errors,
-                warnings,
-            )
+    return {
+        "tweet_idx": tweet_idx,
+        "status_id": status_id,
+        "parent_status_id": parent_status_id,
+        "role": role,
+    }
 
 
 def check_integrity(path: Path) -> tuple[list[str], list[str]]:
     """Run all integrity checks. Returns (errors, warnings)."""
+
     errors: list[str] = []
     warnings: list[str] = []
 
-    id_counts: defaultdict[object, list[int]] = defaultdict(list)
+    id_counts: defaultdict[str, list[int]] = defaultdict(list)
 
     try:
         with path.open(encoding="utf-8") as f:
@@ -282,43 +208,36 @@ def check_integrity(path: Path) -> tuple[list[str], list[str]]:
                     errors.append(f"Line {line_num}: Invalid JSON - {e}")
                     continue
 
+                if not isinstance(obj, dict):
+                    errors.append(
+                        f"Line {line_num}: Record must be a JSON object (got {type(obj).__name__})"
+                    )
+                    continue
+
                 # Required fields
                 id_ = obj.get("id")
                 platform = obj.get("platform")
-                source_id = obj.get("source_id")
                 collected_at = obj.get("collected_at")
-                text = obj.get("text")
                 labels = obj.get("labels")
-                is_reply = obj.get("is_reply")
-                parent_id = obj.get("parent_id")
-                parent_text = obj.get("parent_text")
-                reply_author = obj.get("reply_author")
-                parent_author = obj.get("parent_author")
+                tweets = obj.get("tweets")
 
                 # Check 2: required fields and basic types
+                if not _is_non_empty_string(id_):
+                    errors.append(
+                        f"Line {line_num} (id={id_}): 'id' must be a non-empty string"
+                    )
+                else:
+                    id_counts[id_.strip()].append(line_num)
+
                 if platform != "x":
                     errors.append(
                         f"Line {line_num} (id={id_}): 'platform' must be 'x' for replies dataset"
-                    )
-
-                if not _is_non_empty_string(source_id):
-                    errors.append(
-                        f"Line {line_num} (id={id_}): Missing or invalid 'source_id'"
                     )
 
                 if not _is_iso_datetime(collected_at):
                     errors.append(
                         f"Line {line_num} (id={id_}): Missing or invalid 'collected_at' (ISO 8601 required)"
                     )
-
-                if text is None:
-                    errors.append(f"Line {line_num} (id={id_}): Missing 'text' field")
-                elif not isinstance(text, str):
-                    errors.append(
-                        f"Line {line_num} (id={id_}): 'text' must be a string"
-                    )
-                elif not text.strip():
-                    warnings.append(f"Line {line_num} (id={id_}): Empty text")
 
                 if labels is None:
                     errors.append(f"Line {line_num} (id={id_}): Missing 'labels' field")
@@ -327,64 +246,18 @@ def check_integrity(path: Path) -> tuple[list[str], list[str]]:
                         f"Line {line_num} (id={id_}): 'labels' must be a non-empty list"
                     )
 
-                if is_reply is not True:
+                if tweets is None:
+                    errors.append(f"Line {line_num} (id={id_}): Missing 'tweets' field")
+                elif not isinstance(tweets, list) or not tweets:
                     errors.append(
-                        f"Line {line_num} (id={id_}): 'is_reply' must be true for reply dataset"
+                        f"Line {line_num} (id={id_}): 'tweets' must be a non-empty array"
                     )
 
-                if not _is_non_empty_string(parent_id):
+                # Optional top-level fields
+                if "notes" in obj and not isinstance(obj["notes"], str):
                     errors.append(
-                        f"Line {line_num} (id={id_}): Missing or invalid 'parent_id'"
+                        f"Line {line_num} (id={id_}): 'notes' must be a string"
                     )
-
-                if parent_text is None:
-                    errors.append(
-                        f"Line {line_num} (id={id_}): Missing 'parent_text' field"
-                    )
-                elif not isinstance(parent_text, str):
-                    errors.append(
-                        f"Line {line_num} (id={id_}): 'parent_text' must be a string"
-                    )
-                elif not parent_text.strip():
-                    warnings.append(f"Line {line_num} (id={id_}): Empty parent_text")
-
-                if reply_author is None:
-                    errors.append(
-                        f"Line {line_num} (id={id_}): Missing 'reply_author' field"
-                    )
-                else:
-                    _validate_author(
-                        reply_author,
-                        "reply_author",
-                        line_num,
-                        id_,
-                        errors,
-                        warnings,
-                    )
-
-                if parent_author is None:
-                    errors.append(
-                        f"Line {line_num} (id={id_}): Missing 'parent_author' field"
-                    )
-                else:
-                    _validate_author(
-                        parent_author,
-                        "parent_author",
-                        line_num,
-                        id_,
-                        errors,
-                        warnings,
-                    )
-
-                # Check 3: track IDs for duplicate detection
-                if id_ is not None:
-                    id_counts[id_].append(line_num)
-                    if not isinstance(id_, str):
-                        errors.append(
-                            f"Line {line_num}: 'id' must be a string or null (got {type(id_).__name__})"
-                        )
-                else:
-                    warnings.append(f"Line {line_num}: Null ID")
 
                 # Check 4: valid labels
                 if labels is not None and isinstance(labels, list):
@@ -392,112 +265,69 @@ def check_integrity(path: Path) -> tuple[list[str], list[str]]:
                         errors.append(
                             f"Line {line_num} (id={id_}): Duplicate labels (labels={labels})"
                         )
+
                     for label in labels:
+                        if not _is_non_empty_string(label):
+                            errors.append(
+                                f"Line {line_num} (id={id_}): labels must contain non-empty strings (got {label!r})"
+                            )
+                            continue
                         if label not in VALID_LABELS:
                             errors.append(
-                                f"Line {line_num} (id={id_}): Invalid label '{label}' (valid: {VALID_LABELS})"
+                                f"Line {line_num} (id={id_}): Invalid label '{label}'"
                             )
 
-                # Check 5: id/source_id consistency and source format
-                if isinstance(id_, str) and not RECORD_ID_PATTERN.match(id_):
-                    warnings.append(f"Line {line_num}: Non-standard ID format '{id_}'")
+                # Check tweets (schema + relationships)
+                if tweets is not None and isinstance(tweets, list) and tweets:
+                    seen_status_ids: set[str] = set()
+                    tweet_nodes: list[dict[str, object]] = []
+                    role_counts: defaultdict[str, int] = defaultdict(int)
 
-                if isinstance(source_id, str) and not SOURCE_ID_PATTERN.match(
-                    source_id
-                ):
-                    warnings.append(
-                        f"Line {line_num} (id={id_}): Non-standard source_id format '{source_id}'"
-                    )
+                    for idx, tweet in enumerate(tweets, 1):
+                        node = _validate_tweet(
+                            tweet,
+                            idx,
+                            line_num,
+                            id_,
+                            errors,
+                            warnings,
+                        )
+                        if node is None:
+                            continue
 
-                if isinstance(parent_id, str) and not SOURCE_ID_PATTERN.match(
-                    parent_id
-                ):
-                    warnings.append(
-                        f"Line {line_num} (id={id_}): Non-standard parent_id format '{parent_id}'"
-                    )
+                        status_id = node.get("status_id")
+                        if isinstance(status_id, str):
+                            status_id = status_id.strip()
+                            if status_id in seen_status_ids:
+                                errors.append(
+                                    f"Line {line_num} (id={id_}): duplicate status_id '{status_id}' in tweets[]"
+                                )
+                            else:
+                                seen_status_ids.add(status_id)
 
-                source_is_status_id = _is_tweet_status_id(source_id)
-                id_is_status_id = _is_tweet_status_id(id_)
+                        role = node.get("role")
+                        if isinstance(role, str):
+                            role_counts[role] += 1
 
-                if source_is_status_id and id_ != source_id:
-                    errors.append(
-                        f"Line {line_num}: Numeric source_id must match id (id={id_}, source_id={source_id})"
-                    )
-                elif id_is_status_id and source_id is not None and source_id != id_:
-                    errors.append(
-                        f"Line {line_num}: Numeric id must match source_id when source_id is present (id={id_}, source_id={source_id})"
-                    )
+                        tweet_nodes.append(node)
 
-                if (
-                    isinstance(source_id, str)
-                    and isinstance(parent_id, str)
-                    and source_id == parent_id
-                ):
-                    errors.append(
-                        f"Line {line_num} (id={id_}): 'source_id' and 'parent_id' cannot be the same"
-                    )
+                    if role_counts.get("ai_reply", 0) < 1:
+                        errors.append(
+                            f"Line {line_num} (id={id_}): sample must include at least one tweet with role='ai_reply'"
+                        )
 
-                # Check 6: optional field types
-                if "source_url" in obj and not isinstance(obj["source_url"], str):
-                    errors.append(
-                        f"Line {line_num} (id={id_}): 'source_url' must be a string"
-                    )
+                    for node in tweet_nodes:
+                        tweet_idx = node.get("tweet_idx")
+                        parent_status_id = node.get("parent_status_id")
+                        if parent_status_id is None:
+                            continue
 
-                if "conversation_id" in obj and not isinstance(
-                    obj["conversation_id"], str
-                ):
-                    errors.append(
-                        f"Line {line_num} (id={id_}): 'conversation_id' must be a string"
-                    )
-
-                for field in ("urls", "addresses"):
-                    if field in obj:
-                        value = obj[field]
-                        if not isinstance(value, list):
-                            errors.append(
-                                f"Line {line_num} (id={id_}): '{field}' must be an array"
-                            )
-                        elif not all(isinstance(item, str) for item in value):
-                            errors.append(
-                                f"Line {line_num} (id={id_}): '{field}' must contain only strings"
-                            )
-
-                if "notes" in obj and not isinstance(obj["notes"], str):
-                    errors.append(
-                        f"Line {line_num} (id={id_}): 'notes' must be a string"
-                    )
-
-                if "reply_metrics" in obj:
-                    _validate_metrics(
-                        obj["reply_metrics"],
-                        "reply_metrics",
-                        line_num,
-                        id_,
-                        errors,
-                        warnings,
-                    )
-
-                if "parent_metrics" in obj:
-                    _validate_metrics(
-                        obj["parent_metrics"],
-                        "parent_metrics",
-                        line_num,
-                        id_,
-                        errors,
-                        warnings,
-                    )
-
-                # Check 7: thread context
-                if "thread_context" in obj:
-                    _validate_thread_context(
-                        obj["thread_context"],
-                        line_num,
-                        id_,
-                        parent_id,
-                        source_id,
-                        errors,
-                        warnings,
-                    )
+                        if isinstance(parent_status_id, str):
+                            parent_status_id = parent_status_id.strip()
+                            if parent_status_id not in seen_status_ids:
+                                errors.append(
+                                    f"Line {line_num} (id={id_}): tweets[{tweet_idx}].parent_status_id='{parent_status_id}' does not match any tweets[].status_id"
+                                )
 
     except FileNotFoundError:
         errors.append(f"File not found: {path}")
@@ -553,17 +383,29 @@ def main() -> None:
             rows = [json.loads(line) for line in f if line.strip()]
 
         label_counts: defaultdict[str, int] = defaultdict(int)
-        with_thread_context = 0
+        role_counts: defaultdict[str, int] = defaultdict(int)
+        total_tweets = 0
+
         for row in rows:
             for label in row.get("labels", []) or []:
-                label_counts[label] += 1
-            if row.get("thread_context"):
-                with_thread_context += 1
+                if isinstance(label, str):
+                    label_counts[label] += 1
+
+            tweets = row.get("tweets")
+            if isinstance(tweets, list):
+                total_tweets += len(tweets)
+                for tweet in tweets:
+                    if isinstance(tweet, dict):
+                        role = tweet.get("role")
+                        if isinstance(role, str):
+                            role_counts[role] += 1
 
         print("All checks passed!")
         print("\nDataset stats:")
         print(f"  Total entries: {len(rows)}")
-        print(f"  Entries with thread_context: {with_thread_context}")
+        print(f"  Total tweets: {total_tweets}")
+        for role, count in sorted(role_counts.items(), key=lambda x: -x[1]):
+            print(f"  tweets.role={role}: {count}")
         for label, count in sorted(label_counts.items(), key=lambda x: -x[1]):
             print(f"  {label}: {count}")
 

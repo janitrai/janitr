@@ -1,4 +1,4 @@
-# Reply-In-Context Data Model
+# Replies Data Model (Thread-Based)
 
 This document defines the JSONL schema for the reply dataset used for AI-generated reply detection on X.
 
@@ -6,160 +6,130 @@ This document defines the JSONL schema for the reply dataset used for AI-generat
 - Separate from: `data/sample.jsonl`
 - One JSON object per line
 
-The unit of labeling is always the **reply**, but each sample must include at least the direct parent context.
+The unit of labeling is the **AI reply**, but each sample stores a **thread of tweets** (a small conversation graph) so reviewers and models can reason about context and evidence.
 
 ## Design Principles
 
-1. Keep rich labels from `docs/LABELS.md` at the data layer (no simplification in JSONL).
-2. Store the reply with enough context to evaluate specificity vs templated behavior.
-3. Capture profile metadata for both reply and parent authors to support heuristic features.
+1. Preserve the full granular label taxonomy from `docs/LABELS.md` at the data layer (no label collapsing in JSONL).
+2. Store the thread structure explicitly (parent-child links), not flattened `parent_text`/`thread_context` fields.
+3. Keep the schema small and on-device friendly: tweet text is required; metadata is optional.
 
-## Top-Level Schema
-
-Required fields:
-
-| Field           | Type              | Notes                                                                                |
-| --------------- | ----------------- | ------------------------------------------------------------------------------------ |
-| `id`            | string            | Unique sample ID. For real X replies, use the same numeric status ID as `source_id`. |
-| `platform`      | string            | Must be `x`.                                                                         |
-| `source_id`     | string            | Reply tweet/status ID.                                                               |
-| `collected_at`  | string (ISO 8601) | Time this sample was collected.                                                      |
-| `text`          | string            | Reply text (raw, untruncated).                                                       |
-| `labels`        | string[]          | Non-empty; values must come from `docs/LABELS.md`.                                   |
-| `is_reply`      | boolean           | Must be `true`.                                                                      |
-| `parent_id`     | string            | Direct parent tweet/status ID.                                                       |
-| `parent_text`   | string            | Direct parent text (minimum required context).                                       |
-| `reply_author`  | object            | Author metadata object (schema below).                                               |
-| `parent_author` | object            | Author metadata object (schema below).                                               |
-
-Common optional fields:
-
-| Field             | Type     | Notes                                                           |
-| ----------------- | -------- | --------------------------------------------------------------- |
-| `source_url`      | string   | Canonical URL of the reply.                                     |
-| `conversation_id` | string   | X conversation/thread ID.                                       |
-| `urls`            | string[] | URLs extracted from reply text.                                 |
-| `addresses`       | string[] | Wallet addresses extracted from reply text.                     |
-| `notes`           | string   | Labeler rationale or context notes.                             |
-| `reply_metrics`   | object   | Public metrics snapshot for reply.                              |
-| `parent_metrics`  | object   | Public metrics snapshot for parent.                             |
-| `thread_context`  | object[] | Optional extra context beyond parent (ancestors/siblings/root). |
-
-## Author Metadata Object
-
-`reply_author` and `parent_author` use the same shape.
+## Top-Level Schema (One JSONL Record)
 
 Required fields:
 
-| Field             | Type              | Notes                                                         |
-| ----------------- | ----------------- | ------------------------------------------------------------- |
-| `handle`          | string            | Username without `@`.                                         |
-| `verified`        | boolean           | Verification badge status at scrape time.                     |
-| `follower_count`  | integer           | Non-negative.                                                 |
-| `following_count` | integer           | Non-negative.                                                 |
-| `bio`             | string            | Profile bio text (can be empty if truly blank).               |
-| `created_at`      | string (ISO 8601) | Account creation timestamp (needed for account-age features). |
+| Field          | Type              | Notes                                              |
+| -------------- | ----------------- | -------------------------------------------------- |
+| `id`           | string            | Unique sample ID (dataset-level).                  |
+| `platform`     | string            | Must be `x`.                                       |
+| `collected_at` | string (ISO 8601) | Time this sample was collected.                    |
+| `labels`       | string[]          | Non-empty; values must come from `docs/LABELS.md`. |
+| `tweets`       | object[]          | Non-empty array of tweet objects (schema below).   |
 
 Optional fields:
 
-| Field                  | Type              | Notes                                     |
-| ---------------------- | ----------------- | ----------------------------------------- |
-| `user_id`              | string            | Numeric user ID when available.           |
-| `display_name`         | string            | Display name.                             |
-| `tweet_count`          | integer           | Non-negative.                             |
-| `listed_count`         | integer           | Non-negative.                             |
-| `profile_collected_at` | string (ISO 8601) | Timestamp for profile snapshot freshness. |
+| Field   | Type   | Notes                                 |
+| ------- | ------ | ------------------------------------- |
+| `notes` | string | Labeler rationale or collection notes |
 
-## `thread_context` Item Schema
+## Tweet Object Schema
 
-Each item represents additional posts around the reply and parent.
+Each item in `tweets` is a tweet-like object with a role and a parent pointer.
 
-Required item fields:
+Required fields:
 
-| Field           | Type    | Notes                                                               |
-| --------------- | ------- | ------------------------------------------------------------------- |
-| `source_id`     | string  | Context tweet/status ID.                                            |
-| `text`          | string  | Context post text.                                                  |
-| `author_handle` | string  | Context post author handle (without `@`).                           |
-| `context_type`  | enum    | One of: `parent`, `ancestor`, `conversation_root`, `sibling_reply`. |
-| `distance`      | integer | Relative hop distance from reply (`1` = immediate relation).        |
+| Field              | Type              | Notes                                                                      |
+| ------------------ | ----------------- | -------------------------------------------------------------------------- |
+| `status_id`        | string            | Tweet/status ID.                                                           |
+| `handle`           | string            | Username without `@`.                                                      |
+| `text`             | string            | Tweet text (raw, untruncated).                                             |
+| `role`             | enum              | One of: `original_post`, `ai_reply`, `evidence`, `other_reply`, `context`. |
+| `parent_status_id` | string \| null    | The `status_id` this tweet is replying to. `null` indicates a root node.   |
+| `created_at`       | string (ISO 8601) | Tweet creation timestamp.                                                  |
 
-Optional item fields:
+Optional fields:
 
-| Field            | Type              | Notes                                         |
-| ---------------- | ----------------- | --------------------------------------------- |
-| `author_id`      | string            | Context author ID.                            |
-| `source_url`     | string            | Context post URL.                             |
-| `created_at`     | string (ISO 8601) | Context post timestamp.                       |
-| `public_metrics` | object            | Public metrics snapshot for the context post. |
+| Field             | Type    | Notes                                |
+| ----------------- | ------- | ------------------------------------ |
+| `source_url`      | string  | Canonical URL of the tweet.          |
+| `display_name`    | string  | Display name.                        |
+| `user_id`         | string  | Numeric user ID when available.      |
+| `verified`        | boolean | Verification badge at scrape time.   |
+| `follower_count`  | integer | Non-negative.                        |
+| `following_count` | integer | Non-negative.                        |
+| `bio`             | string  | Profile bio text.                    |
+| `tweet_count`     | integer | Non-negative.                        |
+| `metrics`         | object  | Optional metrics object (see below). |
 
-## Example Record
+If present, `metrics` is an object with optional integer fields:
+
+- `like_count`
+- `reply_count`
+- `repost_count`
+- `quote_count`
+- `view_count`
+
+## Roles
+
+Roles describe why a tweet is included in the sample:
+
+- `original_post`: The tweet that attracted the AI reply (the post being replied to).
+- `ai_reply`: The AI-generated reply being labeled (the primary target for labeling).
+- `evidence`: A human tagger explicitly calling out the AI reply (e.g. "Blocked for AI reply").
+- `other_reply`: Any other reply in the local thread (human replies, other bots, etc.).
+- `context`: Ancestor tweets providing additional context for the conversation.
+
+## Thread Structure and Relationships
+
+- The `tweets` array can represent a non-linear conversation. Do not assume a linear chain.
+- Parent-child links are defined by `parent_status_id`.
+- `parent_status_id` must either be `null` (root) or reference another tweet's `status_id` in the same sample.
+- A "minimum ground truth" sample is typically 3 tweets:
+  - one `original_post`
+  - one `ai_reply`
+  - one `evidence`
+
+## Example
 
 ```json
 {
-  "id": "2017906312416465342",
+  "id": "sample-2021695412122661028",
   "platform": "x",
-  "source_id": "2017906312416465342",
-  "source_url": "https://x.com/CryptoKing_2020/status/2017906312416465342",
-  "collected_at": "2026-02-12T10:26:00Z",
-  "text": "Amazing insight! Totally agree.",
-  "labels": ["ai_generated_reply", "reply_spam", "low_effort"],
-  "is_reply": true,
-  "conversation_id": "2017901000000000000",
-  "parent_id": "2017906200000000000",
-  "parent_text": "Thread: Risk controls that every trader should automate.",
-  "reply_author": {
-    "handle": "CryptoKing_2020",
-    "user_id": "1890012345678901234",
-    "display_name": "THE CRYPTO KING",
-    "verified": true,
-    "follower_count": 312,
-    "following_count": 5421,
-    "bio": "Crypto alpha | DM for business",
-    "created_at": "2025-11-03T00:00:00Z",
-    "tweet_count": 18974,
-    "listed_count": 1,
-    "profile_collected_at": "2026-02-12T10:20:00Z"
-  },
-  "parent_author": {
-    "handle": "legit_trader",
-    "user_id": "1200012345678901234",
-    "display_name": "Legit Trader",
-    "verified": true,
-    "follower_count": 145220,
-    "following_count": 801,
-    "bio": "Market structure and execution",
-    "created_at": "2018-05-13T00:00:00Z",
-    "tweet_count": 15420,
-    "listed_count": 902,
-    "profile_collected_at": "2026-02-12T10:20:00Z"
-  },
-  "reply_metrics": {
-    "like_count": 0,
-    "reply_count": 0,
-    "repost_count": 0,
-    "quote_count": 0
-  },
-  "parent_metrics": {
-    "like_count": 162,
-    "reply_count": 97,
-    "repost_count": 29,
-    "quote_count": 4
-  },
-  "thread_context": [
+  "collected_at": "2026-02-12T10:00:00Z",
+  "labels": ["ai_generated_reply"],
+  "notes": "Flagged by @levelsio",
+  "tweets": [
     {
-      "source_id": "2017906100000000000",
-      "text": "1/ Most losses come from poor sizing, not entries.",
-      "author_handle": "legit_trader",
-      "context_type": "ancestor",
-      "distance": 2,
-      "created_at": "2026-02-12T09:58:10Z",
-      "source_url": "https://x.com/legit_trader/status/2017906100000000000"
+      "status_id": "2021693766793318833",
+      "handle": "levelsio",
+      "text": "New Brazilian buffet tour...",
+      "role": "original_post",
+      "parent_status_id": null,
+      "created_at": "2026-02-11T21:00:00Z",
+      "verified": true,
+      "follower_count": 821200
+    },
+    {
+      "status_id": "2021695412122661028",
+      "handle": "BlockShaolin",
+      "text": "The church buffet isnt about religion - its a social credit testing ground...",
+      "role": "ai_reply",
+      "parent_status_id": "2021693766793318833",
+      "created_at": "2026-02-11T21:30:00Z",
+      "verified": true,
+      "follower_count": 50
+    },
+    {
+      "status_id": "2021699240393609717",
+      "handle": "levelsio",
+      "text": "Blocked for AI reply",
+      "role": "evidence",
+      "parent_status_id": "2021695412122661028",
+      "created_at": "2026-02-11T21:45:00Z",
+      "verified": true,
+      "follower_count": 821200
     }
-  ],
-  "urls": [],
-  "addresses": [],
-  "notes": "Generic high-valence agreement with no reference to parent content."
+  ]
 }
 ```
 
