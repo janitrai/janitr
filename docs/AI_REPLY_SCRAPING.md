@@ -112,17 +112,31 @@ This is derived from ground truth collection but at the account level. Useful fo
 - Account-level features (age, follower ratio, bio patterns)
 - Cross-referencing with other bot lists
 
+## Data Extraction Methods
+
+See `docs/SYNDICATION_API.md` for full details on the syndication API.
+
+### Syndication API (preferred for bulk collection)
+
+X's public embed API at `cdn.syndication.twimg.com/tweet-result?id={status_id}&token=0` returns structured JSON for any public tweet — no auth, no API key, no login. When fetching a reply, the response includes a nested `parent` object with the full parent tweet. This means fetching the evidence tweet gives you 2 of 3 tweets in a thread chain for free.
+
+**Pipeline:** Google search (discover IDs) → syndication API (extract data) → assemble threads
+
+### Browser scraping (fallback)
+
+For cases where the syndication API doesn't return enough data (e.g. need to browse reply trees, discover threads visually), use the OpenClaw browser tool against X directly.
+
 ## Scraping Workflow
 
 ### Step 1: Collect ground truth (explicitly tagged replies)
 
 ```
 For each known tagger and search phrase:
-  1. Search X for their callout posts
-  2. Get the tweet the tagger is replying to (= the AI reply)
-  3. Get the parent of that AI reply (= the original post)
-  4. Get author metadata for both
-  5. Write to data/replies.jsonl with provenance in notes
+  1. Search X for their callout posts (Google site:x.com or X global search)
+  2. Fetch the evidence tweet via syndication API
+  3. Extract the AI reply from the `parent` field
+  4. Fetch the original post via syndication using in_reply_to_status_id_str
+  5. Assemble into thread format and write to data/replies.jsonl
 ```
 
 ### Step 2: Build account list from ground truth
