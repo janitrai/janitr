@@ -29,6 +29,7 @@ from transformer_common import (
     load_prepared_rows,
     micro_macro_from_metrics,
     one_vs_all_metrics,
+    require_cuda,
     save_json,
     set_seed,
     sigmoid,
@@ -197,8 +198,7 @@ def train_one_seed(
 ) -> dict:
     set_seed(seed)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"[seed={seed}] device={device}")
+    device = require_cuda(context=f"train_transformer_teacher.py seed={seed}")
 
     tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
     model = JanitrTeacherModel(
@@ -542,6 +542,14 @@ def main() -> None:
     seeds = [int(item.strip()) for item in args.seeds.split(",") if item.strip()]
     if not seeds:
         raise SystemExit("No seeds provided.")
+    if len(train_rows) <= 5000 and len(seeds) < 3:
+        raise SystemExit(
+            f"Dataset has {len(train_rows)} train rows; expected 3 teacher seeds per plan, got {len(seeds)}."
+        )
+    if args.teacher_init_path is None and args.model_name != DEFAULT_MODEL:
+        raise SystemExit(
+            f"Teacher must be {DEFAULT_MODEL} for this pipeline; got {args.model_name}."
+        )
 
     model_name_or_path = args.teacher_init_path or args.model_name
     out_dir = args.output_dir

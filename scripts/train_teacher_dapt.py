@@ -16,7 +16,7 @@ from transformers import (
     TrainingArguments,
 )
 
-from transformer_common import DATA_DIR, MODELS_DIR, choose_dtype_args, set_seed
+from transformer_common import DATA_DIR, MODELS_DIR, choose_dtype_args, require_cuda, set_seed
 
 DEFAULT_CORPUS = DATA_DIR / "transformer" / "unlabeled_corpus.txt"
 DEFAULT_OUTPUT_DIR = MODELS_DIR / "teacher_dapt"
@@ -87,6 +87,7 @@ def main() -> None:
         raise SystemExit(f"Corpus not found: {args.corpus}")
 
     set_seed(args.seed)
+    require_cuda(context="train_teacher_dapt.py")
 
     lines = load_lines(args.corpus, max_rows=args.max_rows)
     if not lines:
