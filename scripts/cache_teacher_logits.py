@@ -20,6 +20,7 @@ from transformer_common import (
     PreparedRecord,
     load_json,
     load_prepared_rows,
+    require_cuda,
     set_seed,
 )
 
@@ -288,8 +289,7 @@ def main() -> None:
     train_rows = load_prepared_rows(args.train)
     valid_rows = load_prepared_rows(args.valid)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+    device = require_cuda(context="cache_teacher_logits.py")
 
     seed_dirs = list_seed_dirs(args.teacher_dir, args.seeds)
     print("Teacher seeds:", ", ".join(path.name for path in seed_dirs))

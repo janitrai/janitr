@@ -27,6 +27,7 @@ from transformer_common import (
     load_prepared_rows,
     micro_macro_from_metrics,
     one_vs_all_metrics,
+    require_cuda,
     save_json,
     set_seed,
     sigmoid,
@@ -183,10 +184,26 @@ def train_or_load_tokenizer(
     vocab_size: int,
     min_frequency: int,
 ) -> BertTokenizerFast:
+    def ensure_target_vocab(tokenizer: BertTokenizerFast) -> BertTokenizerFast:
+        current_size = int(len(tokenizer))
+        if current_size > vocab_size:
+            raise RuntimeError(
+                f"Tokenizer vocab ({current_size}) exceeds requested vocab_size ({vocab_size})."
+            )
+        if current_size < vocab_size:
+            pad_tokens = [f"[UNUSED_{i}]" for i in range(vocab_size - current_size)]
+            tokenizer.add_tokens(pad_tokens)
+            tokenizer.save_pretrained(str(tokenizer_dir))
+        return tokenizer
+
     vocab_path = tokenizer_dir / "vocab.txt"
     if vocab_path.exists():
         tokenizer = BertTokenizerFast.from_pretrained(str(tokenizer_dir))
-        return tokenizer
+        if int(len(tokenizer)) == vocab_size:
+            return tokenizer
+        print(
+            f"Tokenizer at {tokenizer_dir} has vocab={len(tokenizer)} (target={vocab_size}); rebuilding."
+        )
 
     tokenizer_dir.mkdir(parents=True, exist_ok=True)
     wp = BertWordPieceTokenizer(lowercase=True, strip_accents=False, clean_text=False)
@@ -208,7 +225,7 @@ def train_or_load_tokenizer(
         mask_token="[MASK]",
     )
     tokenizer.save_pretrained(str(tokenizer_dir))
-    return tokenizer
+    return ensure_target_vocab(tokenizer)
 
 
 def compute_weights(rows: list[PreparedRecord], device: torch.device) -> tuple[torch.Tensor, torch.Tensor]:
@@ -307,7 +324,7 @@ def main() -> None:
     parser.add_argument("--hidden-loss-weight", type=float, default=0.2)
     parser.add_argument("--max-length", type=int, default=96)
     parser.add_argument("--vocab-size", type=int, default=8192)
-    parser.add_argument("--min-frequency", type=int, default=2)
+    parser.add_argument("--min-frequency", type=int, default=1)
     parser.add_argument("--hidden-size", type=int, default=192)
     parser.add_argument("--num-hidden-layers", type=int, default=4)
     parser.add_argument("--num-attention-heads", type=int, default=4)
@@ -344,7 +361,11 @@ def main() -> None:
         min_frequency=args.min_frequency,
     )
 
-    vocab_size_actual = int(tokenizer.vocab_size)
+    vocab_size_actual = int(len(tokenizer))
+    if vocab_size_actual != args.vocab_size:
+        raise SystemExit(
+            f"Tokenizer vocab size mismatch: expected {args.vocab_size}, got {vocab_size_actual}."
+        )
     config = BertConfig(
         vocab_size=vocab_size_actual,
         hidden_size=args.hidden_size,
@@ -358,8 +379,7 @@ def main() -> None:
         pad_token_id=tokenizer.pad_token_id,
     )
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+    device = require_cuda(context="train_transformer_student_distill.py")
 
     model = TinyStudentModel(config, teacher_hidden_size=teacher_hidden_size).to(device)
 

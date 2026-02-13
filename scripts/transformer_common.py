@@ -78,6 +78,23 @@ def set_seed(seed: int) -> None:
         pass
 
 
+def require_cuda(*, context: str) -> "Any":
+    try:
+        import torch
+    except ImportError as exc:
+        raise SystemExit(f"{context} requires torch with CUDA support installed.") from exc
+
+    if not torch.cuda.is_available():
+        raise SystemExit(f"{context} requires CUDA, but torch.cuda.is_available() is False.")
+
+    device = torch.device("cuda")
+    dev_name = torch.cuda.get_device_name(device)
+    print(
+        f"{context}: using CUDA device '{dev_name}' (torch={torch.__version__}, cuda={torch.version.cuda})"
+    )
+    return device
+
+
 def clean_text(
     text: str | None,
     *,

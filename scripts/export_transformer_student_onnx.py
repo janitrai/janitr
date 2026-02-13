@@ -16,6 +16,7 @@ from transformers import BertConfig, BertModel, BertTokenizerFast
 from transformer_common import DATA_DIR, MODELS_DIR, decision_from_probs, load_json, load_prepared_rows, sigmoid, softmax
 
 DEFAULT_STUDENT_DIR = MODELS_DIR / "student"
+DEFAULT_TRAIN = DATA_DIR / "transformer" / "train.prepared.jsonl"
 DEFAULT_VALID = DATA_DIR / "transformer" / "valid.prepared.jsonl"
 DEFAULT_OUT = MODELS_DIR / "student.onnx"
 
@@ -79,6 +80,7 @@ def collate(batch: list[dict]) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--student-dir", type=Path, default=DEFAULT_STUDENT_DIR)
+    parser.add_argument("--train", type=Path, default=DEFAULT_TRAIN)
     parser.add_argument("--valid", type=Path, default=DEFAULT_VALID)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--opset", type=int, default=17)
@@ -93,9 +95,13 @@ def main() -> None:
     model_path = args.student_dir / "pytorch_model.bin"
     tokenizer_dir = args.student_dir / "tokenizer"
 
-    for path in (config_path, model_path, tokenizer_dir, args.valid):
+    for path in (config_path, model_path, tokenizer_dir, args.train, args.valid):
         if not Path(path).exists():
             raise SystemExit(f"Missing required input: {path}")
+    if args.parity_samples < 1000:
+        raise SystemExit(
+            f"parity-samples must be >= 1000 per plan acceptance criteria, got {args.parity_samples}."
+        )
 
     payload = load_json(config_path)
     arch = payload["architecture"]
@@ -118,9 +124,10 @@ def main() -> None:
     state = torch.load(model_path, map_location="cpu")
     model.load_state_dict(state)
     model.eval()
+    max_length = int(arch.get("max_length", args.max_length))
 
-    dummy_input_ids = torch.ones((1, args.max_length), dtype=torch.long)
-    dummy_attention = torch.ones((1, args.max_length), dtype=torch.long)
+    dummy_input_ids = torch.ones((1, max_length), dtype=torch.long)
+    dummy_attention = torch.ones((1, max_length), dtype=torch.long)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     torch.onnx.export(
@@ -140,9 +147,13 @@ def main() -> None:
     )
     print(f"Exported ONNX model to {args.out}")
 
-    rows = load_prepared_rows(args.valid)
-    rows = rows[: min(len(rows), args.parity_samples)]
-    dataset = EvalDataset(rows, tokenizer=tokenizer, max_length=args.max_length)
+    rows = load_prepared_rows(args.valid) + load_prepared_rows(args.train)
+    if len(rows) < args.parity_samples:
+        raise SystemExit(
+            f"Need at least {args.parity_samples} samples for parity, but only found {len(rows)}."
+        )
+    rows = rows[: args.parity_samples]
+    dataset = EvalDataset(rows, tokenizer=tokenizer, max_length=max_length)
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, collate_fn=collate)
 
     ort_session = ort.InferenceSession(str(args.out), providers=["CPUExecutionProvider"])
