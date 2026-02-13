@@ -74,7 +74,7 @@ Janitr/
 │   └── logs/            # Daily development logs
 │
 ├── tests/               # Integration tests
-└── skills/              # Agent skills (SimpleDoc)
+└── .agent/skills/       # Agent skills (SimpleDoc, etc.)
 ```
 
 ---
@@ -159,7 +159,7 @@ Thresholds are tuned per-label to maintain FPR < 2%. The `promo` label is curren
 
 ## SimpleDoc Conventions
 
-**Attention agent!** Before creating ANY documentation, use the `simpledoc` skill in `skills/simpledoc/SKILL.md`.
+**Attention agent!** Before creating ANY documentation, use the `simpledoc` skill in `.agent/skills/simpledoc/SKILL.md`.
 
 Key rules:
 
