@@ -8,10 +8,10 @@ npm exec lint-staged
 npm run simpledoc:check
 
 # Run data integrity checks
-python scripts/check_integrity.py data/sample.jsonl
+python3 scripts/check_integrity.py data/sample.jsonl
 
 # Run duplicate ID checks
-dup_check_output="$(python scripts/fix_duplicate_ids.py data/sample.jsonl)"
+dup_check_output="$(python3 scripts/fix_duplicate_ids.py data/sample.jsonl)"
 printf '%s\n' "$dup_check_output"
 
 dup_count="$(printf '%s\n' "$dup_check_output" | sed -n 's/^Duplicate IDs:[[:space:]]*//p' | head -n 1 | tr -d '[:space:]')"

@@ -12,8 +12,8 @@
     "prepare": "husky",
     "format": "prettier --write . --ignore-unknown && uvx ruff format .",
     "format:check": "prettier --check . --ignore-unknown && uvx ruff format --check .",
-    "simpledoc": "node ~/SimpleDoc/dist/bin/simpledoc.js",
-    "simpledoc:check": "node ~/SimpleDoc/dist/bin/simpledoc.js check",
+    "simpledoc": "npx @simpledoc/simpledoc",
+    "simpledoc:check": "npx @simpledoc/simpledoc check",
     "webapp:dev": "npx wrangler pages dev webapp --port 8788",
     "webapp:deploy": "npx wrangler pages deploy webapp"
   },
