@@ -7,7 +7,10 @@ import json
 import math
 import random
 import re
+import subprocess
 import unicodedata
+from datetime import datetime, timezone
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
@@ -354,6 +357,112 @@ def exact_match_accuracy(y_true: Sequence[str], y_pred: Sequence[str]) -> float:
     return sum(1 for gold, pred in zip(y_true, y_pred) if gold == pred) / len(y_true)
 
 
+def format_one_vs_all_metrics(per_class: dict[str, dict[str, float]]) -> dict[str, dict[str, float]]:
+    return {
+        label: {
+            "precision": vals["precision"],
+            "recall": vals["recall"],
+            "f1": vals["f1"],
+            "fpr": vals["fpr"],
+            "fnr": vals["fnr"],
+            "support": vals["support"],
+        }
+        for label, vals in per_class.items()
+    }
+
+
+def summarize_label_predictions(
+    y_true: Sequence[str],
+    y_pred: Sequence[str],
+    *,
+    classes: Sequence[str] = TRAINING_CLASSES,
+) -> dict[str, Any]:
+    per_class = one_vs_all_metrics(y_true, y_pred, classes=classes)
+    mm = micro_macro_from_metrics(per_class)
+    return {
+        "metrics": format_one_vs_all_metrics(per_class),
+        "exact_match": exact_match_accuracy(y_true, y_pred),
+        "micro": mm["micro"],
+        "macro": mm["macro"],
+    }
+
+
+def predict_labels_from_probs(
+    scam_probs: Sequence[float] | np.ndarray,
+    topic_probs: Sequence[float] | np.ndarray,
+    *,
+    scam_threshold: float,
+    topic_threshold: float,
+) -> list[str]:
+    preds: list[str] = []
+    for s_prob, t_prob in zip(scam_probs, topic_probs):
+        preds.append(
+            decision_from_probs(
+                float(s_prob),
+                float(t_prob),
+                scam_threshold=scam_threshold,
+                topic_threshold=topic_threshold,
+            )
+        )
+    return preds
+
+
+def tune_thresholds_for_scam_fpr(
+    *,
+    y_true: Sequence[str],
+    scam_probs: Sequence[float] | np.ndarray,
+    topic_probs: Sequence[float] | np.ndarray,
+    target_scam_fpr: float,
+    step: float,
+    classes: Sequence[str] = TRAINING_CLASSES,
+) -> tuple[float, float, dict[str, Any]]:
+    best: tuple[float, float, float, float, float, dict[str, Any]] | None = None
+
+    scam_arr = np.asarray(scam_probs, dtype=np.float64)
+    topic_arr = np.asarray(topic_probs, dtype=np.float64)
+    scam_grid = np.arange(0.5, 1.0001, step)
+    topic_grid = np.arange(0.5, 1.0001, step)
+
+    for scam_thr in scam_grid:
+        for topic_thr in topic_grid:
+            preds = predict_labels_from_probs(
+                scam_arr,
+                topic_arr,
+                scam_threshold=float(scam_thr),
+                topic_threshold=float(topic_thr),
+            )
+            summary = summarize_label_predictions(y_true, preds, classes=classes)
+            scam_metrics = summary["metrics"]["scam"]
+            if float(scam_metrics["fpr"]) > target_scam_fpr:
+                continue
+            candidate = (
+                float(scam_metrics["recall"]),
+                float(scam_metrics["precision"]),
+                float(summary["macro"]["f1"]),
+                float(scam_thr),
+                float(topic_thr),
+                summary,
+            )
+            if best is None or candidate[:3] > best[:3]:
+                best = candidate
+
+    if best is not None:
+        return best[3], best[4], best[5]
+
+    # Conservative fallback when no pair satisfies target FPR.
+    scam_thr = 0.99
+    topic_thr = 0.99
+    preds = predict_labels_from_probs(
+        scam_arr,
+        topic_arr,
+        scam_threshold=scam_thr,
+        topic_threshold=topic_thr,
+    )
+    summary = summarize_label_predictions(y_true, preds, classes=classes)
+    summary["note"] = "No thresholds met target scam FPR; used conservative fallback 0.99/0.99."
+    return scam_thr, topic_thr, summary
+
+
 def binary_pr_auc(y_true: Sequence[int], scores: Sequence[float]) -> float:
     # Hand-rolled AUPRC to avoid extra runtime dependencies.
     if not y_true:
@@ -470,6 +579,56 @@ def save_json(path: Path, payload: dict[str, Any]) -> None:
 def load_json(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def stable_object_hash(payload: Any) -> str:
+    blob = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def current_git_commit(repo_root: Path = REPO_ROOT) -> str | None:
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except Exception:
+        return None
+    commit = proc.stdout.strip()
+    return commit or None
+
+
+def utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def hash_label_map(labels: Sequence[str]) -> str:
+    payload = {"labels": [str(label) for label in labels]}
+    return stable_object_hash(payload)
+
+
+def hash_prepared_rows(rows: Sequence[PreparedRecord]) -> str:
+    payload = [
+        {
+            "id": row.id,
+            "text_normalized": row.text_normalized,
+            "collapsed_label": row.collapsed_label,
+            "y_scam_clean": int(row.y_scam_clean),
+            "y_topics": [int(v) for v in row.y_topics],
+        }
+        for row in rows
+    ]
+    return stable_object_hash(payload)
+
+
+def parse_seed_csv(seed_csv: str) -> list[int]:
+    seeds = [int(item.strip()) for item in seed_csv.split(",") if item.strip()]
+    if not seeds:
+        raise ValueError("No seeds provided.")
+    return seeds
 
 
 def tokenizer_backend_vocab_size(tokenizer: Any) -> int:

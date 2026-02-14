@@ -9,9 +9,10 @@ from pathlib import Path
 import numpy as np
 import onnxruntime as ort
 import torch
-from torch import nn
 from torch.utils.data import DataLoader, Dataset
-from transformers import BertConfig, BertModel, BertTokenizerFast
+from transformers import BertTokenizerFast
+
+from student_runtime import TinyStudentModel, load_student_from_dir
 
 from transformer_common import (
     CONFIG_DIR,
@@ -23,17 +24,14 @@ from transformer_common import (
     binary_pr_auc,
     brier_score,
     calibration_bins,
-    decision_from_probs,
-    exact_match_accuracy,
     expected_calibration_error,
-    load_json,
     load_prepared_rows,
-    micro_macro_from_metrics,
-    one_vs_all_metrics,
+    predict_labels_from_probs,
     save_json,
-    safe_div,
     sigmoid,
     softmax,
+    summarize_label_predictions,
+    tune_thresholds_for_scam_fpr,
 )
 
 DEFAULT_STUDENT_DIR = MODELS_DIR / "student"
@@ -41,23 +39,6 @@ DEFAULT_VALID = DATA_DIR / "transformer" / "valid.prepared.jsonl"
 DEFAULT_HOLDOUT = DATA_DIR / "transformer" / "holdout.prepared.jsonl"
 DEFAULT_TRAIN = DATA_DIR / "transformer" / "train.prepared.jsonl"
 DEFAULT_THRESHOLD_OUT = CONFIG_DIR / "thresholds.transformer.json"
-
-
-class TinyStudentModel(nn.Module):
-    def __init__(self, config: BertConfig, teacher_hidden_size: int) -> None:
-        super().__init__()
-        self.bert = BertModel(config, add_pooling_layer=False)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.head_scam_clean = nn.Linear(config.hidden_size, 2)
-        self.head_topic = nn.Linear(config.hidden_size, 1)
-        self.teacher_projections = nn.ModuleList(
-            [nn.Linear(teacher_hidden_size, config.hidden_size) for _ in range(config.num_hidden_layers)]
-        )
-
-    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        out = self.bert(input_ids=input_ids, attention_mask=attention_mask, return_dict=True)
-        cls = self.dropout(out.last_hidden_state[:, 0])
-        return self.head_scam_clean(cls), self.head_topic(cls)
 
 
 class EvalDataset(Dataset):
@@ -89,31 +70,6 @@ def collate(batch: list[dict]) -> dict:
         "input_ids": torch.stack([x["input_ids"] for x in batch]),
         "attention_mask": torch.stack([x["attention_mask"] for x in batch]),
     }
-
-
-def load_student_torch(student_dir: Path) -> tuple[TinyStudentModel, BertTokenizerFast, dict]:
-    config_payload = load_json(student_dir / "student_config.json")
-    arch = config_payload["architecture"]
-
-    tokenizer = BertTokenizerFast.from_pretrained(str(student_dir / "tokenizer"))
-    config = BertConfig(
-        vocab_size=int(arch["vocab_size"]),
-        hidden_size=int(arch["hidden_size"]),
-        num_hidden_layers=int(arch["num_hidden_layers"]),
-        num_attention_heads=int(arch["num_attention_heads"]),
-        intermediate_size=int(arch["intermediate_size"]),
-        max_position_embeddings=max(128, int(arch["max_length"]) + 8),
-        hidden_dropout_prob=float(arch["dropout"]),
-        attention_probs_dropout_prob=float(arch["dropout"]),
-        type_vocab_size=1,
-        pad_token_id=tokenizer.pad_token_id,
-    )
-
-    model = TinyStudentModel(config, teacher_hidden_size=int(arch["teacher_hidden_size"]))
-    state = torch.load(student_dir / "pytorch_model.bin", map_location="cpu")
-    model.load_state_dict(state)
-    model.eval()
-    return model, tokenizer, config_payload
 
 
 def infer_probs_torch(
@@ -179,26 +135,6 @@ def infer_probs_onnx(
     return np.array(scam_probs, dtype=np.float64), np.array(topic_probs, dtype=np.float64)
 
 
-def predict_labels(
-    scam_probs: np.ndarray,
-    topic_probs: np.ndarray,
-    *,
-    scam_threshold: float,
-    topic_threshold: float,
-) -> list[str]:
-    preds: list[str] = []
-    for s_prob, t_prob in zip(scam_probs, topic_probs):
-        preds.append(
-            decision_from_probs(
-                float(s_prob),
-                float(t_prob),
-                scam_threshold=scam_threshold,
-                topic_threshold=topic_threshold,
-            )
-        )
-    return preds
-
-
 def compute_metrics(
     *,
     rows: list[PreparedRecord],
@@ -209,35 +145,20 @@ def compute_metrics(
     train_handles: set[str],
 ) -> dict:
     y_true = [row.collapsed_label for row in rows]
-    preds = predict_labels(
+    preds = predict_labels_from_probs(
         scam_probs,
         topic_probs,
         scam_threshold=scam_threshold,
         topic_threshold=topic_threshold,
     )
-
-    per_class = one_vs_all_metrics(y_true, preds, classes=TRAINING_CLASSES)
-    mm = micro_macro_from_metrics(per_class)
+    summary = summarize_label_predictions(y_true, preds, classes=TRAINING_CLASSES)
 
     y_scam = [1 if label == "scam" else 0 for label in y_true]
     scam_auc = binary_pr_auc(y_scam, scam_probs.tolist())
     scam_bins = calibration_bins(y_scam, scam_probs.tolist(), bins=10)
 
     metrics = {
-        "metrics": {
-            label: {
-                "precision": vals["precision"],
-                "recall": vals["recall"],
-                "f1": vals["f1"],
-                "fpr": vals["fpr"],
-                "fnr": vals["fnr"],
-                "support": vals["support"],
-            }
-            for label, vals in per_class.items()
-        },
-        "exact_match": exact_match_accuracy(y_true, preds),
-        "micro": mm["micro"],
-        "macro": mm["macro"],
+        **summary,
         "pr_auc": {
             "scam": scam_auc,
         },
@@ -277,114 +198,43 @@ def compute_metrics(
         sub_topic = topic_probs[idxs]
 
         sub_y_true = [row.collapsed_label for row in sub_rows]
-        sub_preds = predict_labels(
+        sub_preds = predict_labels_from_probs(
             sub_scam,
             sub_topic,
             scam_threshold=scam_threshold,
             topic_threshold=topic_threshold,
         )
-        sub_per_class = one_vs_all_metrics(sub_y_true, sub_preds, classes=TRAINING_CLASSES)
+        sub_summary = summarize_label_predictions(sub_y_true, sub_preds, classes=TRAINING_CLASSES)
         subgroup_metrics[name] = {
             "samples": len(sub_rows),
-            "metrics": {
-                label: {
-                    "precision": vals["precision"],
-                    "recall": vals["recall"],
-                    "f1": vals["f1"],
-                    "fpr": vals["fpr"],
-                    "fnr": vals["fnr"],
-                    "support": vals["support"],
-                }
-                for label, vals in sub_per_class.items()
-            },
+            "metrics": sub_summary["metrics"],
         }
 
     metrics["subgroups"] = subgroup_metrics
     return metrics
 
 
-def tune_thresholds_for_scam_fpr(
-    rows: list[PreparedRecord],
-    scam_probs: np.ndarray,
-    topic_probs: np.ndarray,
-    *,
-    target_scam_fpr: float,
-    step: float,
-) -> tuple[float, float, dict]:
-    y_true = [row.collapsed_label for row in rows]
-    best = None
-
-    scam_grid = np.arange(0.5, 1.0001, step)
-    topic_grid = np.arange(0.5, 1.0001, step)
-
-    for scam_thr in scam_grid:
-        for topic_thr in topic_grid:
-            preds = predict_labels(
-                scam_probs,
-                topic_probs,
-                scam_threshold=float(scam_thr),
-                topic_threshold=float(topic_thr),
-            )
-            per_class = one_vs_all_metrics(y_true, preds, classes=TRAINING_CLASSES)
-            scam_m = per_class["scam"]
-            if scam_m["fpr"] > target_scam_fpr:
-                continue
-            mm = micro_macro_from_metrics(per_class)
-            candidate = (
-                scam_m["recall"],
-                scam_m["precision"],
-                mm["macro"]["f1"],
-                float(scam_thr),
-                float(topic_thr),
-                {
-                    "metrics": {
-                        label: {
-                            "precision": vals["precision"],
-                            "recall": vals["recall"],
-                            "f1": vals["f1"],
-                            "fpr": vals["fpr"],
-                            "fnr": vals["fnr"],
-                            "support": vals["support"],
-                        }
-                        for label, vals in per_class.items()
-                    },
-                    "macro": mm["macro"],
-                    "micro": mm["micro"],
-                },
-            )
-            if best is None or candidate[:3] > best[:3]:
-                best = candidate
-
-    if best is None:
-        # Fallback to high threshold that minimizes FPR.
-        scam_thr = 0.99
-        topic_thr = 0.99
-        preds = predict_labels(
-            scam_probs,
-            topic_probs,
-            scam_threshold=scam_thr,
-            topic_threshold=topic_thr,
+def assert_student_provenance(config_payload: dict, *, allow_missing: bool) -> None:
+    source = config_payload.get("source_artifacts")
+    if source is None:
+        if allow_missing:
+            return
+        raise SystemExit(
+            "student_config.json is missing source_artifacts provenance. "
+            "Re-train student with current distillation pipeline or pass --allow-missing-provenance."
         )
-        per_class = one_vs_all_metrics(y_true, preds, classes=TRAINING_CLASSES)
-        mm = micro_macro_from_metrics(per_class)
-        return scam_thr, topic_thr, {
-            "metrics": {
-                label: {
-                    "precision": vals["precision"],
-                    "recall": vals["recall"],
-                    "f1": vals["f1"],
-                    "fpr": vals["fpr"],
-                    "fnr": vals["fnr"],
-                    "support": vals["support"],
-                }
-                for label, vals in per_class.items()
-            },
-            "macro": mm["macro"],
-            "micro": mm["micro"],
-            "note": "No thresholds met target scam FPR; used conservative fallback 0.99/0.99.",
-        }
-
-    return best[3], best[4], best[5]
+    required = {
+        "teacher_id",
+        "calibration_id",
+        "logits_cache_train_id",
+        "logits_cache_valid_id",
+        "seeds",
+        "label_map_hash",
+        "split_hashes",
+    }
+    missing = sorted(required - set(source.keys()))
+    if missing:
+        raise SystemExit(f"student_config source_artifacts missing keys: {missing}")
 
 
 def main() -> None:
@@ -400,6 +250,7 @@ def main() -> None:
     parser.add_argument("--tokenizer-sanity-sample-size", type=int, default=512)
     parser.add_argument("--target-scam-fpr", type=float, default=0.02)
     parser.add_argument("--threshold-step", type=float, default=0.01)
+    parser.add_argument("--allow-missing-provenance", action="store_true")
     parser.add_argument(
         "--thresholds-out",
         type=Path,
@@ -422,7 +273,8 @@ def main() -> None:
     train_rows = load_prepared_rows(args.train)
     train_handles = {row.author_handle for row in train_rows if row.author_handle}
 
-    model, tokenizer, student_cfg = load_student_torch(args.student_dir)
+    model, tokenizer, student_cfg = load_student_from_dir(args.student_dir)
+    assert_student_provenance(student_cfg, allow_missing=args.allow_missing_provenance)
     max_length = int(student_cfg["architecture"].get("max_length", args.max_length))
     tokenizer_stats = assert_tokenizer_sanity(
         tokenizer=tokenizer,
@@ -477,11 +329,12 @@ def main() -> None:
         engine = "onnx"
 
     scam_thr, topic_thr, valid_threshold_metrics = tune_thresholds_for_scam_fpr(
-        valid_rows,
-        valid_scam,
-        valid_topic,
+        y_true=[row.collapsed_label for row in valid_rows],
+        scam_probs=valid_scam,
+        topic_probs=valid_topic,
         target_scam_fpr=args.target_scam_fpr,
         step=args.threshold_step,
+        classes=TRAINING_CLASSES,
     )
 
     threshold_payload = {

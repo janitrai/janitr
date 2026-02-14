@@ -14,11 +14,13 @@ Prefer aligned plain text blocks over Markdown tables unless the user explicitly
 
 - Use aligned plain-text rows for comparisons; do not use Markdown tables.
 - For comparisons, keep alternatives on the horizontal axis (columns) and metrics on the vertical axis (rows).
+- Use the real alternative names as column headers (for example, `fastText-ftz`, `transformer-int8`).
+- Do not use generic `Left`/`Right` headers or separate mapping notes.
 - Keep decimal points vertically aligned within each numeric column.
 - Keep one precision policy per output.
 - Default precision policy: 2 significant figures.
 - For decimals with absolute value under 1, omit the leading zero (`.84`, `-.07`).
-- Use a `change` column as absolute delta: `right - left`.
+- Use a `change` column as absolute delta: `second alternative column - first alternative column`.
 - Format `change` as signed integer percentages (rounded) with percent signs aligned (`+3%`, `-6%`, `0%`).
 - Preserve units and directionality (`higher is better` vs `lower is better`).
 - Do not include a `better/worse` verdict column.
@@ -44,7 +46,7 @@ Prefer aligned plain text blocks over Markdown tables unless the user explicitly
 
 ## Improvement Calculation
 
-- Compute signed change as `change% = (right - left) * 100`.
+- Compute signed change as `change% = (second alternative - first alternative) * 100`.
 - Determine which side is better using metric direction.
 - Use `abs(change%)` to choose marker strength.
 - If `abs(change%) < 1`, use no marker.
@@ -54,7 +56,7 @@ Prefer aligned plain text blocks over Markdown tables unless the user explicitly
 1. Collect rows: metric, baseline, candidate.
 2. Set direction for each metric.
 3. Determine the better value for each metric.
-4. Compute signed `change = right - left` in percentage points.
+4. Compute signed `change = second-column - first-column` in percentage points.
 5. Map `abs(change)` to impact marker (`*`, `**`, `***`, `****`) with no marker under `1%`.
 6. Append the marker to the winning value only and pad marker width for alignment.
 7. Render aligned rows with alternatives as columns and metrics as rows.
@@ -63,18 +65,18 @@ Prefer aligned plain text blocks over Markdown tables unless the user explicitly
 
 ### Side-by-Side Comparison (default, terminal-safe)
 
-Metric          Left         Right        Change
-Scam precision  .92          .95 *        +3%
-Scam recall     .70          .78 ***      +8%
-Scam FPR        .018         .012         -1%
-Macro F1        .83          .85 *        +2%
+Metric          fastText-ftz  transformer-int8  Change
+Scam precision  .92           .95 *             +3%
+Scam recall     .70           .78 ***           +8%
+Scam FPR        .018          .012              -1%
+Macro F1        .83           .85 *             +2%
 
 ### Comparison with Delta
 
-Metric          Left         Right        Change
-Model size MB   3.4          3.1 **       -9%
-Scam recall     .78 *        .76          -2%
-Latency p95 ms  58 **        61           +5%
+Metric          baseline-v1   candidate-v2      Change
+Model size MB   3.4           3.1 **            -9%
+Scam recall     .78 *         .76               -2%
+Latency p95 ms  58 **         61                +5%
 
 ## Style Controls
 

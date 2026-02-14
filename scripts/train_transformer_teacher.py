@@ -24,16 +24,19 @@ from transformer_common import (
     MODELS_DIR,
     TRAINING_CLASSES,
     PreparedRecord,
+    current_git_commit,
     decision_from_probs,
-    exact_match_accuracy,
+    hash_prepared_rows,
     load_prepared_rows,
-    micro_macro_from_metrics,
-    one_vs_all_metrics,
+    parse_seed_csv,
     require_cuda,
     save_json,
     set_seed,
     sigmoid,
+    stable_object_hash,
+    summarize_label_predictions,
     softmax,
+    utc_now_iso,
     write_jsonl,
 )
 
@@ -396,25 +399,7 @@ def evaluate_loader(
                     }
                 )
 
-    per_class = one_vs_all_metrics(y_true, y_pred, classes=TRAINING_CLASSES)
-    mm = micro_macro_from_metrics(per_class)
-
-    metrics = {
-        "metrics": {
-            label: {
-                "precision": v["precision"],
-                "recall": v["recall"],
-                "f1": v["f1"],
-                "fpr": v["fpr"],
-                "fnr": v["fnr"],
-                "support": v["support"],
-            }
-            for label, v in per_class.items()
-        },
-        "exact_match": exact_match_accuracy(y_true, y_pred),
-        "micro": mm["micro"],
-        "macro": mm["macro"],
-    }
+    metrics = summarize_label_predictions(y_true, y_pred, classes=TRAINING_CLASSES)
     return metrics, pred_rows
 
 
@@ -478,24 +463,7 @@ def eval_ensemble_predictions(
         out["topic_prob"] = topic_prob
         out_rows.append(out)
 
-    per_class = one_vs_all_metrics(y_true, y_pred, classes=TRAINING_CLASSES)
-    mm = micro_macro_from_metrics(per_class)
-    metrics = {
-        "metrics": {
-            label: {
-                "precision": v["precision"],
-                "recall": v["recall"],
-                "f1": v["f1"],
-                "fpr": v["fpr"],
-                "fnr": v["fnr"],
-                "support": v["support"],
-            }
-            for label, v in per_class.items()
-        },
-        "exact_match": exact_match_accuracy(y_true, y_pred),
-        "micro": mm["micro"],
-        "macro": mm["macro"],
-    }
+    metrics = summarize_label_predictions(y_true, y_pred, classes=TRAINING_CLASSES)
     return metrics, out_rows
 
 
@@ -539,9 +507,10 @@ def main() -> None:
     valid_rows = load_prepared_rows(args.valid)
     holdout_rows = load_prepared_rows(args.holdout)
 
-    seeds = [int(item.strip()) for item in args.seeds.split(",") if item.strip()]
-    if not seeds:
-        raise SystemExit("No seeds provided.")
+    try:
+        seeds = parse_seed_csv(args.seeds)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
     if len(train_rows) <= 5000 and len(seeds) < 3:
         raise SystemExit(
             f"Dataset has {len(train_rows)} train rows; expected 3 teacher seeds per plan, got {len(seeds)}."
@@ -554,6 +523,23 @@ def main() -> None:
     model_name_or_path = args.teacher_init_path or args.model_name
     out_dir = args.output_dir
     out_dir.mkdir(parents=True, exist_ok=True)
+    split_hashes = {
+        "train": hash_prepared_rows(train_rows),
+        "valid": hash_prepared_rows(valid_rows),
+        "holdout": hash_prepared_rows(holdout_rows),
+    }
+    teacher_identity_payload = {
+        "model_name_or_path": model_name_or_path,
+        "seeds": seeds,
+        "thresholds": {
+            "scam": args.scam_threshold,
+            "topic_crypto": args.topic_threshold,
+        },
+        "max_length": args.max_length,
+        "split_hashes": split_hashes,
+        "code_commit": current_git_commit(),
+    }
+    teacher_id = f"teacher-{stable_object_hash(teacher_identity_payload)[:16]}"
 
     per_seed_results: list[dict] = []
     for seed in seeds:
@@ -598,6 +584,7 @@ def main() -> None:
     write_jsonl(MODELS_DIR / "teacher_holdout_preds.jsonl", ensemble_holdout_out)
 
     summary = {
+        "teacher_id": teacher_id,
         "model_name_or_path": model_name_or_path,
         "seeds": seeds,
         "dtype": args.dtype,
@@ -623,7 +610,32 @@ def main() -> None:
     }
     save_json(out_dir / "training_summary.json", summary)
 
+    teacher_manifest = {
+        "version": 1,
+        "teacher_id": teacher_id,
+        "created_at": utc_now_iso(),
+        "code_commit": current_git_commit(),
+        "model_name_or_path": model_name_or_path,
+        "teacher_init_path": args.teacher_init_path,
+        "seeds": seeds,
+        "thresholds": {
+            "scam": args.scam_threshold,
+            "topic_crypto": args.topic_threshold,
+        },
+        "splits": {
+            "train": {"path": str(args.train), "rows": len(train_rows), "hash": split_hashes["train"]},
+            "valid": {"path": str(args.valid), "rows": len(valid_rows), "hash": split_hashes["valid"]},
+            "holdout": {
+                "path": str(args.holdout),
+                "rows": len(holdout_rows),
+                "hash": split_hashes["holdout"],
+            },
+        },
+    }
+    save_json(out_dir / "teacher_manifest.json", teacher_manifest)
+
     print(f"Wrote teacher summary to {out_dir / 'training_summary.json'}")
+    print(f"Wrote teacher manifest to {out_dir / 'teacher_manifest.json'}")
     print(f"Wrote ensemble valid preds to {MODELS_DIR / 'teacher_valid_preds.jsonl'}")
 
 

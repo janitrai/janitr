@@ -1,4 +1,4 @@
 interface:
   display_name: "General Visualization"
   short_description: "Present side-by-side metrics with aligned decimals and inline winner stars"
-  default_prompt: "Use this skill to format comparisons with alternatives as columns, metrics as rows, 2 sig figs, no leading zero for decimals under 1, decimal-point alignment, signed absolute change as right-minus-left integer %, aligned percent signs, and fixed-width impact stars on the better value."
+  default_prompt: "Use this skill to format comparisons with alternatives as columns, metrics as rows, real alternative names as headers (no Left/Right), 2 sig figs, no leading zero for decimals under 1, decimal-point alignment, signed integer % change as second-column minus first-column, aligned percent signs, and fixed-width impact stars on the better value."

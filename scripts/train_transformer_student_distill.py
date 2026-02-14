@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 from collections import Counter
 from pathlib import Path
 
@@ -12,10 +11,11 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from tokenizers import BertWordPieceTokenizer
-from torch import nn
 from torch.utils.data import DataLoader, Dataset
 from tqdm.auto import tqdm
-from transformers import BertConfig, BertModel, BertTokenizerFast
+from transformers import BertConfig, BertTokenizerFast
+
+from student_runtime import TinyStudentModel
 
 from transformer_common import (
     DATA_DIR,
@@ -23,16 +23,17 @@ from transformer_common import (
     TRAINING_CLASSES,
     PreparedRecord,
     assert_tokenizer_sanity,
-    decision_from_probs,
-    exact_match_accuracy,
+    hash_label_map,
+    hash_prepared_rows,
+    load_json,
     load_prepared_rows,
-    micro_macro_from_metrics,
-    one_vs_all_metrics,
+    predict_labels_from_probs,
     require_cuda,
     save_json,
     set_seed,
     sigmoid,
     softmax,
+    summarize_label_predictions,
     tokenizer_backend_vocab_size,
 )
 
@@ -46,38 +47,15 @@ DEFAULT_OUT_DIR = MODELS_DIR / "student"
 SPECIAL_TOKENS = ["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"]
 
 
-class TinyStudentModel(nn.Module):
-    def __init__(self, config: BertConfig, teacher_hidden_size: int) -> None:
-        super().__init__()
-        self.bert = BertModel(config, add_pooling_layer=False)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.head_scam_clean = nn.Linear(config.hidden_size, 2)
-        self.head_topic = nn.Linear(config.hidden_size, 1)
-        self.teacher_projections = nn.ModuleList(
-            [nn.Linear(teacher_hidden_size, config.hidden_size) for _ in range(config.num_hidden_layers)]
-        )
-
-    def forward(
-        self,
-        *,
-        input_ids: torch.Tensor,
-        attention_mask: torch.Tensor,
-        output_hidden_states: bool = False,
-    ) -> dict:
-        out = self.bert(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            output_hidden_states=output_hidden_states,
-            return_dict=True,
-        )
-        cls = self.dropout(out.last_hidden_state[:, 0])
-        scam_logits = self.head_scam_clean(cls)
-        topic_logits = self.head_topic(cls).squeeze(-1)
-        return {
-            "scam_logits": scam_logits,
-            "topic_logits": topic_logits,
-            "hidden_states": out.hidden_states if output_hidden_states else None,
-        }
+REQUIRED_CACHE_META_KEYS = {
+    "logits_cache_id",
+    "teacher_id",
+    "calibration_id",
+    "seeds",
+    "label_map_hash",
+    "split",
+    "split_hash",
+}
 
 
 class DistillTrainDataset(Dataset):
@@ -177,6 +155,60 @@ def collate(batch: list[dict]) -> dict:
         out["teacher_topic_logit"] = torch.stack([x["teacher_topic_logit"] for x in batch])
         out["teacher_hidden_cls"] = torch.stack([x["teacher_hidden_cls"] for x in batch])
     return out
+
+
+def infer_cache_meta_path(cache_path: Path) -> Path:
+    return Path(f"{cache_path}.meta.json")
+
+
+def load_cache_meta(path: Path, *, split: str) -> dict:
+    if not path.exists():
+        raise SystemExit(
+            f"Cache metadata missing: {path}. Re-run cache_teacher_logits.py to generate manifest files."
+        )
+    payload = load_json(path)
+    missing = sorted(REQUIRED_CACHE_META_KEYS - set(payload.keys()))
+    if missing:
+        raise SystemExit(f"Cache metadata {path} missing keys: {missing}")
+    if str(payload["split"]) != split:
+        raise SystemExit(f"Cache metadata split mismatch at {path}: expected '{split}', got '{payload['split']}'")
+    return payload
+
+
+def validate_cache_metadata(
+    *,
+    train_meta: dict,
+    valid_meta: dict,
+    train_rows: list[PreparedRecord],
+    valid_rows: list[PreparedRecord],
+) -> None:
+    for key in ("teacher_id", "calibration_id", "label_map_hash"):
+        if train_meta[key] != valid_meta[key]:
+            raise SystemExit(
+                f"Cache metadata mismatch for '{key}': train={train_meta[key]} valid={valid_meta[key]}"
+            )
+
+    train_seeds = [int(seed) for seed in train_meta["seeds"]]
+    valid_seeds = [int(seed) for seed in valid_meta["seeds"]]
+    if train_seeds != valid_seeds:
+        raise SystemExit(f"Cache seed mismatch: train={train_seeds} valid={valid_seeds}")
+
+    expected_label_hash = hash_label_map(TRAINING_CLASSES)
+    if str(train_meta["label_map_hash"]) != expected_label_hash:
+        raise SystemExit(
+            "Cache label map hash mismatch. Cached logits were produced for a different label map."
+        )
+
+    expected_train_hash = hash_prepared_rows(train_rows)
+    expected_valid_hash = hash_prepared_rows(valid_rows)
+    if str(train_meta["split_hash"]) != expected_train_hash:
+        raise SystemExit(
+            "Train cache split hash mismatch. Cached logits do not match current train prepared split."
+        )
+    if str(valid_meta["split_hash"]) != expected_valid_hash:
+        raise SystemExit(
+            "Valid cache split hash mismatch. Cached logits do not match current valid prepared split."
+        )
 
 
 def train_or_load_tokenizer(
@@ -294,41 +326,22 @@ def evaluate_model(
             input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
             with torch.autocast(device_type=device.type, enabled=use_amp, dtype=amp_dtype):
-                out = model(input_ids=input_ids, attention_mask=attention_mask)
+                out = model(input_ids=input_ids, attention_mask=attention_mask, return_dict=True)
 
             scam_logits = out["scam_logits"].detach().cpu().float().numpy()
             topic_logits = out["topic_logits"].detach().cpu().float().numpy()
             scam_probs = softmax(scam_logits)[:, 1]
             topic_probs = sigmoid(topic_logits)
+            preds = predict_labels_from_probs(
+                scam_probs,
+                topic_probs,
+                scam_threshold=scam_threshold,
+                topic_threshold=topic_threshold,
+            )
+            y_true.extend(batch["collapsed_label"])
+            y_pred.extend(preds)
 
-            for gold, s_prob, t_prob in zip(batch["collapsed_label"], scam_probs, topic_probs):
-                pred = decision_from_probs(
-                    float(s_prob),
-                    float(t_prob),
-                    scam_threshold=scam_threshold,
-                    topic_threshold=topic_threshold,
-                )
-                y_true.append(gold)
-                y_pred.append(pred)
-
-    per_class = one_vs_all_metrics(y_true, y_pred, classes=TRAINING_CLASSES)
-    mm = micro_macro_from_metrics(per_class)
-    return {
-        "metrics": {
-            label: {
-                "precision": v["precision"],
-                "recall": v["recall"],
-                "f1": v["f1"],
-                "fpr": v["fpr"],
-                "fnr": v["fnr"],
-                "support": v["support"],
-            }
-            for label, v in per_class.items()
-        },
-        "exact_match": exact_match_accuracy(y_true, y_pred),
-        "micro": mm["micro"],
-        "macro": mm["macro"],
-    }
+    return summarize_label_predictions(y_true, y_pred, classes=TRAINING_CLASSES)
 
 
 def main() -> None:
@@ -338,6 +351,8 @@ def main() -> None:
     parser.add_argument("--holdout", type=Path, default=DEFAULT_HOLDOUT)
     parser.add_argument("--cache-train", type=Path, default=DEFAULT_CACHE_TRAIN)
     parser.add_argument("--cache-valid", type=Path, default=DEFAULT_CACHE_VALID)
+    parser.add_argument("--cache-train-meta", type=Path, default=None)
+    parser.add_argument("--cache-valid-meta", type=Path, default=None)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUT_DIR)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--epochs", type=int, default=10)
@@ -377,6 +392,23 @@ def main() -> None:
     train_rows = load_prepared_rows(args.train)
     valid_rows = load_prepared_rows(args.valid)
     holdout_rows = load_prepared_rows(args.holdout)
+
+    cache_train_meta_path = args.cache_train_meta or infer_cache_meta_path(args.cache_train)
+    cache_valid_meta_path = args.cache_valid_meta or infer_cache_meta_path(args.cache_valid)
+    cache_train_meta = load_cache_meta(cache_train_meta_path, split="train")
+    cache_valid_meta = load_cache_meta(cache_valid_meta_path, split="valid")
+    validate_cache_metadata(
+        train_meta=cache_train_meta,
+        valid_meta=cache_valid_meta,
+        train_rows=train_rows,
+        valid_rows=valid_rows,
+    )
+    print(
+        "Cache metadata: "
+        f"teacher_id={cache_train_meta['teacher_id']} "
+        f"calibration_id={cache_train_meta['calibration_id']} "
+        f"seeds={','.join(str(s) for s in cache_train_meta['seeds'])}"
+    )
 
     with np.load(args.cache_train, allow_pickle=True) as cache_train_npz:
         cache_train = {key: cache_train_npz[key] for key in cache_train_npz.files}
@@ -460,11 +492,7 @@ def main() -> None:
             teacher_hidden = batch["teacher_hidden_cls"].to(device)
 
             with torch.autocast(device_type=device.type, enabled=use_amp, dtype=amp_dtype):
-                out = model(
-                    input_ids=input_ids,
-                    attention_mask=attention_mask,
-                    output_hidden_states=True,
-                )
+                out = model(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=True)
                 student_scam_logits = out["scam_logits"]
                 student_topic_logits = out["topic_logits"]
 
@@ -594,6 +622,18 @@ def main() -> None:
             "scam": args.scam_threshold,
             "topic_crypto": args.topic_threshold,
         },
+        "source_artifacts": {
+            "teacher_id": cache_train_meta["teacher_id"],
+            "calibration_id": cache_train_meta["calibration_id"],
+            "logits_cache_train_id": cache_train_meta["logits_cache_id"],
+            "logits_cache_valid_id": cache_valid_meta["logits_cache_id"],
+            "seeds": [int(seed) for seed in cache_train_meta["seeds"]],
+            "label_map_hash": cache_train_meta["label_map_hash"],
+            "split_hashes": {
+                "train": cache_train_meta["split_hash"],
+                "valid": cache_valid_meta["split_hash"],
+            },
+        },
     }
     save_json(args.output_dir / "student_config.json", config_payload)
 
@@ -603,7 +643,6 @@ def main() -> None:
         "config": config_payload,
     }
     save_json(args.output_dir / "student_eval.json", eval_payload)
-    save_json(MODELS_DIR / "student_eval.json", eval_payload)
 
     print(f"Saved student model to {args.output_dir}")
     print(f"Saved student eval to {args.output_dir / 'student_eval.json'}")
