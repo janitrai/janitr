@@ -1,0 +1,18 @@
+{
+  "holdout_forbidden_checks": [],
+  "ok": true,
+  "pairwise_overlaps": {
+    "calib_holdout": 0,
+    "train_calib": 0,
+    "train_holdout": 0,
+    "train_valid": 0,
+    "valid_calib": 0,
+    "valid_holdout": 0
+  },
+  "split_counts": {
+    "calib": 214,
+    "holdout": 1069,
+    "train": 2566,
+    "valid": 428
+  }
+}
