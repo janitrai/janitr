@@ -15,10 +15,15 @@ from transformer_common import (
     PreparedRecord,
     brier_score,
     calibration_bins,
+    current_git_commit,
     expected_calibration_error,
+    hash_prepared_rows,
+    load_json,
     load_prepared_rows,
     sigmoid,
     softmax,
+    stable_object_hash,
+    utc_now_iso,
     write_jsonl,
     load_jsonl,
     save_json,
@@ -28,6 +33,7 @@ DEFAULT_PREPARED_VALID = DATA_DIR / "transformer" / "valid.prepared.jsonl"
 DEFAULT_PREDS = MODELS_DIR / "teacher_valid_preds.jsonl"
 DEFAULT_OUT = MODELS_DIR / "teacher_calibration.json"
 DEFAULT_OUT_PREDS = MODELS_DIR / "teacher_valid_preds_calibrated.jsonl"
+DEFAULT_TEACHER_DIR = MODELS_DIR / "teacher"
 
 
 def nll_scam(logits: np.ndarray, y_true: np.ndarray, temp: float) -> float:
@@ -69,6 +75,7 @@ def main() -> None:
     parser.add_argument("--preds", type=Path, default=DEFAULT_PREDS)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--out-calibrated-preds", type=Path, default=DEFAULT_OUT_PREDS)
+    parser.add_argument("--teacher-dir", type=Path, default=None)
     parser.add_argument("--min-temp", type=float, default=0.5)
     parser.add_argument("--max-temp", type=float, default=5.0)
     parser.add_argument("--temp-step", type=float, default=0.05)
@@ -78,8 +85,28 @@ def main() -> None:
         raise SystemExit(f"Prepared valid split not found: {args.prepared_valid}")
     if not args.preds.exists():
         raise SystemExit(f"Teacher valid preds not found: {args.preds}")
+    teacher_dir = args.teacher_dir
+    if teacher_dir is None:
+        inferred = args.preds.parent / "teacher"
+        teacher_dir = inferred if inferred.exists() else DEFAULT_TEACHER_DIR
+    teacher_manifest_path = teacher_dir / "teacher_manifest.json"
+    if not teacher_manifest_path.exists():
+        raise SystemExit(
+            f"Teacher manifest missing: {teacher_manifest_path}. Re-run train_transformer_teacher.py first."
+        )
 
     valid_rows = load_prepared_rows(args.prepared_valid)
+    teacher_manifest = load_json(teacher_manifest_path)
+    teacher_id = str(teacher_manifest.get("teacher_id", "")).strip()
+    if not teacher_id:
+        raise SystemExit(f"Teacher manifest at {teacher_manifest_path} is missing teacher_id.")
+    valid_hash_expected = teacher_manifest.get("splits", {}).get("valid", {}).get("hash")
+    valid_hash_actual = hash_prepared_rows(valid_rows)
+    if valid_hash_expected and str(valid_hash_expected) != valid_hash_actual:
+        raise SystemExit(
+            "Prepared valid split hash does not match teacher manifest. "
+            "Calibration would mix incompatible artifacts."
+        )
     valid_by_id = {row.id: row for row in valid_rows}
 
     preds_raw = load_jsonl(args.preds)
@@ -127,6 +154,14 @@ def main() -> None:
     topic_bins_cal = calibration_bins(y_topic.astype(int).tolist(), topic_prob_cal.tolist())
 
     payload = {
+        "meta": {
+            "version": 1,
+            "calibration_id": f"calib-{stable_object_hash({'teacher_id': teacher_id, 'valid_hash': valid_hash_actual, 'preds': str(args.preds), 'min_temp': args.min_temp, 'max_temp': args.max_temp, 'temp_step': args.temp_step})[:16]}",
+            "teacher_id": teacher_id,
+            "valid_split_hash": valid_hash_actual,
+            "code_commit": current_git_commit(),
+            "created_at": utc_now_iso(),
+        },
         "temps": {
             "scam_clean_head": float(temp_scam),
             "topic_crypto_head": float(temp_topic),

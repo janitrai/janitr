@@ -9,16 +9,16 @@ from pathlib import Path
 import numpy as np
 import onnxruntime as ort
 import torch
-from torch import nn
 from torch.utils.data import DataLoader, Dataset
-from transformers import BertConfig, BertModel, BertTokenizerFast
+from transformers import BertTokenizerFast
+
+from student_runtime import load_student_from_dir
 
 from transformer_common import (
     DATA_DIR,
     MODELS_DIR,
     assert_tokenizer_sanity,
     decision_from_probs,
-    load_json,
     load_prepared_rows,
     sigmoid,
     softmax,
@@ -28,29 +28,6 @@ DEFAULT_STUDENT_DIR = MODELS_DIR / "student"
 DEFAULT_TRAIN = DATA_DIR / "transformer" / "train.prepared.jsonl"
 DEFAULT_VALID = DATA_DIR / "transformer" / "valid.prepared.jsonl"
 DEFAULT_OUT = MODELS_DIR / "student.onnx"
-
-
-class TinyStudentModel(nn.Module):
-    def __init__(self, config: BertConfig, teacher_hidden_size: int) -> None:
-        super().__init__()
-        self.bert = BertModel(config, add_pooling_layer=False)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.head_scam_clean = nn.Linear(config.hidden_size, 2)
-        self.head_topic = nn.Linear(config.hidden_size, 1)
-        self.teacher_projections = nn.ModuleList(
-            [nn.Linear(teacher_hidden_size, config.hidden_size) for _ in range(config.num_hidden_layers)]
-        )
-
-    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        out = self.bert(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            return_dict=True,
-        )
-        cls = self.dropout(out.last_hidden_state[:, 0])
-        scam_logits = self.head_scam_clean(cls)
-        topic_logits = self.head_topic(cls)
-        return scam_logits, topic_logits
 
 
 class EvalDataset(Dataset):
@@ -102,11 +79,7 @@ def main() -> None:
     parser.add_argument("--min-label-agreement", type=float, default=0.99)
     args = parser.parse_args()
 
-    config_path = args.student_dir / "student_config.json"
-    model_path = args.student_dir / "pytorch_model.bin"
-    tokenizer_dir = args.student_dir / "tokenizer"
-
-    for path in (config_path, model_path, tokenizer_dir, args.train, args.valid):
+    for path in (args.student_dir, args.train, args.valid):
         if not Path(path).exists():
             raise SystemExit(f"Missing required input: {path}")
     if args.parity_samples < 1000:
@@ -114,27 +87,9 @@ def main() -> None:
             f"parity-samples must be >= 1000 per plan acceptance criteria, got {args.parity_samples}."
         )
 
-    payload = load_json(config_path)
+    model, tokenizer, payload = load_student_from_dir(args.student_dir)
     arch = payload["architecture"]
     thresholds = payload.get("thresholds", {"scam": 0.5, "topic_crypto": 0.5})
-
-    tokenizer = BertTokenizerFast.from_pretrained(str(tokenizer_dir))
-    config = BertConfig(
-        vocab_size=int(arch["vocab_size"]),
-        hidden_size=int(arch["hidden_size"]),
-        num_hidden_layers=int(arch["num_hidden_layers"]),
-        num_attention_heads=int(arch["num_attention_heads"]),
-        intermediate_size=int(arch["intermediate_size"]),
-        max_position_embeddings=max(128, int(arch["max_length"]) + 8),
-        hidden_dropout_prob=float(arch["dropout"]),
-        attention_probs_dropout_prob=float(arch["dropout"]),
-        type_vocab_size=1,
-        pad_token_id=tokenizer.pad_token_id,
-    )
-    model = TinyStudentModel(config, teacher_hidden_size=int(arch["teacher_hidden_size"]))
-    state = torch.load(model_path, map_location="cpu")
-    model.load_state_dict(state)
-    model.eval()
     max_length = int(arch.get("max_length", args.max_length))
 
     rows = load_prepared_rows(args.valid) + load_prepared_rows(args.train)

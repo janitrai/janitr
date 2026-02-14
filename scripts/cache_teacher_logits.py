@@ -17,11 +17,18 @@ from transformers import AutoModel, AutoTokenizer
 from transformer_common import (
     DATA_DIR,
     MODELS_DIR,
+    TRAINING_CLASSES,
     PreparedRecord,
+    current_git_commit,
+    hash_label_map,
+    hash_prepared_rows,
     load_json,
     load_prepared_rows,
     require_cuda,
+    save_json,
     set_seed,
+    stable_object_hash,
+    utc_now_iso,
 )
 
 DEFAULT_TRAIN = DATA_DIR / "transformer" / "train.prepared.jsonl"
@@ -148,6 +155,11 @@ def cache_split(
     scam_temp: float,
     topic_temp: float,
     dtype: str,
+    teacher_id: str,
+    calibration_id: str,
+    seed_list: list[int],
+    label_map_hash: str,
+    split_hash: str,
 ) -> None:
     models: list[JanitrTeacherModel] = []
     tokenizers = []
@@ -241,8 +253,33 @@ def cache_split(
         scam_temp=np.array([scam_temp], dtype=np.float32),
         topic_temp=np.array([topic_temp], dtype=np.float32),
     )
+    metadata = {
+        "version": 1,
+        "logits_cache_id": f"logits-{stable_object_hash({'teacher_id': teacher_id, 'calibration_id': calibration_id, 'seed_list': seed_list, 'label_map_hash': label_map_hash, 'split': split_name, 'split_hash': split_hash})[:16]}",
+        "teacher_id": teacher_id,
+        "calibration_id": calibration_id,
+        "seeds": seed_list,
+        "label_map_hash": label_map_hash,
+        "split": split_name,
+        "split_hash": split_hash,
+        "rows": len(rows),
+        "code_commit": current_git_commit(),
+        "created_at": utc_now_iso(),
+        "path": str(out_path),
+    }
+    meta_path = Path(f"{out_path}.meta.json")
+    if meta_path.exists():
+        existing = load_json(meta_path)
+        for key in ("teacher_id", "calibration_id", "seeds", "label_map_hash", "split", "split_hash"):
+            if existing.get(key) != metadata.get(key):
+                raise SystemExit(
+                    f"Existing cache metadata mismatch for {meta_path} key={key}: "
+                    f"existing={existing.get(key)} new={metadata.get(key)}"
+                )
+    save_json(meta_path, metadata)
 
     print(f"Cached {split_name} logits to {out_path}")
+    print(f"Wrote cache metadata to {meta_path}")
 
 
 def main() -> None:
@@ -277,21 +314,57 @@ def main() -> None:
         if not path.exists():
             raise SystemExit(f"Missing required path: {path}")
 
+    teacher_manifest_path = args.teacher_dir / "teacher_manifest.json"
+    if not teacher_manifest_path.exists():
+        raise SystemExit(
+            f"Teacher manifest missing: {teacher_manifest_path}. Re-run train_transformer_teacher.py first."
+        )
+
     if not args.calibration.exists():
         raise SystemExit(
             f"Calibration file missing: {args.calibration}. Run calibrate_teacher.py first."
         )
 
+    teacher_manifest = load_json(teacher_manifest_path)
+    teacher_id = str(teacher_manifest.get("teacher_id", "")).strip()
+    if not teacher_id:
+        raise SystemExit(f"Teacher manifest at {teacher_manifest_path} is missing teacher_id.")
+    expected_seeds = [int(seed) for seed in teacher_manifest.get("seeds", [])]
+    if not expected_seeds:
+        raise SystemExit(f"Teacher manifest at {teacher_manifest_path} has empty seed list.")
+
     calibration = load_json(args.calibration)
+    calibration_meta = calibration.get("meta", {})
+    calibration_id = str(calibration_meta.get("calibration_id", "")).strip()
+    calibration_teacher_id = str(calibration_meta.get("teacher_id", "")).strip()
+    if not calibration_id or not calibration_teacher_id:
+        raise SystemExit(
+            "Calibration metadata is missing calibration_id/teacher_id. Re-run calibrate_teacher.py."
+        )
+    if calibration_teacher_id != teacher_id:
+        raise SystemExit(
+            f"Calibration teacher_id mismatch: calibration={calibration_teacher_id} teacher_manifest={teacher_id}"
+        )
     scam_temp = float(calibration["temps"]["scam_clean_head"])
     topic_temp = float(calibration["temps"]["topic_crypto_head"])
 
     train_rows = load_prepared_rows(args.train)
     valid_rows = load_prepared_rows(args.valid)
+    split_hashes = {
+        "train": hash_prepared_rows(train_rows),
+        "valid": hash_prepared_rows(valid_rows),
+    }
+    label_map_hash = hash_label_map(TRAINING_CLASSES)
 
     device = require_cuda(context="cache_teacher_logits.py")
 
     seed_dirs = list_seed_dirs(args.teacher_dir, args.seeds)
+    selected_seeds = [int(path.name.split("_", 1)[1]) for path in seed_dirs]
+    if selected_seeds != expected_seeds:
+        raise SystemExit(
+            f"Teacher seed mismatch. selected={selected_seeds} manifest={expected_seeds}. "
+            "Refusing to mix incompatible seed sets."
+        )
     print("Teacher seeds:", ", ".join(path.name for path in seed_dirs))
 
     cache_split(
@@ -304,6 +377,11 @@ def main() -> None:
         scam_temp=scam_temp,
         topic_temp=topic_temp,
         dtype=args.dtype,
+        teacher_id=teacher_id,
+        calibration_id=calibration_id,
+        seed_list=selected_seeds,
+        label_map_hash=label_map_hash,
+        split_hash=split_hashes["train"],
     )
     cache_split(
         split_name="valid",
@@ -315,6 +393,11 @@ def main() -> None:
         scam_temp=scam_temp,
         topic_temp=topic_temp,
         dtype=args.dtype,
+        teacher_id=teacher_id,
+        calibration_id=calibration_id,
+        seed_list=selected_seeds,
+        label_map_hash=label_map_hash,
+        split_hash=split_hashes["valid"],
     )
 
 
