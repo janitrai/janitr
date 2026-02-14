@@ -53,8 +53,11 @@ Previous contamination evidence (holdout overlap with old split snapshot):
   - `uv run --project scripts python scripts/train_fasttext.py --train data/train.txt --model-out models/benchmarks/2026-02-14_expanded_holdout/fasttext/scam_detector.bin`
 - Threshold tuning:
   - `uv run --project scripts python scripts/tune_thresholds_fpr.py --model models/benchmarks/2026-02-14_expanded_holdout/fasttext/scam_detector.bin --data data/calib.txt --out models/benchmarks/2026-02-14_expanded_holdout/fasttext/thresholds.json --target-fpr 0.02 --labels topic_crypto,scam`
+- Quantization (production profile):
+  - `uv run --project scripts python scripts/reduce_fasttext.py --model models/benchmarks/2026-02-14_expanded_holdout/fasttext/scam_detector.bin --valid data/valid.txt --cutoff 1000 --dsub 8 --out models/benchmarks/2026-02-14_expanded_holdout/fasttext/scam_detector.ftz`
 - Holdout eval artifact:
   - `models/benchmarks/2026-02-14_expanded_holdout/fasttext/holdout_eval.json`
+  - `models/benchmarks/2026-02-14_expanded_holdout/fasttext/holdout_eval_ftz.json`
 
 ### Transformer (teacher -> student)
 
@@ -77,29 +80,28 @@ Previous contamination evidence (holdout overlap with old split snapshot):
 
 Operating points used:
 
-- fastText thresholds: `scam=0.8439`, `topic_crypto=0.9957`, `clean=0.10`
+- fastText (`.ftz`) thresholds: `scam=0.8439`, `topic_crypto=0.9957`, `clean=0.10`
 - Transformer thresholds: `scam=0.87`, `topic_crypto=0.50`
 
 Metrics:
 
-- scam precision: fastText `0.8976` vs transformer-int8 `0.9375`
-- scam recall: fastText `0.6082` vs transformer-int8 `0.6122`
-- scam F1: fastText `0.7251` vs transformer-int8 `0.7407`
-- scam FPR: fastText `0.0206` vs transformer-int8 `0.0121`
-- topic_crypto F1: fastText `0.7139` vs transformer-int8 `0.7806`
-- macro F1: fastText `0.7461` vs transformer-int8 `0.8013`
-- exact match: fastText `0.7138` vs transformer-int8 `0.8241`
+- scam precision: fastText-ftz `0.9128` vs transformer-int8 `0.9375`
+- scam recall: fastText-ftz `0.5551` vs transformer-int8 `0.6122`
+- scam F1: fastText-ftz `0.6904` vs transformer-int8 `0.7407`
+- scam FPR: fastText-ftz `0.0158` vs transformer-int8 `0.0121`
+- topic_crypto F1: fastText-ftz `0.8258` vs transformer-int8 `0.7806`
+- macro F1: fastText-ftz `0.7838` vs transformer-int8 `0.8013`
+- exact match: fastText-ftz `0.7624` vs transformer-int8 `0.8241`
 
-Result: transformer student is better on this frozen benchmark, including the primary scam operating point (higher precision, slightly higher recall, materially lower FPR).
+Result: transformer student is better on the primary scam operating point (higher precision, higher recall, lower FPR) and overall macro/exact-match. fastText-ftz is stronger only on topic_crypto F1.
 
 ## Artifact Sizes
 
 - fastText `.bin`: `770 MB` (`models/benchmarks/2026-02-14_expanded_holdout/fasttext/scam_detector.bin`)
+- fastText `.ftz` (cutoff=1000,dsub=8): `123 KB` (`models/benchmarks/2026-02-14_expanded_holdout/fasttext/scam_detector.ftz`)
 - transformer student checkpoint: `16 MB`
 - transformer ONNX fp32: `13 MB`
 - transformer ONNX int8: `3.4 MB`
-
-Note: fastText binary above is unquantized training output.
 
 ## Conclusion
 
