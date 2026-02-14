@@ -1,0 +1,67 @@
+{
+  "benchmark_id": "2026-02-14_expanded_holdout",
+  "created_at_utc": "2026-02-14T14:00:29Z",
+  "source": {
+    "input": "data/sample.jsonl",
+    "split_script": "scripts/make_stratified_splits.py",
+    "split_command": "uv run --project scripts python scripts/make_stratified_splits.py --input data/sample.jsonl --train-ratio 0.60 --valid-ratio 0.10 --calib-ratio 0.05 --holdout-ratio 0.25 --seed 42"
+  },
+  "splits": {
+    "train": {
+      "jsonl": "data/train.jsonl",
+      "ids": "dataset/benchmarks/2026-02-14_expanded_holdout/train.ids.txt",
+      "rows": 2566,
+      "label_support": {
+        "clean": 1216,
+        "topic_crypto": 1227,
+        "scam": 587
+      },
+      "sha256_jsonl": "18b5e1262bb9a02368f8f2164f71de271ad52acb0259ebce3f1353de57400246",
+      "sha256_ids": "986cb3b7bb82316cf91f78da90fc7532314eca00fcb309f7817645750a5b34dc"
+    },
+    "valid": {
+      "jsonl": "data/valid.jsonl",
+      "ids": "dataset/benchmarks/2026-02-14_expanded_holdout/valid.ids.txt",
+      "rows": 428,
+      "label_support": {
+        "clean": 203,
+        "topic_crypto": 204,
+        "scam": 98
+      },
+      "sha256_jsonl": "692b1bd78f8c95cff4eea412a4e088f1eb3ecffcb8cff66b1d195478c9c05dea",
+      "sha256_ids": "b2aba19f00931438a433ec831ad9d5e3796897b3f5cbc0cf5e60008f95fc9658"
+    },
+    "calib": {
+      "jsonl": "data/calib.jsonl",
+      "ids": "dataset/benchmarks/2026-02-14_expanded_holdout/calib.ids.txt",
+      "rows": 214,
+      "label_support": {
+        "clean": 101,
+        "topic_crypto": 102,
+        "scam": 50
+      },
+      "sha256_jsonl": "b9a6ab773c067f3b7ef85d22c26ad4ad4c371b2bdb1520830ec99ec093f9dddd",
+      "sha256_ids": "5c865452c0b4dbda585b6492fce2e200a6d264b7b7328f0c69a26ee51ab3ef2d"
+    },
+    "holdout": {
+      "jsonl": "data/holdout.jsonl",
+      "ids": "dataset/benchmarks/2026-02-14_expanded_holdout/holdout.ids.txt",
+      "rows": 1069,
+      "label_support": {
+        "clean": 506,
+        "topic_crypto": 512,
+        "scam": 245
+      },
+      "sha256_jsonl": "d65d7a089227397349601009601698910d1b98165431dbb652525857b07e20f9",
+      "sha256_ids": "11783c36e752d3a6b1ce6765c52a3790bcb369aae77994172e72d9c680568e7a"
+    }
+  },
+  "expected_invariants": {
+    "train_valid_overlap": 0,
+    "train_calib_overlap": 0,
+    "train_holdout_overlap": 0,
+    "valid_calib_overlap": 0,
+    "valid_holdout_overlap": 0,
+    "calib_holdout_overlap": 0
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "holdout_forbidden_checks": [
+    {
+      "holdout_overlap": 847,
+      "path": "data/split_backups/2026-02-14-holdout-expand/train.jsonl",
+      "rows": 3421
+    },
+    {
+      "holdout_overlap": 72,
+      "path": "data/split_backups/2026-02-14-holdout-expand/valid.jsonl",
+      "rows": 428
+    },
+    {
+      "holdout_overlap": 10,
+      "path": "data/split_backups/2026-02-14-holdout-expand/holdout.jsonl",
+      "rows": 214
+    }
+  ],
+  "ok": false,
+  "pairwise_overlaps": {
+    "calib_holdout": 0,
+    "train_calib": 0,
+    "train_holdout": 0,
+    "train_valid": 0,
+    "valid_calib": 0,
+    "valid_holdout": 0
+  },
+  "split_counts": {
+    "calib": 214,
+    "holdout": 1069,
+    "train": 2566,
+    "valid": 428
+  }
+}
