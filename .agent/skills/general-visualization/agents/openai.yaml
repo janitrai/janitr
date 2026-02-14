@@ -1,4 +1,4 @@
 interface:
   display_name: "General Visualization"
-  short_description: "Present comparisons and metrics with aligned plain-text layouts"
-  default_prompt: "Use this skill to format side-by-side metric comparisons with readable fixed-width alignment, no markdown tables, and explicit better/worse labels."
+  short_description: "Present side-by-side metrics with aligned decimals and inline winner stars"
+  default_prompt: "Use this skill to format comparisons with alternatives as columns, metrics as rows, 2 sig figs, no leading zero for decimals under 1, decimal-point alignment, signed absolute change as right-minus-left integer %, aligned percent signs, and fixed-width impact stars on the better value."

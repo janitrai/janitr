@@ -1,6 +1,6 @@
 ---
 name: general-visualization
-description: Format comparisons and metrics as readable fixed-width plain text with aligned columns, explicit better/worse labels, and optional deltas. Use when users ask for side-by-side values, no-markdown-table output, console-style alignment, before-vs-after comparisons, experiment scorecards, or quick leaderboard-style summaries.
+description: Format comparisons as aligned plain text with alternatives as columns, metrics as rows, decimal-point alignment, and inline winner-impact stars.
 ---
 
 # General Visualization
@@ -12,10 +12,26 @@ Prefer aligned plain text blocks over Markdown tables unless the user explicitly
 
 ## Core Rules
 
-- Use fixed-width alignment inside fenced `text` blocks for comparisons with multiple metrics.
-- Keep one precision policy per output (for example, 4 decimals for rates).
+- Use aligned plain-text rows for comparisons; do not use Markdown tables.
+- For comparisons, keep alternatives on the horizontal axis (columns) and metrics on the vertical axis (rows).
+- Keep decimal points vertically aligned within each numeric column.
+- Keep one precision policy per output.
+- Default precision policy: 2 significant figures.
+- For decimals with absolute value under 1, omit the leading zero (`.84`, `-.07`).
+- Use a `change` column as absolute delta: `right - left`.
+- Format `change` as signed integer percentages (rounded) with percent signs aligned (`+3%`, `-6%`, `0%`).
 - Preserve units and directionality (`higher is better` vs `lower is better`).
-- Always include a verdict column (`better`, `worse`, `same`) when comparing two variants.
+- Do not include a `better/worse` verdict column.
+- Do not use HTML tags for emphasis.
+- Attach the impact marker directly to the better value as a suffix.
+- Keep a fixed-width star slot so markers line up vertically (`*`, `**`, `***`, `****`).
+- For ties or near-ties (`<1%`), do not add any marker.
+- Impact markers:
+  - no marker for roughly equal (`0%` to `<1%`)
+  - `*` for `1%` to `<5%`
+  - `**` for `5%` to `<10%`
+  - `***` for `10%` to `50%`
+  - `****` for `>50%`
 - If direction is ambiguous, state the assumption explicitly.
 - Keep row labels short and stable (`Scam precision`, `Macro F1`, `Latency p95`).
 - Do not hide regressions.
@@ -24,41 +40,47 @@ Prefer aligned plain text blocks over Markdown tables unless the user explicitly
 
 - Higher is better: `precision`, `recall`, `f1`, `accuracy`, `auc`, `throughput`.
 - Lower is better: `fpr`, `fnr`, `latency`, `error`, `loss`, `size`, `memory`.
-- For unknown metric names, require an explicit assumption before labeling better/worse.
+- For unknown metric names, require an explicit assumption before choosing the better value.
+
+## Improvement Calculation
+
+- Compute signed change as `change% = (right - left) * 100`.
+- Determine which side is better using metric direction.
+- Use `abs(change%)` to choose marker strength.
+- If `abs(change%) < 1`, use no marker.
 
 ## Workflow
 
 1. Collect rows: metric, baseline, candidate.
 2. Set direction for each metric.
-3. Compute optional delta (`candidate - baseline` or `%` change).
-4. Assign verdict (`better`, `worse`, `same`).
-5. Render aligned plain-text block.
+3. Determine the better value for each metric.
+4. Compute signed `change = right - left` in percentage points.
+5. Map `abs(change)` to impact marker (`*`, `**`, `***`, `****`) with no marker under `1%`.
+6. Append the marker to the winning value only and pad marker width for alignment.
+7. Render aligned rows with alternatives as columns and metrics as rows.
 
 ## Output Templates
 
-### Side-by-Side Comparison (default)
+### Side-by-Side Comparison (default, terminal-safe)
 
-```text
-Metric          Baseline    Candidate   Verdict
-Scam precision  0.9512      0.9211      worse
-Scam recall     0.7800      0.7000      worse
-Scam FPR        0.0122      0.0183      worse
-Macro F1        0.8504      0.8301      worse
-```
+Metric          Left         Right        Change
+Scam precision  .92          .95 *        +3%
+Scam recall     .70          .78 ***      +8%
+Scam FPR        .018         .012         -1%
+Macro F1        .83          .85 *        +2%
 
 ### Comparison with Delta
 
-```text
-Metric          Baseline    Candidate   Delta       Verdict
-Model size MB   3.40        3.10        -0.30       better
-Scam recall     0.7800      0.7600      -0.0200     worse
-Latency p95 ms  58          61          +3          worse
-```
+Metric          Left         Right        Change
+Model size MB   3.4          3.1 **       -9%
+Scam recall     .78 *        .76          -2%
+Latency p95 ms  58 **        61           +5%
 
 ## Style Controls
 
-- If user requests emphasis, apply `**bold**` only to values or verdicts.
+- Keep output terminal-friendly plain text; avoid HTML tags entirely.
 - If user requests no table, still use aligned rows (not Markdown tables).
 - If output is short (1-3 metrics), keep to single compact block without extra sections.
+- Do not add a dedicated better/worse column unless explicitly requested.
 
 This skill intentionally uses no bundled scripts/resources.
