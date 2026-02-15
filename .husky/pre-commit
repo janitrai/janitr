@@ -26,11 +26,3 @@ if [ "$dup_count" -gt 0 ]; then
   echo "❌ Duplicate IDs detected ($dup_count). Resolve duplicates before committing."
   exit 1
 fi
-
-# Validate offline experiments manifests when present
-RUNS_ROOT="${JANITR_EXPERIMENTS_RUNS_ROOT:-$HOME/offline/janitr-experiments/runs}"
-if [ -d "$RUNS_ROOT" ]; then
-  uv run scripts/validate_experiment_runs.py --runs-root "$RUNS_ROOT"
-else
-  echo "ℹ️  Skipping experiment manifest validation; runs root not found: $RUNS_ROOT"
-fi

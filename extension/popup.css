@@ -1,0 +1,139 @@
+:root {
+  --bg: #f5f8ff;
+  --panel: #ffffff;
+  --text: #1f2530;
+  --muted: #607089;
+  --border: #d8e1f0;
+  --accent: #0a5bb8;
+  --accent-2: #08417f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  width: 360px;
+  min-height: 420px;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  background: linear-gradient(180deg, #e9f1ff 0%, var(--bg) 38%);
+  color: var(--text);
+}
+
+.app {
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+header p {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.panel {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+label {
+  font-size: 0.77rem;
+  color: var(--muted);
+}
+
+select,
+input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  font-size: 0.85rem;
+  padding: 8px;
+}
+
+button {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--accent-2);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+button.ghost {
+  background: #e8eefb;
+  color: #2f4d78;
+}
+
+button.ghost:hover {
+  background: #dbe7ff;
+}
+
+.row {
+  display: grid;
+  gap: 6px;
+}
+
+.meta-row {
+  display: grid;
+  gap: 4px;
+}
+
+.meta-row span {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.meta-row strong {
+  font-size: 0.8rem;
+  word-break: break-word;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+footer#status {
+  font-size: 0.77rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  background: #fff;
+  color: #3a4557;
+}
+
+footer#status[data-tone="success"] {
+  color: #166534;
+  border-color: #c4ead3;
+  background: #effcf4;
+}
+
+footer#status[data-tone="error"] {
+  color: #7f1d1d;
+  border-color: #f3c3c3;
+  background: #fff1f1;
+}

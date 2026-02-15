@@ -4,6 +4,7 @@ const ENTRY_POINTS = [
   "extension/src/background.ts",
   "extension/src/content-script.ts",
   "extension/src/offscreen.ts",
+  "extension/src/popup.ts",
   "extension/src/options.ts",
   "extension/src/fasttext/classifier.ts",
   "extension/src/fasttext/fasttext.ts",
