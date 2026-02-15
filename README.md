@@ -52,6 +52,13 @@ pnpm install
 pnpm extension:build
 ```
 
+If `pnpm install` warns about ignored build scripts, run this once and then build again:
+
+```bash
+pnpm rebuild
+pnpm extension:build
+```
+
 3. Open Chrome → `chrome://extensions`
 4. Enable **Developer mode** (top right)
 5. Click **Load unpacked** → select the `extension/` folder
