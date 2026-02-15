@@ -44,13 +44,18 @@ The approach: start narrow (crypto scams have clear ground truth), prove the pip
 ## Install
 
 1. Clone or download this repo
-2. Enable Corepack (once): `corepack enable`
-3. Install dependencies: `pnpm install`
-4. Build extension assets: `pnpm extension:build`
-5. Open Chrome → `chrome://extensions`
-6. Enable **Developer mode** (top right)
-7. Click **Load unpacked** → select the `extension/` folder
-8. Pin the extension to your toolbar
+2. Run setup commands:
+
+```bash
+corepack enable
+pnpm install
+pnpm extension:build
+```
+
+3. Open Chrome → `chrome://extensions`
+4. Enable **Developer mode** (top right)
+5. Click **Load unpacked** → select the `extension/` folder
+6. Pin the extension to your toolbar
 
 ## How It Works
 
