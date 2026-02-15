@@ -234,4 +234,4 @@ Log each entry after completing the step or realizing the insight. No exceptions
 
 ## Skill Breadcrumbs
 
-- `general-visualization` (`.agent/skills/general-visualization/SKILL.md`): use for aligned plain-text metric comparisons (no markdown tables), explicit better/worse verdicts, and optional deltas. Trigger with `general-visualization` or `$general-visualization`.
+- `general-visualization` (`.agent/skills/general-visualization/SKILL.md`): NON-VIOLABLE RULE — YOU MUST USE THIS SKILL for aligned plain-text metric comparisons (no markdown tables), explicit better/worse verdicts, and optional deltas. Trigger with `general-visualization` or `$general-visualization`.

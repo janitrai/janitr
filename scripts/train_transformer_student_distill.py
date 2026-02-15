@@ -15,6 +15,7 @@ from torch.utils.data import DataLoader, Dataset
 from tqdm.auto import tqdm
 from transformers import BertConfig, BertTokenizerFast
 
+from run_naming import apply_run_name_template, resolve_run_name
 from student_runtime import TinyStudentModel
 
 from transformer_common import (
@@ -114,7 +115,9 @@ class DistillTrainDataset(Dataset):
 
 
 class EvalDataset(Dataset):
-    def __init__(self, rows: list[PreparedRecord], tokenizer: BertTokenizerFast, max_length: int) -> None:
+    def __init__(
+        self, rows: list[PreparedRecord], tokenizer: BertTokenizerFast, max_length: int
+    ) -> None:
         self.rows = rows
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -151,9 +154,15 @@ def collate(batch: list[dict]) -> dict:
         "y_topic": torch.stack([x["y_topic"] for x in batch]),
     }
     if "teacher_scam_logits" in batch[0]:
-        out["teacher_scam_logits"] = torch.stack([x["teacher_scam_logits"] for x in batch])
-        out["teacher_topic_logit"] = torch.stack([x["teacher_topic_logit"] for x in batch])
-        out["teacher_hidden_cls"] = torch.stack([x["teacher_hidden_cls"] for x in batch])
+        out["teacher_scam_logits"] = torch.stack(
+            [x["teacher_scam_logits"] for x in batch]
+        )
+        out["teacher_topic_logit"] = torch.stack(
+            [x["teacher_topic_logit"] for x in batch]
+        )
+        out["teacher_hidden_cls"] = torch.stack(
+            [x["teacher_hidden_cls"] for x in batch]
+        )
     return out
 
 
@@ -171,7 +180,9 @@ def load_cache_meta(path: Path, *, split: str) -> dict:
     if missing:
         raise SystemExit(f"Cache metadata {path} missing keys: {missing}")
     if str(payload["split"]) != split:
-        raise SystemExit(f"Cache metadata split mismatch at {path}: expected '{split}', got '{payload['split']}'")
+        raise SystemExit(
+            f"Cache metadata split mismatch at {path}: expected '{split}', got '{payload['split']}'"
+        )
     return payload
 
 
@@ -191,7 +202,9 @@ def validate_cache_metadata(
     train_seeds = [int(seed) for seed in train_meta["seeds"]]
     valid_seeds = [int(seed) for seed in valid_meta["seeds"]]
     if train_seeds != valid_seeds:
-        raise SystemExit(f"Cache seed mismatch: train={train_seeds} valid={valid_seeds}")
+        raise SystemExit(
+            f"Cache seed mismatch: train={train_seeds} valid={valid_seeds}"
+        )
 
     expected_label_hash = hash_label_map(TRAINING_CLASSES)
     if str(train_meta["label_map_hash"]) != expected_label_hash:
@@ -245,7 +258,9 @@ def train_or_load_tokenizer(
             )
             return tokenizer
         except SystemExit as exc:
-            print(f"Tokenizer at {tokenizer_dir} failed sanity checks ({exc}); rebuilding.")
+            print(
+                f"Tokenizer at {tokenizer_dir} failed sanity checks ({exc}); rebuilding."
+            )
 
     tokenizer_dir.mkdir(parents=True, exist_ok=True)
     wp = BertWordPieceTokenizer(lowercase=True, strip_accents=False, clean_text=False)
@@ -287,20 +302,26 @@ def train_or_load_tokenizer(
     return tokenizer
 
 
-def compute_weights(rows: list[PreparedRecord], device: torch.device) -> tuple[torch.Tensor, torch.Tensor]:
+def compute_weights(
+    rows: list[PreparedRecord], device: torch.device
+) -> tuple[torch.Tensor, torch.Tensor]:
     scam_counts = Counter(row.y_scam_clean for row in rows)
     clean_count = max(1, scam_counts.get(0, 0))
     scam_count = max(1, scam_counts.get(1, 0))
     total = clean_count + scam_count
 
     ce_weight = torch.tensor(
-        [total / (2 * clean_count), total / (2 * scam_count)], dtype=torch.float32, device=device
+        [total / (2 * clean_count), total / (2 * scam_count)],
+        dtype=torch.float32,
+        device=device,
     )
 
     topic_pos = sum(row.y_topics[0] for row in rows)
     topic_neg = len(rows) - topic_pos
     pos_weight = torch.tensor(
-        [float(topic_neg) / max(1.0, float(topic_pos))], dtype=torch.float32, device=device
+        [float(topic_neg) / max(1.0, float(topic_pos))],
+        dtype=torch.float32,
+        device=device,
     )
     return ce_weight, pos_weight
 
@@ -325,8 +346,12 @@ def evaluate_model(
         for batch in loader:
             input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
-            with torch.autocast(device_type=device.type, enabled=use_amp, dtype=amp_dtype):
-                out = model(input_ids=input_ids, attention_mask=attention_mask, return_dict=True)
+            with torch.autocast(
+                device_type=device.type, enabled=use_amp, dtype=amp_dtype
+            ):
+                out = model(
+                    input_ids=input_ids, attention_mask=attention_mask, return_dict=True
+                )
 
             scam_logits = out["scam_logits"].detach().cpu().float().numpy()
             topic_logits = out["topic_logits"].detach().cpu().float().numpy()
@@ -354,6 +379,12 @@ def main() -> None:
     parser.add_argument("--cache-train-meta", type=Path, default=None)
     parser.add_argument("--cache-valid-meta", type=Path, default=None)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUT_DIR)
+    parser.add_argument(
+        "--run-name",
+        type=str,
+        default=None,
+        help="Run name. Defaults to yyyy-mm-dd-<petname>. Use {run_name} in --output-dir to template.",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--batch-size", type=int, default=32)
@@ -379,13 +410,24 @@ def main() -> None:
     parser.add_argument(
         "--dtype",
         choices=["fp16", "bf16", "fp32"],
-        default="bf16" if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else "fp16",
+        default="bf16"
+        if torch.cuda.is_available() and torch.cuda.is_bf16_supported()
+        else "fp16",
     )
     args = parser.parse_args()
 
+    run_name = resolve_run_name(args.run_name)
+    output_dir = apply_run_name_template(args.output_dir, run_name)
+
     set_seed(args.seed)
 
-    for path in (args.train, args.valid, args.holdout, args.cache_train, args.cache_valid):
+    for path in (
+        args.train,
+        args.valid,
+        args.holdout,
+        args.cache_train,
+        args.cache_valid,
+    ):
         if not path.exists():
             raise SystemExit(f"Missing required input: {path}")
 
@@ -393,8 +435,12 @@ def main() -> None:
     valid_rows = load_prepared_rows(args.valid)
     holdout_rows = load_prepared_rows(args.holdout)
 
-    cache_train_meta_path = args.cache_train_meta or infer_cache_meta_path(args.cache_train)
-    cache_valid_meta_path = args.cache_valid_meta or infer_cache_meta_path(args.cache_valid)
+    cache_train_meta_path = args.cache_train_meta or infer_cache_meta_path(
+        args.cache_train
+    )
+    cache_valid_meta_path = args.cache_valid_meta or infer_cache_meta_path(
+        args.cache_valid
+    )
     cache_train_meta = load_cache_meta(cache_train_meta_path, split="train")
     cache_valid_meta = load_cache_meta(cache_valid_meta_path, split="valid")
     validate_cache_metadata(
@@ -414,7 +460,7 @@ def main() -> None:
         cache_train = {key: cache_train_npz[key] for key in cache_train_npz.files}
     teacher_hidden_size = int(cache_train["teacher_hidden_cls"].shape[-1])
 
-    tokenizer_dir = args.output_dir / "tokenizer"
+    tokenizer_dir = output_dir / "tokenizer"
     tokenizer = train_or_load_tokenizer(
         rows=train_rows,
         tokenizer_dir=tokenizer_dir,
@@ -454,10 +500,16 @@ def main() -> None:
         cache=cache_train,
     )
     valid_ds = EvalDataset(valid_rows, tokenizer=tokenizer, max_length=args.max_length)
-    holdout_ds = EvalDataset(holdout_rows, tokenizer=tokenizer, max_length=args.max_length)
+    holdout_ds = EvalDataset(
+        holdout_rows, tokenizer=tokenizer, max_length=args.max_length
+    )
 
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, collate_fn=collate)
-    valid_loader = DataLoader(valid_ds, batch_size=args.eval_batch_size, shuffle=False, collate_fn=collate)
+    train_loader = DataLoader(
+        train_ds, batch_size=args.batch_size, shuffle=True, collate_fn=collate
+    )
+    valid_loader = DataLoader(
+        valid_ds, batch_size=args.eval_batch_size, shuffle=False, collate_fn=collate
+    )
     holdout_loader = DataLoader(
         holdout_ds,
         batch_size=args.eval_batch_size,
@@ -467,7 +519,9 @@ def main() -> None:
 
     ce_weight, topic_pos_weight = compute_weights(train_rows, device)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    optimizer = torch.optim.AdamW(
+        model.parameters(), lr=args.lr, weight_decay=args.weight_decay
+    )
     use_amp = device.type == "cuda" and args.dtype in {"fp16", "bf16"}
     scaler = torch.cuda.amp.GradScaler(enabled=(use_amp and args.dtype == "fp16"))
     amp_dtype = torch.float16 if args.dtype == "fp16" else torch.bfloat16
@@ -480,7 +534,9 @@ def main() -> None:
         running_loss = 0.0
         optimizer.zero_grad(set_to_none=True)
 
-        progress = tqdm(train_loader, desc=f"student epoch {epoch}/{args.epochs}", leave=False)
+        progress = tqdm(
+            train_loader, desc=f"student epoch {epoch}/{args.epochs}", leave=False
+        )
         for step, batch in enumerate(progress, start=1):
             input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
@@ -491,8 +547,14 @@ def main() -> None:
             teacher_topic_logit = batch["teacher_topic_logit"].to(device)
             teacher_hidden = batch["teacher_hidden_cls"].to(device)
 
-            with torch.autocast(device_type=device.type, enabled=use_amp, dtype=amp_dtype):
-                out = model(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=True)
+            with torch.autocast(
+                device_type=device.type, enabled=use_amp, dtype=amp_dtype
+            ):
+                out = model(
+                    input_ids=input_ids,
+                    attention_mask=attention_mask,
+                    output_hidden_states=True,
+                )
                 student_scam_logits = out["scam_logits"]
                 student_topic_logits = out["topic_logits"]
 
@@ -507,18 +569,15 @@ def main() -> None:
                 t = args.distill_temp
                 teacher_scam_probs = F.softmax(teacher_scam_logits / t, dim=-1)
                 student_scam_log_probs = F.log_softmax(student_scam_logits / t, dim=-1)
-                soft_scam = F.kl_div(student_scam_log_probs, teacher_scam_probs, reduction="batchmean") * (
-                    t * t
-                )
+                soft_scam = F.kl_div(
+                    student_scam_log_probs, teacher_scam_probs, reduction="batchmean"
+                ) * (t * t)
 
                 teacher_topic_probs = torch.sigmoid(teacher_topic_logit / t)
-                soft_topic = (
-                    F.binary_cross_entropy_with_logits(
-                        student_topic_logits / t,
-                        teacher_topic_probs,
-                    )
-                    * (t * t)
-                )
+                soft_topic = F.binary_cross_entropy_with_logits(
+                    student_topic_logits / t,
+                    teacher_topic_probs,
+                ) * (t * t)
                 soft_loss = soft_scam + soft_topic
 
                 student_hidden_states = out["hidden_states"]
@@ -575,8 +634,8 @@ def main() -> None:
         best_state = {k: v.detach().cpu() for k, v in model.state_dict().items()}
     model.load_state_dict(best_state)
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    torch.save(model.state_dict(), args.output_dir / "pytorch_model.bin")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(model.state_dict(), output_dir / "pytorch_model.bin")
     tokenizer.save_pretrained(str(tokenizer_dir))
 
     valid_metrics = evaluate_model(
@@ -597,6 +656,7 @@ def main() -> None:
     )
 
     config_payload = {
+        "run_name": run_name,
         "architecture": {
             "hidden_size": args.hidden_size,
             "num_hidden_layers": args.num_hidden_layers,
@@ -617,6 +677,7 @@ def main() -> None:
             "hidden_loss_weight": args.hidden_loss_weight,
             "dtype": args.dtype,
             "seed": args.seed,
+            "output_dir": str(output_dir),
         },
         "thresholds": {
             "scam": args.scam_threshold,
@@ -635,17 +696,18 @@ def main() -> None:
             },
         },
     }
-    save_json(args.output_dir / "student_config.json", config_payload)
+    save_json(output_dir / "student_config.json", config_payload)
 
     eval_payload = {
         "valid": valid_metrics,
         "holdout": holdout_metrics,
         "config": config_payload,
     }
-    save_json(args.output_dir / "student_eval.json", eval_payload)
+    save_json(output_dir / "student_eval.json", eval_payload)
 
-    print(f"Saved student model to {args.output_dir}")
-    print(f"Saved student eval to {args.output_dir / 'student_eval.json'}")
+    print(f"Run name: {run_name}")
+    print(f"Saved student model to {output_dir}")
+    print(f"Saved student eval to {output_dir / 'student_eval.json'}")
 
 
 if __name__ == "__main__":

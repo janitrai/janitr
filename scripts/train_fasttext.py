@@ -4,9 +4,13 @@ Train a fastText supervised model for multi-label scam/topic_crypto classificati
 """
 
 import argparse
+import json
 import os
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
+
+from run_naming import apply_run_name_template, resolve_run_name
 
 REPO_ROOT = Path(__file__).parent.parent
 DEFAULT_TRAIN = REPO_ROOT / "data" / "train.txt"
@@ -87,6 +91,12 @@ def main() -> None:
         action="store_true",
         help="Disable label exclusion filtering",
     )
+    parser.add_argument(
+        "--run-name",
+        type=str,
+        default=None,
+        help="Run name. Defaults to yyyy-mm-dd-<petname>. Use {run_name} in --model-out to template.",
+    )
     args = parser.parse_args()
 
     if not args.train.exists():
@@ -99,7 +109,9 @@ def main() -> None:
             "fasttext is not installed. Install Python deps with: cd scripts && uv sync"
         ) from exc
 
-    args.model_out.parent.mkdir(parents=True, exist_ok=True)
+    run_name = resolve_run_name(args.run_name)
+    model_out = apply_run_name_template(args.model_out, run_name)
+    model_out.parent.mkdir(parents=True, exist_ok=True)
 
     exclude_labels = set()
     if not args.no_exclude:
@@ -135,8 +147,32 @@ def main() -> None:
             except OSError:
                 pass
 
-    model.save_model(str(args.model_out))
-    print(f"Model saved to {args.model_out}")
+    model.save_model(str(model_out))
+
+    meta_path = Path(f"{model_out}.meta.json")
+    meta = {
+        "run_name": run_name,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "train": str(args.train),
+        "model_out": str(model_out),
+        "params": {
+            "word_ngrams": args.word_ngrams,
+            "minn": args.minn,
+            "maxn": args.maxn,
+            "bucket": args.bucket,
+            "dim": args.dim,
+            "epoch": args.epoch,
+            "lr": args.lr,
+            "loss": args.loss,
+            "exclude_labels": sorted(exclude_labels),
+        },
+    }
+    with meta_path.open("w", encoding="utf-8") as handle:
+        json.dump(meta, handle, indent=2, sort_keys=True)
+
+    print(f"Run name: {run_name}")
+    print(f"Model saved to {model_out}")
+    print(f"Run metadata saved to {meta_path}")
 
 
 if __name__ == "__main__":
