@@ -20,6 +20,8 @@ jobs:
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.7.3"
 
       - name: Data integrity check
         run: uv run --python 3.12 python scripts/check_integrity.py data/sample.jsonl
@@ -56,6 +58,8 @@ jobs:
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.7.3"
 
       - name: Install dependencies
         run: |
