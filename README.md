@@ -2,7 +2,7 @@
 
 <img src="assets/logo.svg" alt="Janitr logo" width="200">
 
-A browser extension that filters crypto scams, AI-generated replies, and promotional spam from your social media feeds — entirely locally, with no network calls.
+A browser extension that filters crypto scams, AI-generated replies, and promotional spam from your social media feeds. Inference runs locally on-device; advanced mode can optionally fetch model runs from Hugging Face.
 
 > **⚠️ Work in Progress**: This is an MVP. Currently it only works on X (Twitter) for demoing scam detection. Try it out, and if you have ideas for new content categories or improvements, tag or DM [@janitr_ai](https://x.com/janitr_ai) on X.
 
@@ -49,10 +49,11 @@ The approach: start narrow (crypto scams have clear ground truth), prove the pip
 ## How It Works
 
 - **fastText model** runs in-browser via WebAssembly
+- **Transformer model** runs in-browser via ONNX Runtime Web (default backend)
 - **Content scripts** scan posts and DMs as you scroll
 - **3-class detection**: `scam`, `topic_crypto`, `clean` (backed by a [100+ label taxonomy](docs/LABELS.md))
 - **Thresholds** are tunable per-class to control false positive rate
-- **Zero network calls** — all inference happens on your CPU
+- **No network calls during inference** — classification happens on your CPU
 
 ## Model Performance
 
@@ -70,6 +71,26 @@ Current thresholds (`extension/fasttext/thresholds.json`), tuned for ≤ 2% FPR:
 - `scam`: 0.93
 - `topic_crypto`: 0.91
 - `clean`: 0.1
+
+## Hugging Face Experiment Runs
+
+Janitr keeps a rolling artifact repo on Hugging Face for large model files and dataset checkpoints:
+
+- **Repo:** [`janitr/experiments`](https://huggingface.co/janitr/experiments)
+- **Purpose:** store versioned experiment runs and dataset snapshots without bloating the main git repo
+- **Structure:** runs are indexed with `runs/INDEX.json`; each run has `RUN_INFO.json` plus model/eval files
+
+### Extension approach (advanced mode)
+
+- The extension ships with bundled local models and works offline by default.
+- In advanced mode (`Options` page), you can:
+
+1. list remote runs from Hugging Face
+2. inspect run metadata/eval
+3. download and activate a selected run
+
+- Downloaded run artifacts are integrity-checked (size + SHA-256) and cached locally in IndexedDB.
+- If a selected remote run cannot load, the extension falls back to the bundled transformer.
 
 ## Development
 

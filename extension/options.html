@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Janitr Model Control</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header>
+        <h1>Janitr Model Control</h1>
+        <p>
+          Advanced model management for local classifier backends and Hugging
+          Face run activation.
+        </p>
+      </header>
+
+      <section class="panel">
+        <h2>Backend</h2>
+        <label for="backend-select">Inference backend</label>
+        <select id="backend-select">
+          <option value="transformer">transformer</option>
+          <option value="fasttext">fasttext</option>
+          <option value="auto">auto (transformer fallback)</option>
+        </select>
+      </section>
+
+      <section class="panel">
+        <h2>Active Transformer Source</h2>
+        <div class="kv">
+          <span>Source</span><strong id="active-source">-</strong>
+        </div>
+        <div class="kv">
+          <span>Source key</span><code id="active-source-key">-</code>
+        </div>
+        <div class="actions">
+          <button id="use-builtin" type="button">
+            Use Bundled Transformer
+          </button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Remote Runs (Hugging Face)</h2>
+        <div class="row">
+          <label for="repo-input">Repo</label>
+          <input
+            id="repo-input"
+            type="text"
+            placeholder="janitr/experiments"
+            spellcheck="false"
+          />
+          <button id="refresh-runs" type="button">Refresh</button>
+        </div>
+
+        <label for="runs-select">Run</label>
+        <select id="runs-select"></select>
+
+        <div class="actions">
+          <button id="inspect-run" type="button" class="ghost">
+            Inspect Run
+          </button>
+          <button id="download-run" type="button">Download + Activate</button>
+        </div>
+
+        <div id="run-meta" class="muted">Select a run and click Inspect.</div>
+        <pre id="run-eval" class="eval"></pre>
+      </section>
+
+      <section class="panel">
+        <h2>Cached Transformer Runs</h2>
+        <div id="cached-runs"></div>
+      </section>
+
+      <footer id="status" data-tone="normal">Ready.</footer>
+    </main>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

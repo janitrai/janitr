@@ -29,12 +29,18 @@ type TransformerThresholds = ThresholdMap & {
 
 interface LoadTransformerOptions {
   modelUrl?: string;
+  modelData?: ArrayBuffer | Uint8Array;
   studentConfigUrl?: string;
+  studentConfig?: Record<string, unknown>;
   vocabUrl?: string;
+  vocabText?: string;
+  cacheKey?: string;
 }
 
 interface LoadThresholdOptions {
   thresholdsUrl?: string;
+  thresholdsPayload?: Record<string, unknown>;
+  cacheKey?: string;
 }
 
 interface TokenizerState {
@@ -56,6 +62,9 @@ interface TransformerModel {
 interface PredictTransformerOptions {
   thresholds?: TransformerThresholds;
   threshold?: number;
+  model?: TransformerModel;
+  loadOptions?: LoadTransformerOptions;
+  thresholdLoadOptions?: LoadThresholdOptions;
 }
 
 let ortPromise: Promise<any> | null = null;
@@ -63,6 +72,9 @@ let modelPromise: Promise<TransformerModel> | null = null;
 let configPromise: Promise<Record<string, unknown>> | null = null;
 let thresholdsPromise: Promise<TransformerThresholds> | null = null;
 let tokenizerPromise: Promise<TokenizerState> | null = null;
+let modelCacheKey: string | null = null;
+let thresholdsCacheKey: string | null = null;
+let tokenizerCacheKey: string | null = null;
 
 const defaultAssetUrl = (filename: string): string => {
   if (typeof chrome !== "undefined" && chrome.runtime?.getURL) {
@@ -235,16 +247,32 @@ const parseVocab = (text: string): Map<string, number> => {
 
 const loadTokenizer = async ({
   vocabUrl,
+  vocabText,
   maxLength,
+  cacheKey,
 }: {
   vocabUrl?: string;
+  vocabText?: string;
   maxLength?: number;
+  cacheKey?: string;
 } = {}): Promise<TokenizerState> => {
+  const resolvedCacheKey = String(cacheKey || "");
+  if (tokenizerPromise && tokenizerCacheKey !== resolvedCacheKey) {
+    tokenizerPromise = null;
+  }
+
   if (!tokenizerPromise) {
+    tokenizerCacheKey = resolvedCacheKey;
     tokenizerPromise = (async () => {
-      const resolvedVocabUrl = vocabUrl || defaultAssetUrl(VOCAB_FILENAME);
-      const vocabText = await fetchText(resolvedVocabUrl, "transformer vocab");
-      const vocabMap = parseVocab(vocabText);
+      let resolvedVocabText = vocabText;
+      if (typeof resolvedVocabText !== "string") {
+        const resolvedVocabUrl = vocabUrl || defaultAssetUrl(VOCAB_FILENAME);
+        resolvedVocabText = await fetchText(
+          resolvedVocabUrl,
+          "transformer vocab",
+        );
+      }
+      const vocabMap = parseVocab(resolvedVocabText);
       const vocabSize = vocabMap.size;
 
       const padId = vocabMap.get(SPECIAL_TOKENS.pad);
@@ -358,17 +386,63 @@ const resolveMaxLength = (config: Record<string, unknown>): number => {
   return DEFAULT_MAX_LENGTH;
 };
 
+const resolveModelCacheKey = (options: LoadTransformerOptions): string => {
+  if (typeof options.cacheKey === "string" && options.cacheKey.trim()) {
+    return options.cacheKey.trim();
+  }
+  const modelPart = options.modelUrl || "default_model";
+  const configPart = options.studentConfigUrl || "default_config";
+  const vocabPart = options.vocabUrl || "default_vocab";
+  const hasInlineModel = options.modelData ? "inline_model" : "";
+  const hasInlineConfig = options.studentConfig ? "inline_config" : "";
+  const hasInlineVocab = options.vocabText ? "inline_vocab" : "";
+  return [
+    modelPart,
+    configPart,
+    vocabPart,
+    hasInlineModel,
+    hasInlineConfig,
+    hasInlineVocab,
+  ]
+    .join("|")
+    .trim();
+};
+
+const resolveThresholdCacheKey = (options: LoadThresholdOptions): string => {
+  if (typeof options.cacheKey === "string" && options.cacheKey.trim()) {
+    return options.cacheKey.trim();
+  }
+  const thresholdsPart = options.thresholdsUrl || "default_thresholds";
+  const inlinePart = options.thresholdsPayload ? "inline_thresholds" : "";
+  return [thresholdsPart, inlinePart].join("|").trim();
+};
+
 export const loadTransformerThresholds = async ({
   thresholdsUrl,
+  thresholdsPayload,
+  cacheKey,
 }: LoadThresholdOptions = {}): Promise<TransformerThresholds> => {
+  const resolvedCacheKey = resolveThresholdCacheKey({
+    thresholdsUrl,
+    thresholdsPayload,
+    cacheKey,
+  });
+  if (thresholdsPromise && thresholdsCacheKey !== resolvedCacheKey) {
+    thresholdsPromise = null;
+  }
+
   if (!thresholdsPromise) {
+    thresholdsCacheKey = resolvedCacheKey;
     thresholdsPromise = (async () => {
-      const resolvedThresholdsUrl =
-        thresholdsUrl || defaultAssetUrl(THRESHOLDS_FILENAME);
-      const payload = await fetchJson(
-        resolvedThresholdsUrl,
-        "transformer thresholds",
-      );
+      let payload = thresholdsPayload;
+      if (!payload) {
+        const resolvedThresholdsUrl =
+          thresholdsUrl || defaultAssetUrl(THRESHOLDS_FILENAME);
+        payload = await fetchJson(
+          resolvedThresholdsUrl,
+          "transformer thresholds",
+        );
+      }
       return parseThresholds(payload);
     })();
   }
@@ -377,20 +451,44 @@ export const loadTransformerThresholds = async ({
 
 export const loadTransformerModel = async ({
   modelUrl,
+  modelData,
   studentConfigUrl,
+  studentConfig,
   vocabUrl,
+  vocabText,
+  cacheKey,
 }: LoadTransformerOptions = {}): Promise<TransformerModel> => {
+  const resolvedCacheKey = resolveModelCacheKey({
+    modelUrl,
+    modelData,
+    studentConfigUrl,
+    studentConfig,
+    vocabUrl,
+    vocabText,
+    cacheKey,
+  });
+  if (modelPromise && modelCacheKey !== resolvedCacheKey) {
+    modelPromise = null;
+    configPromise = null;
+    tokenizerPromise = null;
+  }
+
   if (!modelPromise) {
+    modelCacheKey = resolvedCacheKey;
     modelPromise = (async () => {
       const resolvedModelUrl = modelUrl || defaultAssetUrl(MODEL_FILENAME);
       const resolvedConfigUrl =
         studentConfigUrl || defaultAssetUrl(STUDENT_CONFIG_FILENAME);
 
       if (!configPromise) {
-        configPromise = fetchJson(
-          resolvedConfigUrl,
-          "transformer student config",
-        );
+        if (studentConfig && typeof studentConfig === "object") {
+          configPromise = Promise.resolve(studentConfig);
+        } else {
+          configPromise = fetchJson(
+            resolvedConfigUrl,
+            "transformer student config",
+          );
+        }
       }
       const [ort, config] = await Promise.all([loadOrt(), configPromise]);
 
@@ -401,7 +499,12 @@ export const loadTransformerModel = async ({
       );
 
       const maxLength = resolveMaxLength(config);
-      const tokenizer = await loadTokenizer({ vocabUrl, maxLength });
+      const tokenizer = await loadTokenizer({
+        vocabUrl,
+        vocabText,
+        maxLength,
+        cacheKey: resolvedCacheKey,
+      });
       const architecture =
         config.architecture && typeof config.architecture === "object"
           ? (config.architecture as Record<string, unknown>)
@@ -417,7 +520,12 @@ export const loadTransformerModel = async ({
         );
       }
 
-      const session = await ort.InferenceSession.create(resolvedModelUrl, {
+      const modelSource = modelData
+        ? modelData instanceof Uint8Array
+          ? modelData
+          : new Uint8Array(modelData)
+        : resolvedModelUrl;
+      const session = await ort.InferenceSession.create(modelSource, {
         executionProviders: ["wasm"],
         graphOptimizationLevel: "all",
       });
@@ -514,35 +622,43 @@ const toResult = (
 
 export const predictTransformerBatch = async (
   texts: unknown,
-  { thresholds, threshold }: PredictTransformerOptions = {},
+  {
+    thresholds,
+    threshold,
+    model,
+    loadOptions,
+    thresholdLoadOptions,
+  }: PredictTransformerOptions = {},
 ): Promise<ClassifierResult[]> => {
   const safeTexts = Array.isArray(texts)
     ? texts.map((text) => String(text ?? ""))
     : [];
   if (safeTexts.length === 0) return [];
 
-  const [model, loadedThresholds] = await Promise.all([
-    loadTransformerModel(),
-    thresholds ? Promise.resolve(thresholds) : loadTransformerThresholds(),
+  const [loadedModel, loadedThresholds] = await Promise.all([
+    model ? Promise.resolve(model) : loadTransformerModel(loadOptions),
+    thresholds
+      ? Promise.resolve(thresholds)
+      : loadTransformerThresholds(thresholdLoadOptions),
   ]);
   const appliedThresholds = applyThresholds(loadedThresholds, threshold);
 
   const batchSize = safeTexts.length;
-  const maxLength = model.tokenizer.maxLength;
-  const encoded = encodeBatch(safeTexts, model.tokenizer);
+  const maxLength = loadedModel.tokenizer.maxLength;
+  const encoded = encodeBatch(safeTexts, loadedModel.tokenizer);
 
   const feeds = {
-    input_ids: new model.ort.Tensor("int64", encoded.inputIds, [
+    input_ids: new loadedModel.ort.Tensor("int64", encoded.inputIds, [
       batchSize,
       maxLength,
     ]),
-    attention_mask: new model.ort.Tensor("int64", encoded.attentionMask, [
+    attention_mask: new loadedModel.ort.Tensor("int64", encoded.attentionMask, [
       batchSize,
       maxLength,
     ]),
   };
 
-  const outputs = await model.session.run(feeds, [
+  const outputs = await loadedModel.session.run(feeds, [
     "scam_logits",
     "topic_logits",
   ]);
@@ -583,4 +699,7 @@ export const resetTransformerModel = (): void => {
   configPromise = null;
   thresholdsPromise = null;
   tokenizerPromise = null;
+  modelCacheKey = null;
+  thresholdsCacheKey = null;
+  tokenizerCacheKey = null;
 };

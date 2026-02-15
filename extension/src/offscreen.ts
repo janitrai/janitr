@@ -10,6 +10,12 @@ import {
   predictTransformerBatch,
   resetTransformerModel,
 } from "./transformer/classifier-transformer.js";
+import {
+  getActiveTransformerSource,
+  resolveTransformerAssetsForSource,
+  setActiveTransformerSource,
+  transformerSourceKey,
+} from "./transformer/model-repo.js";
 import type { ClassifierResult, Engine } from "./types.js";
 
 const ENGINE_FASTTEXT: Engine = "fasttext";
@@ -27,6 +33,10 @@ const normalizeEngine = (value: unknown): Engine => {
 };
 
 let queue: Promise<void> = Promise.resolve();
+let activeTransformerSourceKey: string | null = null;
+let activeTransformerAssets: Awaited<
+  ReturnType<typeof resolveTransformerAssetsForSource>
+> | null = null;
 
 const enqueue = <T>(task: () => Promise<T>): Promise<T> => {
   const next = queue.then(task, task);
@@ -54,9 +64,40 @@ const classifyTextsFasttext = async (
 const classifyTextsTransformer = async (
   texts: string[],
 ): Promise<{ results: ClassifierResult[]; engine: Engine }> => {
-  await loadTransformerModel();
-  const thresholds = await loadTransformerThresholds();
-  const results = await predictTransformerBatch(texts, { thresholds });
+  const source = await getActiveTransformerSource();
+  const sourceKey = transformerSourceKey(source);
+
+  if (!activeTransformerAssets || activeTransformerSourceKey !== sourceKey) {
+    try {
+      activeTransformerAssets = await resolveTransformerAssetsForSource(source);
+    } catch (error) {
+      if (source.type === "hf_run") {
+        if (typeof console !== "undefined" && console.warn) {
+          console.warn(
+            "Unable to load selected transformer run; switching back to bundled transformer.",
+            error,
+          );
+        }
+        await setActiveTransformerSource({ type: "builtin" });
+        activeTransformerAssets = await resolveTransformerAssetsForSource({
+          type: "builtin",
+        });
+      } else {
+        throw error;
+      }
+    }
+    activeTransformerSourceKey = activeTransformerAssets.sourceKey;
+    resetTransformerModel();
+  }
+
+  const [model, thresholds] = await Promise.all([
+    loadTransformerModel(activeTransformerAssets.modelLoadOptions),
+    loadTransformerThresholds(activeTransformerAssets.thresholdLoadOptions),
+  ]);
+  const results = await predictTransformerBatch(texts, {
+    model,
+    thresholds,
+  });
   return { results, engine: ENGINE_TRANSFORMER };
 };
 
@@ -97,30 +138,34 @@ const classifyTexts = async (
   }
 };
 
-chrome.runtime.onMessage.addListener((message: any, _sender: any, sendResponse: (response: unknown) => void) => {
-  if (!message || message.type !== "ic-infer-offscreen") {
-    return undefined;
-  }
+chrome.runtime.onMessage.addListener(
+  (message: any, _sender: any, sendResponse: (response: unknown) => void) => {
+    if (!message || message.type !== "ic-infer-offscreen") {
+      return undefined;
+    }
 
-  const texts = Array.isArray(message.texts)
-    ? message.texts.map((text: unknown) => String(text ?? ""))
-    : [];
-  const engine = normalizeEngine(message.engine);
-  void enqueue(() => classifyTexts(texts, engine))
-    .then((response) => {
-      sendResponse({
-        ok: true,
-        ...response,
+    const texts = Array.isArray(message.texts)
+      ? message.texts.map((text: unknown) => String(text ?? ""))
+      : [];
+    const engine = normalizeEngine(message.engine);
+    void enqueue(() => classifyTexts(texts, engine))
+      .then((response) => {
+        sendResponse({
+          ok: true,
+          ...response,
+        });
+      })
+      .catch((err: any) => {
+        resetClassifierModel();
+        resetTransformerModel();
+        activeTransformerSourceKey = null;
+        activeTransformerAssets = null;
+        sendResponse({
+          ok: false,
+          error: String(err && err.stack ? err.stack : err),
+        });
       });
-    })
-    .catch((err: any) => {
-      resetClassifierModel();
-      resetTransformerModel();
-      sendResponse({
-        ok: false,
-        error: String(err && err.stack ? err.stack : err),
-      });
-    });
 
-  return true;
-});
+    return true;
+  },
+);
