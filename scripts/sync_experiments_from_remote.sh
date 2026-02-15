@@ -24,7 +24,7 @@ Options:
 
 Notes:
   - Uses rsync over SSH.
-  - Excludes .git so your local repo metadata is not overwritten.
+  - Excludes .git directories so local/remote repo metadata is not overwritten.
 EOF
 }
 
@@ -84,7 +84,12 @@ mkdir -p "$DEST_PATH"
 RSYNC_ARGS=(
   -avz
   --progress
+  --exclude=.git
   --exclude=.git/
+  --exclude=.git/**
+  --exclude=**/.git
+  --exclude=**/.git/
+  --exclude=**/.git/**
 )
 
 if [[ "$DRY_RUN" -eq 1 ]]; then
