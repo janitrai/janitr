@@ -16,7 +16,16 @@ from transformers import (
     TrainingArguments,
 )
 
-from transformer_common import DATA_DIR, MODELS_DIR, choose_dtype_args, require_cuda, set_seed
+from run_naming import apply_run_name_template, resolve_run_name
+from transformer_common import (
+    DATA_DIR,
+    MODELS_DIR,
+    choose_dtype_args,
+    require_cuda,
+    save_json,
+    set_seed,
+    utc_now_iso,
+)
 
 DEFAULT_CORPUS = DATA_DIR / "transformer" / "unlabeled_corpus.txt"
 DEFAULT_OUTPUT_DIR = MODELS_DIR / "teacher_dapt"
@@ -38,8 +47,12 @@ class LineDataset(Dataset):
 
     def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         return {
-            "input_ids": torch.tensor(self.encodings["input_ids"][idx], dtype=torch.long),
-            "attention_mask": torch.tensor(self.encodings["attention_mask"][idx], dtype=torch.long),
+            "input_ids": torch.tensor(
+                self.encodings["input_ids"][idx], dtype=torch.long
+            ),
+            "attention_mask": torch.tensor(
+                self.encodings["attention_mask"][idx], dtype=torch.long
+            ),
         }
 
 
@@ -75,9 +88,17 @@ def main() -> None:
     parser.add_argument("--logging-steps", type=int, default=25)
     parser.add_argument("--max-rows", type=int, default=0, help="0 keeps all rows")
     parser.add_argument(
+        "--run-name",
+        type=str,
+        default=None,
+        help="Run name. Defaults to yyyy-mm-dd-<petname>. Use {run_name} in --output-dir to template.",
+    )
+    parser.add_argument(
         "--dtype",
         choices=["fp16", "bf16", "fp32"],
-        default="bf16" if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else "fp16",
+        default="bf16"
+        if torch.cuda.is_available() and torch.cuda.is_bf16_supported()
+        else "fp16",
     )
     parser.add_argument("--gradient-checkpointing", action="store_true", default=True)
     parser.add_argument("--no-gradient-checkpointing", action="store_true")
@@ -85,6 +106,9 @@ def main() -> None:
 
     if not args.corpus.exists():
         raise SystemExit(f"Corpus not found: {args.corpus}")
+
+    run_name = resolve_run_name(args.run_name)
+    output_dir = apply_run_name_template(args.output_dir, run_name)
 
     set_seed(args.seed)
     require_cuda(context="train_teacher_dapt.py")
@@ -110,7 +134,7 @@ def main() -> None:
 
     dtype_args = choose_dtype_args(args.dtype)
     training_args = TrainingArguments(
-        output_dir=str(args.output_dir),
+        output_dir=str(output_dir),
         do_train=True,
         num_train_epochs=args.num_train_epochs,
         max_steps=args.max_steps if args.max_steps > 0 else -1,
@@ -137,10 +161,26 @@ def main() -> None:
 
     trainer.train()
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    trainer.save_model(str(args.output_dir))
-    tokenizer.save_pretrained(str(args.output_dir))
-    print(f"Saved DAPT model to {args.output_dir}")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    trainer.save_model(str(output_dir))
+    tokenizer.save_pretrained(str(output_dir))
+
+    run_manifest = {
+        "run_name": run_name,
+        "created_at": utc_now_iso(),
+        "model_name": args.model_name,
+        "corpus": str(args.corpus),
+        "output_dir": str(output_dir),
+        "seed": args.seed,
+        "max_length": args.max_length,
+        "num_train_epochs": args.num_train_epochs,
+        "max_steps": args.max_steps,
+        "per_device_batch_size": args.per_device_batch_size,
+    }
+    save_json(output_dir / "dapt_run_manifest.json", run_manifest)
+
+    print(f"Run name: {run_name}")
+    print(f"Saved DAPT model to {output_dir}")
 
 
 if __name__ == "__main__":

@@ -19,6 +19,7 @@ from torch.utils.data import DataLoader, Dataset
 from tqdm.auto import tqdm
 from transformers import AutoModel, AutoTokenizer
 
+from run_naming import apply_run_name_template, resolve_run_name
 from transformer_common import (
     DATA_DIR,
     MODELS_DIR,
@@ -151,7 +152,9 @@ class LossWeights:
     bce_pos_weight: torch.Tensor
 
 
-def compute_loss_weights(rows: list[PreparedRecord], device: torch.device) -> LossWeights:
+def compute_loss_weights(
+    rows: list[PreparedRecord], device: torch.device
+) -> LossWeights:
     scam_clean_counts = Counter(row.y_scam_clean for row in rows)
     topic_pos = sum(row.y_topics[0] for row in rows)
     topic_neg = len(rows) - topic_pos
@@ -213,9 +216,15 @@ def train_one_seed(
     valid_ds = PreparedDataset(valid_rows, tokenizer, max_length=max_length)
     holdout_ds = PreparedDataset(holdout_rows, tokenizer, max_length=max_length)
 
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, collate_fn=collate)
-    valid_loader = DataLoader(valid_ds, batch_size=eval_batch_size, shuffle=False, collate_fn=collate)
-    holdout_loader = DataLoader(holdout_ds, batch_size=eval_batch_size, shuffle=False, collate_fn=collate)
+    train_loader = DataLoader(
+        train_ds, batch_size=batch_size, shuffle=True, collate_fn=collate
+    )
+    valid_loader = DataLoader(
+        valid_ds, batch_size=eval_batch_size, shuffle=False, collate_fn=collate
+    )
+    holdout_loader = DataLoader(
+        holdout_ds, batch_size=eval_batch_size, shuffle=False, collate_fn=collate
+    )
 
     weights = compute_loss_weights(train_rows, device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -232,7 +241,9 @@ def train_one_seed(
         running_loss = 0.0
         optimizer.zero_grad(set_to_none=True)
 
-        progress = tqdm(train_loader, desc=f"seed {seed} epoch {epoch}/{epochs}", leave=False)
+        progress = tqdm(
+            train_loader, desc=f"seed {seed} epoch {epoch}/{epochs}", leave=False
+        )
         for step, batch in enumerate(progress, start=1):
             input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
@@ -249,7 +260,9 @@ def train_one_seed(
                 scam_logits = out["scam_logits"]
                 topic_logits = out["topic_logits"].squeeze(-1)
 
-                loss_scam = F.cross_entropy(scam_logits, y_scam, weight=weights.ce_weight)
+                loss_scam = F.cross_entropy(
+                    scam_logits, y_scam, weight=weights.ce_weight
+                )
                 loss_topic = F.binary_cross_entropy_with_logits(
                     topic_logits,
                     y_topic,
@@ -371,7 +384,9 @@ def evaluate_loader(
             with amp_ctx:
                 out = model(input_ids=input_ids, attention_mask=attention_mask)
             scam_logits = out["scam_logits"].detach().cpu().float().numpy()
-            topic_logits = out["topic_logits"].detach().cpu().float().numpy().reshape(-1)
+            topic_logits = (
+                out["topic_logits"].detach().cpu().float().numpy().reshape(-1)
+            )
 
             scam_probs = softmax(scam_logits)[:, 1]
             topic_probs = sigmoid(topic_logits)
@@ -411,7 +426,9 @@ def merge_ensemble_predictions(per_seed_preds: list[list[dict]]) -> list[dict]:
     length = len(per_seed_preds[0])
     for preds in per_seed_preds:
         if len(preds) != length:
-            raise RuntimeError("Seed prediction lengths do not match for ensemble merge.")
+            raise RuntimeError(
+                "Seed prediction lengths do not match for ensemble merge."
+            )
 
     for idx in range(length):
         base = per_seed_preds[0][idx]
@@ -447,7 +464,9 @@ def eval_ensemble_predictions(
     out_rows: list[dict] = []
 
     for row in rows:
-        scam_prob = float(softmax(np.array([row["scam_logits"]], dtype=np.float64))[0][1])
+        scam_prob = float(
+            softmax(np.array([row["scam_logits"]], dtype=np.float64))[0][1]
+        )
         topic_prob = float(sigmoid(np.array([row["topic_logit"]], dtype=np.float64))[0])
         pred = decision_from_probs(
             scam_prob,
@@ -480,6 +499,12 @@ def main() -> None:
     parser.add_argument("--valid", type=Path, default=DEFAULT_VALID)
     parser.add_argument("--holdout", type=Path, default=DEFAULT_HOLDOUT)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument(
+        "--run-name",
+        type=str,
+        default=None,
+        help="Run name. Defaults to yyyy-mm-dd-<petname>. Use {run_name} in --output-dir to template.",
+    )
     parser.add_argument("--seeds", type=str, default="13,17,21")
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--batch-size", type=int, default=8)
@@ -495,13 +520,17 @@ def main() -> None:
     parser.add_argument(
         "--dtype",
         choices=["fp16", "bf16", "fp32"],
-        default="bf16" if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else "fp16",
+        default="bf16"
+        if torch.cuda.is_available() and torch.cuda.is_bf16_supported()
+        else "fp16",
     )
     args = parser.parse_args()
 
     for path in (args.train, args.valid, args.holdout):
         if not path.exists():
-            raise SystemExit(f"Prepared split missing: {path}. Run prepare_transformer_data.py first.")
+            raise SystemExit(
+                f"Prepared split missing: {path}. Run prepare_transformer_data.py first."
+            )
 
     train_rows = load_prepared_rows(args.train)
     valid_rows = load_prepared_rows(args.valid)
@@ -520,8 +549,9 @@ def main() -> None:
             f"Teacher must be {DEFAULT_MODEL} for this pipeline; got {args.model_name}."
         )
 
+    run_name = resolve_run_name(args.run_name)
     model_name_or_path = args.teacher_init_path or args.model_name
-    out_dir = args.output_dir
+    out_dir = apply_run_name_template(args.output_dir, run_name)
     out_dir.mkdir(parents=True, exist_ok=True)
     split_hashes = {
         "train": hash_prepared_rows(train_rows),
@@ -537,6 +567,7 @@ def main() -> None:
         },
         "max_length": args.max_length,
         "split_hashes": split_hashes,
+        "run_name": run_name,
         "code_commit": current_git_commit(),
     }
     teacher_id = f"teacher-{stable_object_hash(teacher_identity_payload)[:16]}"
@@ -566,8 +597,12 @@ def main() -> None:
         )
         per_seed_results.append(result)
 
-    ensemble_valid = merge_ensemble_predictions([x["valid_preds"] for x in per_seed_results])
-    ensemble_holdout = merge_ensemble_predictions([x["holdout_preds"] for x in per_seed_results])
+    ensemble_valid = merge_ensemble_predictions(
+        [x["valid_preds"] for x in per_seed_results]
+    )
+    ensemble_holdout = merge_ensemble_predictions(
+        [x["holdout_preds"] for x in per_seed_results]
+    )
 
     ensemble_valid_metrics, ensemble_valid_out = eval_ensemble_predictions(
         ensemble_valid,
@@ -584,6 +619,7 @@ def main() -> None:
     write_jsonl(MODELS_DIR / "teacher_holdout_preds.jsonl", ensemble_holdout_out)
 
     summary = {
+        "run_name": run_name,
         "teacher_id": teacher_id,
         "model_name_or_path": model_name_or_path,
         "seeds": seeds,
@@ -612,6 +648,7 @@ def main() -> None:
 
     teacher_manifest = {
         "version": 1,
+        "run_name": run_name,
         "teacher_id": teacher_id,
         "created_at": utc_now_iso(),
         "code_commit": current_git_commit(),
@@ -623,8 +660,16 @@ def main() -> None:
             "topic_crypto": args.topic_threshold,
         },
         "splits": {
-            "train": {"path": str(args.train), "rows": len(train_rows), "hash": split_hashes["train"]},
-            "valid": {"path": str(args.valid), "rows": len(valid_rows), "hash": split_hashes["valid"]},
+            "train": {
+                "path": str(args.train),
+                "rows": len(train_rows),
+                "hash": split_hashes["train"],
+            },
+            "valid": {
+                "path": str(args.valid),
+                "rows": len(valid_rows),
+                "hash": split_hashes["valid"],
+            },
             "holdout": {
                 "path": str(args.holdout),
                 "rows": len(holdout_rows),
@@ -634,6 +679,7 @@ def main() -> None:
     }
     save_json(out_dir / "teacher_manifest.json", teacher_manifest)
 
+    print(f"Run name: {run_name}")
     print(f"Wrote teacher summary to {out_dir / 'training_summary.json'}")
     print(f"Wrote teacher manifest to {out_dir / 'teacher_manifest.json'}")
     print(f"Wrote ensemble valid preds to {MODELS_DIR / 'teacher_valid_preds.jsonl'}")
