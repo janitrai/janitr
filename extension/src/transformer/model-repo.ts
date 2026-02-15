@@ -12,11 +12,6 @@ const REQUIRED_TRANSFORMER_DESTINATIONS = [
   "model/tokenizer/vocab.txt",
   "model/thresholds.json",
 ] as const;
-const RUNTIME_WASM_FILENAME = "ort-wasm-simd-threaded.wasm";
-const RUNTIME_DIR_CANDIDATES = [
-  "runtime/onnxruntime-web",
-  "vendor/onnxruntime-web",
-] as const;
 
 const DB_NAME = "janitr_transformer_models";
 const DB_VERSION = 1;
@@ -299,17 +294,6 @@ const runInfoUrl = (repo: string, runId: string): string =>
 const runFileUrl = (repo: string, runId: string, destination: string): string =>
   buildResolveUrl(repo, `runs/${runId}/${normalizeDestination(destination)}`);
 
-const runtimeWasmBaseUrlForDir = (repo: string, runtimeDir: string): string => {
-  const safeDir = String(runtimeDir || "")
-    .trim()
-    .replace(/^\/+/, "")
-    .replace(/\/+$/, "");
-  return `${buildResolveUrl(repo, safeDir)}/`;
-};
-
-const runtimeWasmUrlForBase = (baseUrl: string): string =>
-  `${String(baseUrl || "").replace(/\/+$/, "")}/${RUNTIME_WASM_FILENAME}`;
-
 const fetchText = async (url: string, label: string): Promise<string> => {
   const response = await fetch(url, {
     method: "GET",
@@ -322,34 +306,6 @@ const fetchText = async (url: string, label: string): Promise<string> => {
     );
   }
   return response.text();
-};
-
-const urlLooksReachable = async (url: string): Promise<boolean> => {
-  try {
-    const head = await fetch(url, {
-      method: "HEAD",
-      cache: "no-store",
-      redirect: "follow",
-    });
-    if (head.ok) return true;
-    if (head.status !== 405 && head.status !== 501) return false;
-  } catch {
-    // Try fallback request.
-  }
-
-  try {
-    const probe = await fetch(url, {
-      method: "GET",
-      cache: "no-store",
-      redirect: "follow",
-      headers: {
-        Range: "bytes=0-0",
-      },
-    });
-    return probe.ok;
-  } catch {
-    return false;
-  }
 };
 
 const fetchJson = async (
@@ -613,31 +569,12 @@ const createBuiltinAssets = (): ActiveTransformerRuntimeAssets => ({
   source: { type: DEFAULT_SOURCE_TYPE },
   sourceKey: DEFAULT_SOURCE_TYPE,
   modelLoadOptions: {
-    ortWasmPathPrefix: runtimeWasmBaseUrlForDir(
-      DEFAULT_HF_EXPERIMENTS_REPO,
-      RUNTIME_DIR_CANDIDATES[0],
-    ),
     cacheKey: DEFAULT_SOURCE_TYPE,
   },
   thresholdLoadOptions: {
     cacheKey: DEFAULT_SOURCE_TYPE,
   },
 });
-
-const ensureRuntimeWasmBaseUrl = async (repo: string): Promise<string> => {
-  for (const runtimeDir of RUNTIME_DIR_CANDIDATES) {
-    const baseUrl = runtimeWasmBaseUrlForDir(repo, runtimeDir);
-    const runtimeWasmUrl = runtimeWasmUrlForBase(baseUrl);
-    if (await urlLooksReachable(runtimeWasmUrl)) {
-      return baseUrl;
-    }
-  }
-  throw new Error(
-    `Runtime wasm not found in ${repo}. Expected ${RUNTIME_WASM_FILENAME} under one of: ${RUNTIME_DIR_CANDIDATES.join(
-      ", ",
-    )}.`,
-  );
-};
 
 const normalizeEvalPayload = (
   payload: Record<string, unknown>,
@@ -835,7 +772,6 @@ export const downloadAndActivateTransformerRun = async (
     throw new Error("runId is required.");
   }
 
-  const runtimeWasmBaseUrl = await ensureRuntimeWasmBaseUrl(normalizedRepo);
   const runInfo = await fetchRemoteRunInfo(normalizedRepo, normalizedRunId);
   const requiredFiles = requiredFilesFromRunInfo(runInfo);
   const runCacheKey = buildRunCacheKey(normalizedRepo, normalizedRunId);
@@ -913,7 +849,6 @@ export const downloadAndActivateTransformerRun = async (
       repo: normalizedRepo,
       run_id: normalizedRunId,
       run_info: runInfo,
-      runtime_wasm_base_url: runtimeWasmBaseUrl,
       downloaded_at_utc: now,
       total_bytes: requiredFiles.reduce(
         (sum, file) => sum + file.size_bytes,
@@ -1006,14 +941,6 @@ export const resolveTransformerAssetsForSource = async (
     const thresholdsAsset = byDestination.get(
       "model/thresholds.json",
     ) as CachedAssetRecord;
-    const runtimeWasmBaseUrl = String(
-      runRecord.runtime_wasm_base_url || "",
-    ).trim();
-    if (!runtimeWasmBaseUrl) {
-      throw new Error(
-        `Cached run ${normalizedSource.runId} is missing runtime_wasm_base_url. Re-activate the run.`,
-      );
-    }
 
     const modelBytes = new Uint8Array(await modelAsset.blob.arrayBuffer());
     const studentConfig = await readJsonBlob(
@@ -1033,7 +960,6 @@ export const resolveTransformerAssetsForSource = async (
         modelData: modelBytes,
         studentConfig,
         vocabText,
-        ortWasmPathPrefix: runtimeWasmBaseUrl,
         cacheKey: sourceKey,
       },
       thresholdLoadOptions: {

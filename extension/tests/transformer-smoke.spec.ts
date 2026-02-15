@@ -2,15 +2,15 @@ import path from "node:path";
 import { test, expect } from "playwright/test";
 import { chromium } from "playwright";
 
-test("WASM smoke test loads in the extension", async ({}, testInfo) => {
-  test.setTimeout(120000);
+test("transformer smoke test flags obvious scam text on extension test page", async ({}, testInfo) => {
+  test.setTimeout(240000);
   test.skip(
     process.platform === "linux" && !process.env.DISPLAY,
     "Requires DISPLAY (headed Chromium extension test).",
   );
 
   const extensionRoot = path.resolve(path.dirname(testInfo.file), "..");
-  const userDataDir = testInfo.outputPath("chromium-profile");
+  const userDataDir = testInfo.outputPath("chromium-profile-transformer");
   const chromeExecutable =
     process.env.CHROME_PATH ||
     process.env.CHROMIUM_PATH ||
@@ -47,38 +47,27 @@ test("WASM smoke test loads in the extension", async ({}, testInfo) => {
     const extensionId = new URL(worker.url()).host;
 
     const page = await context.newPage();
-    await page.goto(`chrome-extension://${extensionId}/tests/wasm-smoke.html`);
+    await page.goto(
+      `chrome-extension://${extensionId}/tests/transformer-smoke.html`,
+    );
     await page.waitForFunction(
-      () => (window as any).__wasmTestDone === true,
+      () => (window as any).__transformerTestDone === true,
       null,
-      {
-        timeout: 120000,
-      },
+      { timeout: 240000 },
     );
 
     const error = await page.evaluate(
-      () => (window as any).__wasmTestError || null,
+      () => (window as any).__transformerTestError || null,
     );
     expect(error).toBeNull();
 
-    const results = await page.evaluate(
-      () => (window as any).__wasmTestResults || null,
+    const result = await page.evaluate(
+      () => (window as any).__transformerTestResults || null,
     );
-    expect(Array.isArray(results)).toBeTruthy();
-    expect(results.length).toBeGreaterThan(0);
-
-    for (const result of results) {
-      expect(typeof result.probability).toBe("number");
-      expect(result.probability).toBeGreaterThanOrEqual(0);
-      expect(result.probability).toBeLessThanOrEqual(1);
-      expect(typeof result.isFlagged).toBe("boolean");
-      expect(result.threshold).toBeDefined();
-      expect(result.scores && typeof result.scores).toBe("object");
-
-      if (result.probability >= result.threshold) {
-        expect(result.isFlagged).toBe(true);
-      }
-    }
+    expect(result).toBeTruthy();
+    expect(result.engine).toBe("transformer");
+    expect(result.label).toBe("scam");
+    expect(typeof result.scamScore).toBe("number");
   } finally {
     await context.close();
   }

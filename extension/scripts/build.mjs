@@ -11,6 +11,7 @@ const ENTRY_POINTS = [
   "extension/src/transformer/classifier-transformer.ts",
   "extension/src/transformer/model-repo.ts",
   "extension/src/tests/wasm-smoke.ts",
+  "extension/src/tests/transformer-smoke.ts",
 ];
 
 await build({
