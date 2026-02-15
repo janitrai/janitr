@@ -67,12 +67,12 @@ test("WASM smoke test loads in the extension", async ({}, testInfo) => {
       expect(typeof result.probability).toBe("number");
       expect(result.probability).toBeGreaterThanOrEqual(0);
       expect(result.probability).toBeLessThanOrEqual(1);
-      expect(typeof result.isScam).toBe("boolean");
+      expect(typeof result.isFlagged).toBe("boolean");
       expect(result.threshold).toBeDefined();
       expect(result.scores && typeof result.scores).toBe("object");
 
       if (result.probability >= result.threshold) {
-        expect(result.isScam).toBe(true);
+        expect(result.isFlagged).toBe(true);
       }
     }
   } finally {

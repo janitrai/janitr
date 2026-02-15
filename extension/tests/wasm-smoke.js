@@ -1,4 +1,7 @@
-import { loadScamThresholds, predictScam } from "../fasttext/scam-detector.js";
+import {
+  loadClassifierThresholds,
+  predictClassifier,
+} from "../fasttext/classifier.js";
 
 const output = document.getElementById("output");
 const samples = [
@@ -14,10 +17,10 @@ const samples = [
 
 const run = async () => {
   try {
-    const thresholds = await loadScamThresholds();
+    const thresholds = await loadClassifierThresholds();
     const results = [];
     for (const sample of samples) {
-      const result = await predictScam(sample.text, { thresholds });
+      const result = await predictClassifier(sample.text, { thresholds });
       results.push({ ...sample, ...result });
     }
     window.__wasmTestResults = results;

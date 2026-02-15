@@ -3,7 +3,7 @@
   "name": "Janitr",
   "version": "0.1.0",
   "description": "Filter crypto scams, AI spam, and promotional garbage from your social feeds — locally, with no network calls.",
-  "permissions": ["offscreen"],
+  "permissions": ["offscreen", "storage"],
   "icons": {
     "16": "icon16.png",
     "32": "icon32.png",
@@ -35,7 +35,12 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["vendor/fasttext/**", "models/*"],
+      "resources": [
+        "vendor/fasttext/**",
+        "vendor/onnxruntime-web/**",
+        "models/*",
+        "transformer/**"
+      ],
       "matches": ["https://x.com/*", "https://*.x.com/*"]
     }
   ]

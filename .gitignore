@@ -5,6 +5,14 @@ models/*.bin
 models/*.vec
 models/*.ftz
 *.ftz
+*.onnx
+extension/vendor/onnxruntime-web/*.wasm
+
+# Optional extension transformer runtime/model assets (local-only)
+extension/transformer/student_config.json
+extension/transformer/thresholds.json
+extension/transformer/tokenizer/
+extension/vendor/onnxruntime-web/*.mjs
 
 # Training data (generated)
 data/train.txt

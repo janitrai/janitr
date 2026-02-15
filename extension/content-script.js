@@ -111,7 +111,12 @@ const inferBatch = async (texts) => {
   if (!response || !response.ok) {
     throw new Error(response?.error || "Inference failed");
   }
-  return response.results || [];
+  return {
+    results: response.results || [],
+    engine: typeof response.engine === "string" ? response.engine : "unknown",
+    fallbackFrom:
+      typeof response.fallbackFrom === "string" ? response.fallbackFrom : null,
+  };
 };
 
 const pickTopLabel = (scores) => {
@@ -158,11 +163,18 @@ const clearHighlight = (el) => {
   el.removeAttribute("data-ic-label");
   el.removeAttribute("data-ic-labels");
   el.removeAttribute("data-ic-score");
-  el.removeAttribute("data-ic-pscam");
+  el.removeAttribute("data-ic-confidence");
   el.removeAttribute("title");
 };
 
-const applyHighlight = (el, label, score, pScam, labels = [], scores = {}) => {
+const applyHighlight = (
+  el,
+  label,
+  score,
+  confidence,
+  labels = [],
+  scores = {},
+) => {
   if (!el) return;
   el.classList.add("ic-flagged");
   el.classList.toggle("ic-scam", label === "scam");
@@ -175,15 +187,17 @@ const applyHighlight = (el, label, score, pScam, labels = [], scores = {}) => {
   if (Number.isFinite(score)) {
     el.dataset.icScore = score.toFixed(3);
   }
-  if (Number.isFinite(pScam)) {
-    el.dataset.icPscam = pScam.toFixed(3);
+  if (Number.isFinite(confidence)) {
+    el.dataset.icConfidence = confidence.toFixed(3);
   }
   const labelText = labels.length > 0 ? labels.join(" + ") : `${label}`;
   const scoreText = Number.isFinite(score) ? `, score=${score.toFixed(3)}` : "";
-  const pScamText = Number.isFinite(pScam) ? `, pScam=${pScam.toFixed(3)}` : "";
+  const confidenceText = Number.isFinite(confidence)
+    ? `, confidence=${confidence.toFixed(3)}`
+    : "";
   const scoreList = formatScores(scores);
   const scoreListText = scoreList ? `, scores: ${scoreList}` : "";
-  el.title = `Scam model: ${labelText}${scoreText}${pScamText}${scoreListText}`;
+  el.title = `Classifier: ${labelText}${scoreText}${confidenceText}${scoreListText}`;
 };
 
 const buildItem = (el) => {
@@ -215,7 +229,9 @@ const processQueue = async () => {
 
     if (items.length > 0) {
       try {
-        const results = await inferBatch(items.map((item) => item.text));
+        const { results, engine, fallbackFrom } = await inferBatch(
+          items.map((item) => item.text),
+        );
         for (let i = 0; i < items.length; i += 1) {
           const { el } = items[i];
           const result = results[i];
@@ -226,29 +242,33 @@ const processQueue = async () => {
           const score =
             typeof scores[label] === "number" ? scores[label] : Number.NaN;
           const labelList = Array.isArray(result?.labels) ? result.labels : [];
-          const pScam =
+          const confidence =
             typeof scores.scam === "number"
               ? scores.scam
               : result?.probability || 0;
 
           if (LOG_INFERENCE) {
             console.log("[IC] inference", {
+              engine,
+              fallbackFrom,
               label,
               score: Number.isFinite(score) ? Number(score.toFixed(3)) : score,
-              pScam: Number.isFinite(pScam) ? Number(pScam.toFixed(3)) : pScam,
+              confidence: Number.isFinite(confidence)
+                ? Number(confidence.toFixed(3))
+                : confidence,
               length: items[i].text.length,
               text: previewText(items[i].text),
             });
           }
 
           if (label !== "clean") {
-            applyHighlight(el, label, score, pScam, labelList, scores);
+            applyHighlight(el, label, score, confidence, labelList, scores);
           } else {
             clearHighlight(el);
           }
         }
       } catch (err) {
-        console.warn("Scam detector inference failed", err);
+        console.warn("Classifier inference failed", err);
       }
     }
     await idle();

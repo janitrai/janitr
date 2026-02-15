@@ -107,7 +107,7 @@ const run = async () => {
         result.probability >= 0 && result.probability <= 1,
         "Probability out of range.",
       );
-      assert(typeof result.isScam === "boolean", "isScam missing.");
+      assert(typeof result.isFlagged === "boolean", "isFlagged missing.");
       assert(result.threshold !== undefined, "threshold missing.");
       assert(
         result.scores && typeof result.scores === "object",
@@ -115,8 +115,8 @@ const run = async () => {
       );
       if (result.probability >= result.threshold) {
         assert(
-          result.isScam === true,
-          "isScam should be true when probability >= threshold.",
+          result.isFlagged === true,
+          "isFlagged should be true when probability >= threshold.",
         );
       }
     }

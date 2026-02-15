@@ -36,7 +36,7 @@ Janitr/
 │   ├── fasttext/        # WASM model + JS bindings
 │   │   ├── model.ftz    # Quantized fastText model (122KB)
 │   │   ├── thresholds.json # Per-label confidence thresholds
-│   │   ├── scam-detector.js # High-level detection API
+│   │   ├── classifier.js # High-level classification API
 │   │   └── fasttext.js  # WASM loader
 │   ├── vendor/          # Third-party WASM bindings
 │   └── tests/           # Extension smoke tests
@@ -92,7 +92,7 @@ Chrome MV3 extension that:
 
 **Key files:**
 
-- `fasttext/scam-detector.js` — main detection API (`predictScam()`)
+- `fasttext/classifier.js` — main classification API (`predictClassifier()`)
 - `fasttext/thresholds.json` — per-label thresholds (scam: 0.93, topic_crypto: 0.91)
 - `fasttext/model.ftz` — quantized model (123KB)
 

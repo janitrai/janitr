@@ -145,7 +145,10 @@ const buildThresholds = (perLabel, globalThreshold) => {
   return thresholds;
 };
 
-export const loadScamThresholds = async ({ thresholdsUrl, modelUrl } = {}) => {
+export const loadClassifierThresholds = async ({
+  thresholdsUrl,
+  modelUrl,
+} = {}) => {
   if (!configPromise) {
     configPromise = loadConfig({ thresholdsUrl, modelUrl }).then((config) => {
       cachedConfig = config;
@@ -157,8 +160,8 @@ export const loadScamThresholds = async ({ thresholdsUrl, modelUrl } = {}) => {
   return cachedThresholds || config.thresholds;
 };
 
-export const getScamThresholds = () => cachedThresholds;
-export const getScamConfig = () => cachedConfig;
+export const getClassifierThresholds = () => cachedThresholds;
+export const getClassifierConfig = () => cachedConfig;
 
 const readPredictionScores = (model, text, k) => {
   const rawPredictions = model.predict(text, k, 0.0);
@@ -252,9 +255,9 @@ const pickLabels = (scores, appliedThresholds, { allowEmpty, mode }) => {
   return CLASSES.filter((label) => predicted.has(label));
 };
 
-export const loadScamModel = async ({ modelUrl, thresholdsUrl } = {}) => {
+export const loadClassifierModel = async ({ modelUrl, thresholdsUrl } = {}) => {
   const resolvedModelUrl = modelUrl || defaultModelUrl();
-  await loadScamThresholds({ thresholdsUrl, modelUrl: resolvedModelUrl });
+  await loadClassifierThresholds({ thresholdsUrl, modelUrl: resolvedModelUrl });
   if (!modelPromise) {
     modelPromise = (async () => {
       const config = cachedConfig || {
@@ -320,20 +323,20 @@ export const loadScamModel = async ({ modelUrl, thresholdsUrl } = {}) => {
   return modelPromise;
 };
 
-export const resetScamModel = () => {
+export const resetClassifierModel = () => {
   modelPromise = null;
   configPromise = null;
   cachedThresholds = null;
   cachedConfig = null;
 };
 
-export const predictScam = async (
+export const predictClassifier = async (
   text,
   { thresholds, threshold, k = CLASSES.length, allowEmpty = false } = {},
 ) => {
-  const modelBundle = await loadScamModel();
+  const modelBundle = await loadClassifierModel();
   const cleaned = normalizeText(text).replace(/\n/g, " ");
-  const perLabelThresholds = thresholds || (await loadScamThresholds());
+  const perLabelThresholds = thresholds || (await loadClassifierThresholds());
   const appliedThresholds = buildThresholds(perLabelThresholds, threshold);
   const scores =
     modelBundle.mode === MODE_TWO_STAGE
@@ -344,16 +347,16 @@ export const predictScam = async (
     allowEmpty,
     mode: modelBundle.mode,
   });
-  const predicted = new Set(labels);
-  const pScam = scores.scam ?? 0;
-  const isScam = predicted.has("scam");
+  const predictedLabels = new Set(labels);
+  const primaryProbability = scores.scam ?? 0;
+  const isFlagged = predictedLabels.has("scam");
 
   return {
-    isScam,
-    probability: pScam,
+    isFlagged,
+    probability: primaryProbability,
     threshold: appliedThresholds.scam,
     thresholds: appliedThresholds,
-    label: isScam ? "scam" : labels[0] || "clean",
+    label: isFlagged ? "scam" : labels[0] || "clean",
     labels,
     scores,
   };
