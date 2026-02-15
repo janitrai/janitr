@@ -1,17 +1,21 @@
-// Generated from extension/src/*.ts by `npm run extension:build`.
+import type { ClassifierResult, InferenceResponse, ScoreMap } from "./types.js";
+
 const MIN_CHARS = 20;
 const MAX_CHARS = 800;
 const BATCH_SIZE = 4;
 const LOG_INFERENCE = true;
+
 const HOSTNAME = String(globalThis.location?.hostname || "").toLowerCase();
 const IS_X = HOSTNAME === "x.com" || HOSTNAME.endsWith(".x.com");
 const X_TWEET_SELECTOR = 'div[data-testid="tweetText"]';
-const queue = [];
-const queued = /* @__PURE__ */ new Set();
-const lastText = /* @__PURE__ */ new WeakMap();
+
+const queue: Element[] = [];
+const queued = new Set<Element>();
+const lastText = new WeakMap<Element, string>();
 let processing = false;
 let stylesInjected = false;
-const SKIP_TAGS = /* @__PURE__ */ new Set([
+
+const SKIP_TAGS = new Set([
   "SCRIPT",
   "STYLE",
   "NOSCRIPT",
@@ -22,31 +26,46 @@ const SKIP_TAGS = /* @__PURE__ */ new Set([
   "CODE",
   "PRE",
   "SVG",
-  "CANVAS"
+  "CANVAS",
 ]);
-const idle = () => new Promise((resolve) => {
-  if (typeof requestIdleCallback === "function") {
-    requestIdleCallback(() => resolve(), { timeout: 500 });
-  } else {
-    setTimeout(resolve, 16);
-  }
-});
-const normalizeText = (text) => String(text || "").replace(/\s+/g, " ").trim();
-const previewText = (text, limit = 200) => {
+
+type InferenceBatch = {
+  results: ClassifierResult[];
+  engine: string;
+  fallbackFrom: string | null;
+};
+
+const idle = (): Promise<void> =>
+  new Promise<void>((resolve) => {
+    if (typeof requestIdleCallback === "function") {
+      requestIdleCallback(() => resolve(), { timeout: 500 });
+    } else {
+      setTimeout(resolve, 16);
+    }
+  });
+
+const normalizeText = (text: unknown): string =>
+  String(text || "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const previewText = (text: unknown, limit = 200): string => {
   const cleaned = normalizeText(text);
   if (cleaned.length <= limit) return cleaned;
   return `${cleaned.slice(0, limit)}...`;
 };
-const isSkippableElement = (el) => {
+
+const isSkippableElement = (el: Element | null | undefined): boolean => {
   if (!el || el.nodeType !== Node.ELEMENT_NODE) return true;
   if (SKIP_TAGS.has(el.tagName)) return true;
-  if (el.isContentEditable) return true;
+  if ((el as HTMLElement).isContentEditable) return true;
   if (el.closest('[contenteditable="true"]')) return true;
   return false;
 };
-const extractText = (el) => {
+
+const extractText = (el: Element | null | undefined): string => {
   if (!el) return "";
-  const htmlElement = el;
+  const htmlElement = el as HTMLElement;
   const raw = htmlElement.innerText || el.textContent || "";
   let text = normalizeText(raw);
   if (text.length > MAX_CHARS) {
@@ -54,23 +73,36 @@ const extractText = (el) => {
   }
   return text;
 };
-const getRuntime = () => {
-  if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
+
+const getRuntime = (): any | null => {
+  if (
+    typeof chrome !== "undefined" &&
+    chrome.runtime &&
+    chrome.runtime.sendMessage
+  ) {
     return chrome.runtime;
   }
-  if (typeof browser !== "undefined" && browser.runtime && browser.runtime.sendMessage) {
+  if (
+    typeof browser !== "undefined" &&
+    browser.runtime &&
+    browser.runtime.sendMessage
+  ) {
     return browser.runtime;
   }
   return null;
 };
-const sendMessage = (message) => {
+
+const sendMessage = (message: unknown): Promise<InferenceResponse> => {
   const runtime = getRuntime();
   if (!runtime) {
     return Promise.reject(new Error("Extension runtime is unavailable."));
   }
-  if (typeof runtime.sendMessage === "function" && runtime.sendMessage.length >= 2) {
-    return new Promise((resolve, reject) => {
-      runtime.sendMessage(message, (response) => {
+  if (
+    typeof runtime.sendMessage === "function" &&
+    runtime.sendMessage.length >= 2
+  ) {
+    return new Promise<InferenceResponse>((resolve, reject) => {
+      runtime.sendMessage(message, (response: InferenceResponse) => {
         const err = runtime.lastError;
         if (err) {
           reject(err);
@@ -80,9 +112,10 @@ const sendMessage = (message) => {
       });
     });
   }
-  return runtime.sendMessage(message);
+  return runtime.sendMessage(message) as Promise<InferenceResponse>;
 };
-const inferBatch = async (texts) => {
+
+const inferBatch = async (texts: string[]): Promise<InferenceBatch> => {
   const response = await sendMessage({ type: "ic-infer", texts });
   if (!response || !response.ok) {
     throw new Error(response?.error || "Inference failed");
@@ -90,14 +123,21 @@ const inferBatch = async (texts) => {
   return {
     results: Array.isArray(response.results) ? response.results : [],
     engine: typeof response.engine === "string" ? response.engine : "unknown",
-    fallbackFrom: typeof response.fallbackFrom === "string" ? response.fallbackFrom : null
+    fallbackFrom:
+      typeof response.fallbackFrom === "string" ? response.fallbackFrom : null,
   };
 };
-const formatScores = (scores, limit = 4) => {
-  const entries = Object.entries(scores).filter(([, score]) => Number.isFinite(score)).sort((a, b) => b[1] - a[1]).slice(0, limit).map(([label, score]) => `${label}=${score.toFixed(3)}`);
+
+const formatScores = (scores: ScoreMap, limit = 4): string => {
+  const entries = (Object.entries(scores) as Array<[string, number]>)
+    .filter(([, score]) => Number.isFinite(score))
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([label, score]) => `${label}=${score.toFixed(3)}`);
   return entries.join(" ");
 };
-const clearHighlight = (el) => {
+
+const clearHighlight = (el: Element | null | undefined): void => {
   if (!el) return;
   el.classList.remove("ic-flagged", "ic-scam", "ic-crypto", "ic-promo");
   el.removeAttribute("data-ic-label");
@@ -106,9 +146,17 @@ const clearHighlight = (el) => {
   el.removeAttribute("data-ic-confidence");
   el.removeAttribute("title");
 };
-const applyHighlight = (el, label, score, confidence, labels = [], scores = {}) => {
+
+const applyHighlight = (
+  el: Element | null | undefined,
+  label: string,
+  score: number,
+  confidence: number,
+  labels: string[] = [],
+  scores: ScoreMap = {},
+): void => {
   if (!el) return;
-  const htmlElement = el;
+  const htmlElement = el as HTMLElement;
   htmlElement.classList.add("ic-flagged");
   htmlElement.classList.toggle("ic-scam", label === "scam");
   htmlElement.classList.toggle("ic-crypto", label === "topic_crypto");
@@ -125,61 +173,82 @@ const applyHighlight = (el, label, score, confidence, labels = [], scores = {}) 
   }
   const labelText = labels.length > 0 ? labels.join(" + ") : `${label}`;
   const scoreText = Number.isFinite(score) ? `, score=${score.toFixed(3)}` : "";
-  const confidenceText = Number.isFinite(confidence) ? `, confidence=${confidence.toFixed(3)}` : "";
+  const confidenceText = Number.isFinite(confidence)
+    ? `, confidence=${confidence.toFixed(3)}`
+    : "";
   const scoreList = formatScores(scores);
   const scoreListText = scoreList ? `, scores: ${scoreList}` : "";
   htmlElement.title = `Classifier: ${labelText}${scoreText}${confidenceText}${scoreListText}`;
 };
-const buildItem = (el) => {
+
+const buildItem = (el: Element): { el: Element; text: string } | null => {
   if (!document.contains(el) || isSkippableElement(el)) return null;
+
   const text = extractText(el);
   if (text.length < MIN_CHARS) {
     clearHighlight(el);
     return null;
   }
+
   if (lastText.get(el) === text) return null;
   lastText.set(el, text);
+
   return { el, text };
 };
-const processQueue = async () => {
+
+const processQueue = async (): Promise<void> => {
   if (processing) return;
   processing = true;
   while (queue.length > 0) {
     const batch = queue.splice(0, BATCH_SIZE);
-    const items = [];
+    const items: Array<{ el: Element; text: string }> = [];
     for (const el of batch) {
       queued.delete(el);
       const item = buildItem(el);
       if (item) items.push(item);
     }
+
     if (items.length > 0) {
       try {
         const { results, engine, fallbackFrom } = await inferBatch(
-          items.map((item) => item.text)
+          items.map((item) => item.text),
         );
         for (let i = 0; i < items.length; i += 1) {
           const { el } = items[i];
           const result = results[i];
           if (!result) continue;
-          const scores = result.scores && typeof result.scores === "object" ? result.scores : {};
+
+          const scores =
+            result.scores && typeof result.scores === "object"
+              ? (result.scores as ScoreMap)
+              : {};
           const label = typeof result.label === "string" ? result.label : "clean";
-          const score = typeof scores[label] === "number" ? scores[label] : Number.NaN;
-          const labelList = Array.isArray(result.labels) ? result.labels.filter(
-            (entry) => typeof entry === "string"
-          ) : [];
-          const fallbackConfidence = typeof result.probability === "number" ? result.probability : 0;
-          const confidence = typeof scores.scam === "number" ? scores.scam : fallbackConfidence;
+          const score =
+            typeof scores[label] === "number" ? scores[label] : Number.NaN;
+          const labelList = Array.isArray(result.labels)
+            ? result.labels.filter(
+                (entry): entry is string => typeof entry === "string",
+              )
+            : [];
+          const fallbackConfidence =
+            typeof result.probability === "number" ? result.probability : 0;
+          const confidence =
+            typeof scores.scam === "number" ? scores.scam : fallbackConfidence;
+
           if (LOG_INFERENCE) {
             console.log("[IC] inference", {
               engine,
               fallbackFrom,
               label,
               score: Number.isFinite(score) ? Number(score.toFixed(3)) : score,
-              confidence: Number.isFinite(confidence) ? Number(confidence.toFixed(3)) : confidence,
+              confidence: Number.isFinite(confidence)
+                ? Number(confidence.toFixed(3))
+                : confidence,
               length: items[i].text.length,
-              text: previewText(items[i].text)
+              text: previewText(items[i].text),
             });
           }
+
           if (label !== "clean") {
             applyHighlight(el, label, score, confidence, labelList, scores);
           } else {
@@ -194,37 +263,41 @@ const processQueue = async () => {
   }
   processing = false;
 };
-const enqueueElement = (el) => {
+
+const enqueueElement = (el: Element | null | undefined): void => {
   if (!el || isSkippableElement(el)) return;
   if (queued.has(el)) return;
   queued.add(el);
   queue.push(el);
   void processQueue();
 };
-const scanTree = (root) => {
+
+const scanTree = (root: ParentNode | null): void => {
   if (!root) return;
   if (IS_X) {
     root.querySelectorAll(X_TWEET_SELECTOR).forEach((el) => enqueueElement(el));
     return;
   }
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-    acceptNode: (node2) => {
-      if (!node2 || !node2.parentElement) return NodeFilter.FILTER_REJECT;
-      if (isSkippableElement(node2.parentElement)) {
+    acceptNode: (node) => {
+      if (!node || !node.parentElement) return NodeFilter.FILTER_REJECT;
+      if (isSkippableElement(node.parentElement)) {
         return NodeFilter.FILTER_REJECT;
       }
-      const text = normalizeText(node2.textContent || "");
+      const text = normalizeText(node.textContent || "");
       if (text.length < MIN_CHARS) return NodeFilter.FILTER_REJECT;
       return NodeFilter.FILTER_ACCEPT;
-    }
+    },
   });
+
   let node = walker.nextNode();
   while (node) {
     if (node.parentElement) enqueueElement(node.parentElement);
     node = walker.nextNode();
   }
 };
-const observeMutations = () => {
+
+const observeMutations = (): void => {
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       if (mutation.type === "characterData") {
@@ -247,13 +320,13 @@ const observeMutations = () => {
             }
             enqueueElement(node.parentElement);
           } else if (node.nodeType === Node.ELEMENT_NODE) {
-            const el = node;
+            const el = node as Element;
             if (IS_X) {
               if (el.matches(X_TWEET_SELECTOR)) {
                 enqueueElement(el);
               }
-              el.querySelectorAll(X_TWEET_SELECTOR).forEach(
-                (tweet) => enqueueElement(tweet)
+              el.querySelectorAll(X_TWEET_SELECTOR).forEach((tweet) =>
+                enqueueElement(tweet),
               );
             } else {
               scanTree(el);
@@ -263,13 +336,15 @@ const observeMutations = () => {
       }
     }
   });
+
   observer.observe(document.documentElement, {
     subtree: true,
     childList: true,
-    characterData: true
+    characterData: true,
   });
 };
-const injectStyles = () => {
+
+const injectStyles = (): void => {
   if (stylesInjected) return;
   stylesInjected = true;
   const style = document.createElement("style");
@@ -311,11 +386,13 @@ const injectStyles = () => {
   `;
   document.documentElement.appendChild(style);
 };
-const init = () => {
+
+const init = (): void => {
   injectStyles();
   scanTree(document.body || document.documentElement);
   observeMutations();
 };
+
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init, { once: true });
 } else {
