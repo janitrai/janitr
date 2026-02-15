@@ -33,7 +33,7 @@ const normalizeEngine = (value: unknown): Engine => {
     .toLowerCase();
   if (candidate === ENGINE_FASTTEXT) return ENGINE_FASTTEXT;
   if (candidate === ENGINE_TRANSFORMER) return ENGINE_TRANSFORMER;
-  if (candidate === ENGINE_AUTO) return ENGINE_AUTO;
+  if (candidate === ENGINE_AUTO) return ENGINE_TRANSFORMER;
   return DEFAULT_ENGINE;
 };
 

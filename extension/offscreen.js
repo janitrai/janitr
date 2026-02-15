@@ -14,7 +14,6 @@ import {
 import {
   getActiveTransformerSource,
   resolveTransformerAssetsForSource,
-  setActiveTransformerSource,
   transformerSourceKey,
 } from "./transformer/model-repo.js";
 const ENGINE_FASTTEXT = "fasttext";
@@ -26,8 +25,8 @@ const normalizeEngine = (value) => {
     .toLowerCase();
   if (candidate === ENGINE_FASTTEXT) return ENGINE_FASTTEXT;
   if (candidate === ENGINE_TRANSFORMER) return ENGINE_TRANSFORMER;
-  if (candidate === ENGINE_AUTO) return ENGINE_AUTO;
-  return ENGINE_FASTTEXT;
+  if (candidate === ENGINE_AUTO) return ENGINE_TRANSFORMER;
+  return ENGINE_TRANSFORMER;
 };
 let queue = Promise.resolve();
 let activeTransformerSourceKey = null;
@@ -55,24 +54,7 @@ const classifyTextsTransformer = async (texts) => {
   const source = await getActiveTransformerSource();
   const sourceKey = transformerSourceKey(source);
   if (!activeTransformerAssets || activeTransformerSourceKey !== sourceKey) {
-    try {
-      activeTransformerAssets = await resolveTransformerAssetsForSource(source);
-    } catch (error) {
-      if (source.type === "hf_run") {
-        if (typeof console !== "undefined" && console.warn) {
-          console.warn(
-            "Unable to load selected transformer run; switching back to bundled transformer.",
-            error,
-          );
-        }
-        await setActiveTransformerSource({ type: "builtin" });
-        activeTransformerAssets = await resolveTransformerAssetsForSource({
-          type: "builtin",
-        });
-      } else {
-        throw error;
-      }
-    }
+    activeTransformerAssets = await resolveTransformerAssetsForSource(source);
     activeTransformerSourceKey = activeTransformerAssets.sourceKey;
     resetTransformerModel();
   }
@@ -86,44 +68,22 @@ const classifyTextsTransformer = async (texts) => {
   });
   return { results, engine: ENGINE_TRANSFORMER };
 };
+const resetTransformerRuntimeState = () => {
+  resetTransformerModel();
+  activeTransformerSourceKey = null;
+  activeTransformerAssets = null;
+};
 const classifyTexts = async (texts, engine) => {
   const requested = normalizeEngine(engine);
   if (requested === ENGINE_FASTTEXT) {
     return classifyTextsFasttext(texts);
   }
-  if (requested === ENGINE_TRANSFORMER) {
-    try {
-      return await classifyTextsTransformer(texts);
-    } catch (err) {
-      if (typeof console !== "undefined" && console.warn) {
-        console.warn(
-          "Transformer inference failed, falling back to fastText.",
-          err,
-        );
-      }
-      const fallback = await classifyTextsFasttext(texts);
-      return {
-        ...fallback,
-        fallbackFrom: ENGINE_TRANSFORMER,
-        fallbackReason: String(err && err.message ? err.message : err),
-      };
-    }
-  }
   try {
     return await classifyTextsTransformer(texts);
   } catch (err) {
-    if (typeof console !== "undefined" && console.warn) {
-      console.warn(
-        "Transformer inference failed in auto mode, falling back to fastText.",
-        err,
-      );
-    }
-    const fallback = await classifyTextsFasttext(texts);
-    return {
-      ...fallback,
-      fallbackFrom: ENGINE_TRANSFORMER,
-      fallbackReason: String(err && err.message ? err.message : err),
-    };
+    resetTransformerRuntimeState();
+    const reason = String(err && err.message ? err.message : err);
+    throw new Error(`Transformer inference failed: ${reason}`);
   }
 };
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -143,9 +103,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     })
     .catch((err) => {
       resetClassifierModel();
-      resetTransformerModel();
-      activeTransformerSourceKey = null;
-      activeTransformerAssets = null;
+      resetTransformerRuntimeState();
       sendResponse({
         ok: false,
         error: String(err && err.stack ? err.stack : err),
