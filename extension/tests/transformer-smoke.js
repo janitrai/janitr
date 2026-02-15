@@ -59,6 +59,16 @@ const run = async () => {
           `Failed to download+activate run ${DEFAULT_REPO}/${runId}.`,
       );
     }
+    const builtinResponse = await sendMessage({
+      type: "ic-use-builtin-transformer",
+      setBackendToTransformer: true,
+    });
+    if (!builtinResponse?.ok) {
+      fail(
+        builtinResponse?.error ||
+          "Failed to switch to built-in transformer source.",
+      );
+    }
     const inferResponse = await sendMessage({
       type: "ic-infer",
       texts: [SCAM_SAMPLE],

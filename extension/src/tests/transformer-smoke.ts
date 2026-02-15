@@ -86,6 +86,19 @@ const run = async (): Promise<void> => {
       );
     }
 
+    // Force built-in source selection; runtime should auto-switch to cached HF
+    // run if bundled transformer assets are missing in this checkout.
+    const builtinResponse = await sendMessage({
+      type: "ic-use-builtin-transformer",
+      setBackendToTransformer: true,
+    });
+    if (!builtinResponse?.ok) {
+      fail(
+        builtinResponse?.error ||
+          "Failed to switch to built-in transformer source.",
+      );
+    }
+
     const inferResponse = await sendMessage({
       type: "ic-infer",
       texts: [SCAM_SAMPLE],

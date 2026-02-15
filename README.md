@@ -90,7 +90,7 @@ Janitr keeps a rolling artifact repo on Hugging Face for large model files and d
 
 ### Extension approach (advanced mode)
 
-- The extension ships with bundled local models and works offline by default.
+- The extension ships with local runtime assets and supports bundled or cached transformer model artifacts.
 - Default backend is `transformer`; you can switch backend from the popup or options page.
 - In advanced mode (`Options` page), you can:
 
@@ -100,6 +100,7 @@ Janitr keeps a rolling artifact repo on Hugging Face for large model files and d
 
 - Downloaded run artifacts are integrity-checked (size + SHA-256) and cached locally in IndexedDB.
 - If a selected remote run cannot load, the extension falls back to the bundled transformer.
+- If bundled transformer artifacts are not present in your checkout, Janitr auto-selects the newest cached Hugging Face run. If none is cached yet, download and activate a run from Options.
 
 ## Development
 

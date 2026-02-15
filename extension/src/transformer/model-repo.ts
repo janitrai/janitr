@@ -12,6 +12,12 @@ const REQUIRED_TRANSFORMER_DESTINATIONS = [
   "model/tokenizer/vocab.txt",
   "model/thresholds.json",
 ] as const;
+const BUNDLED_TRANSFORMER_ASSET_PATHS = [
+  "transformer/student.int8.onnx",
+  "transformer/student_config.json",
+  "transformer/tokenizer/vocab.txt",
+  "transformer/thresholds.json",
+] as const;
 
 const DB_NAME = "janitr_transformer_models";
 const DB_VERSION = 1;
@@ -307,6 +313,51 @@ const fetchText = async (url: string, label: string): Promise<string> => {
   return response.text();
 };
 
+const runtimeGetUrl = (assetPath: string): string | null => {
+  const cleanPath = String(assetPath || "").replace(/^\/+/, "");
+  if (
+    typeof chrome !== "undefined" &&
+    chrome?.runtime &&
+    typeof chrome.runtime.getURL === "function"
+  ) {
+    return chrome.runtime.getURL(cleanPath);
+  }
+  if (
+    typeof browser !== "undefined" &&
+    (browser as any)?.runtime &&
+    typeof (browser as any).runtime.getURL === "function"
+  ) {
+    return (browser as any).runtime.getURL(cleanPath);
+  }
+  return null;
+};
+
+const urlLooksReachable = async (url: string): Promise<boolean> => {
+  try {
+    const head = await fetch(url, {
+      method: "HEAD",
+      cache: "no-store",
+      redirect: "follow",
+    });
+    if (head.ok) return true;
+    if (head.status !== 405 && head.status !== 501) return false;
+  } catch {
+    // Fall through to GET probe.
+  }
+
+  try {
+    const probe = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+      redirect: "follow",
+      headers: { Range: "bytes=0-0" },
+    });
+    return probe.ok;
+  } catch {
+    return false;
+  }
+};
+
 const fetchJson = async (
   url: string,
   label: string,
@@ -574,6 +625,29 @@ const createBuiltinAssets = (): ActiveTransformerRuntimeAssets => ({
     cacheKey: DEFAULT_SOURCE_TYPE,
   },
 });
+
+const bundledTransformerAssetsAvailable = async (): Promise<boolean> => {
+  for (const path of BUNDLED_TRANSFORMER_ASSET_PATHS) {
+    const url = runtimeGetUrl(path);
+    if (!url) return false;
+    if (!(await urlLooksReachable(url))) return false;
+  }
+  return true;
+};
+
+const getNewestCachedTransformerSource =
+  async (): Promise<TransformerSource | null> => {
+    const cachedRuns = await listCachedTransformerRuns();
+    if (!cachedRuns.length) return null;
+    const newest = cachedRuns[0];
+    const runId = normalizeRunId(newest.runId);
+    if (!runId) return null;
+    return {
+      type: HF_SOURCE_TYPE,
+      repo: normalizeRepo(newest.repo),
+      runId,
+    };
+  };
 
 const normalizeEvalPayload = (
   payload: Record<string, unknown>,
@@ -892,7 +966,26 @@ export const resolveTransformerAssetsForSource = async (
   const sourceKey = transformerSourceKey(normalizedSource);
 
   if (normalizedSource.type !== HF_SOURCE_TYPE) {
-    return createBuiltinAssets();
+    if (await bundledTransformerAssetsAvailable()) {
+      return createBuiltinAssets();
+    }
+
+    const cachedSource = await getNewestCachedTransformerSource();
+    if (cachedSource) {
+      await setActiveTransformerSource(cachedSource);
+      if (typeof console !== "undefined" && console.warn) {
+        console.warn(
+          "Bundled transformer assets are missing; using newest cached Hugging Face run instead.",
+          cachedSource,
+        );
+      }
+      return resolveTransformerAssetsForSource(cachedSource);
+    }
+
+    throw new Error(
+      "Bundled transformer assets are missing and no cached Hugging Face run is available. " +
+        "Open Janitr options and download+activate a transformer run.",
+    );
   }
 
   const db = await openDb();
