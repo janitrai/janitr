@@ -56,6 +56,11 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.23.0
+
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
         with:
@@ -63,16 +68,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm install --no-audit
-
-      - name: Prepare SimpleDoc CLI
-        run: |
-          npm install --no-save @simpledoc/simpledoc --prefer-offline --no-audit
-          mkdir -p "$HOME/SimpleDoc/dist/bin"
-          ln -sf "$GITHUB_WORKSPACE/node_modules/@simpledoc/simpledoc/dist/bin/simpledoc.js" "$HOME/SimpleDoc/dist/bin/simpledoc.js"
+          pnpm install --frozen-lockfile
 
       - name: Lint check
-        run: npm run format:check
+        run: pnpm run format:check
 
       - name: SimpleDoc check
-        run: npm run simpledoc -- check
+        run: pnpm dlx @simpledoc/simpledoc check

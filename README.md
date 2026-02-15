@@ -44,12 +44,13 @@ The approach: start narrow (crypto scams have clear ground truth), prove the pip
 ## Install
 
 1. Clone or download this repo
-2. Install dependencies: `npm install`
-3. Build extension assets: `npm run extension:build`
-4. Open Chrome → `chrome://extensions`
-5. Enable **Developer mode** (top right)
-6. Click **Load unpacked** → select the `extension/` folder
-7. Pin the extension to your toolbar
+2. Enable Corepack (once): `corepack enable`
+3. Install dependencies: `pnpm install`
+4. Build extension assets: `pnpm extension:build`
+5. Open Chrome → `chrome://extensions`
+6. Enable **Developer mode** (top right)
+7. Click **Load unpacked** → select the `extension/` folder
+8. Pin the extension to your toolbar
 
 ## How It Works
 
@@ -131,7 +132,7 @@ The extension lives in `extension/`. Key files:
 
 Build command:
 
-- `npm run extension:build` transpiles TS and stages required ONNX Runtime Web assets from `node_modules/onnxruntime-web/dist` into `extension/vendor/onnxruntime-web/`.
+- `pnpm extension:build` transpiles TS and stages required ONNX Runtime Web assets from `node_modules/onnxruntime-web/dist` into `extension/vendor/onnxruntime-web/`.
 
 ### Quantization
 
