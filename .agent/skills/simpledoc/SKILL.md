@@ -99,6 +99,7 @@ npx -y @simpledoc/simpledoc log "Entry text here"
 ```
 
 For multiline:
+
 ```bash
 cat <<'EOF' | npx -y @simpledoc/simpledoc log --stdin
 Multiline entry here
