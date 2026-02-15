@@ -22,7 +22,8 @@
       "48": "icon48.png",
       "128": "icon128.png"
     },
-    "default_title": "Janitr"
+    "default_title": "Janitr",
+    "default_popup": "popup.html"
   },
   "options_page": "options.html",
   "background": {
