@@ -1,0 +1,126 @@
+import {
+  loadClassifierModel,
+  loadClassifierThresholds,
+  predictClassifier,
+  resetClassifierModel,
+} from "./fasttext/classifier.js";
+import {
+  loadTransformerModel,
+  loadTransformerThresholds,
+  predictTransformerBatch,
+  resetTransformerModel,
+} from "./transformer/classifier-transformer.js";
+import type { ClassifierResult, Engine } from "./types.js";
+
+const ENGINE_FASTTEXT: Engine = "fasttext";
+const ENGINE_TRANSFORMER: Engine = "transformer";
+const ENGINE_AUTO: Engine = "auto";
+
+const normalizeEngine = (value: unknown): Engine => {
+  const candidate = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  if (candidate === ENGINE_FASTTEXT) return ENGINE_FASTTEXT;
+  if (candidate === ENGINE_TRANSFORMER) return ENGINE_TRANSFORMER;
+  if (candidate === ENGINE_AUTO) return ENGINE_AUTO;
+  return ENGINE_FASTTEXT;
+};
+
+let queue: Promise<void> = Promise.resolve();
+
+const enqueue = <T>(task: () => Promise<T>): Promise<T> => {
+  const next = queue.then(task, task);
+  queue = next.then(
+    () => undefined,
+    () => undefined,
+  );
+  return next;
+};
+
+const classifyTextsFasttext = async (
+  texts: string[],
+): Promise<{ results: ClassifierResult[]; engine: Engine }> => {
+  await loadClassifierModel();
+  const thresholds = await loadClassifierThresholds();
+  const results: ClassifierResult[] = [];
+  for (const text of texts) {
+    results.push(
+      await predictClassifier(text, { thresholds, allowEmpty: false }),
+    );
+  }
+  return { results, engine: ENGINE_FASTTEXT };
+};
+
+const classifyTextsTransformer = async (
+  texts: string[],
+): Promise<{ results: ClassifierResult[]; engine: Engine }> => {
+  await loadTransformerModel();
+  const thresholds = await loadTransformerThresholds();
+  const results = await predictTransformerBatch(texts, { thresholds });
+  return { results, engine: ENGINE_TRANSFORMER };
+};
+
+type ClassifiedResponse = {
+  results: ClassifierResult[];
+  engine: Engine;
+  fallbackFrom?: Engine;
+  fallbackReason?: string;
+};
+
+const classifyTexts = async (
+  texts: string[],
+  engine: unknown,
+): Promise<ClassifiedResponse> => {
+  const requested = normalizeEngine(engine);
+  if (requested === ENGINE_FASTTEXT) {
+    return classifyTextsFasttext(texts);
+  }
+  if (requested === ENGINE_TRANSFORMER) {
+    return classifyTextsTransformer(texts);
+  }
+
+  try {
+    return await classifyTextsTransformer(texts);
+  } catch (err: any) {
+    if (typeof console !== "undefined" && console.warn) {
+      console.warn(
+        "Transformer inference failed in auto mode, falling back to fastText.",
+        err,
+      );
+    }
+    const fallback = await classifyTextsFasttext(texts);
+    return {
+      ...fallback,
+      fallbackFrom: ENGINE_TRANSFORMER,
+      fallbackReason: String(err && err.message ? err.message : err),
+    };
+  }
+};
+
+chrome.runtime.onMessage.addListener((message: any, _sender: any, sendResponse: (response: unknown) => void) => {
+  if (!message || message.type !== "ic-infer-offscreen") {
+    return undefined;
+  }
+
+  const texts = Array.isArray(message.texts)
+    ? message.texts.map((text: unknown) => String(text ?? ""))
+    : [];
+  const engine = normalizeEngine(message.engine);
+  void enqueue(() => classifyTexts(texts, engine))
+    .then((response) => {
+      sendResponse({
+        ok: true,
+        ...response,
+      });
+    })
+    .catch((err: any) => {
+      resetClassifierModel();
+      resetTransformerModel();
+      sendResponse({
+        ok: false,
+        error: String(err && err.stack ? err.stack : err),
+      });
+    });
+
+  return true;
+});

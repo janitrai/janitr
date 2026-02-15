@@ -3,12 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "devDependencies": {
+    "esbuild": "^0.25.11",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "playwright": "^1.58.1",
-    "prettier": "^3.8.1"
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3"
   },
   "scripts": {
+    "extension:build": "node extension/scripts/build.mjs",
+    "extension:typecheck": "tsc -p extension/tsconfig.json --noEmit",
     "prepare": "husky",
     "format": "prettier --write . --ignore-unknown && uvx ruff format .",
     "format:check": "prettier --check . --ignore-unknown && uvx ruff format --check .",

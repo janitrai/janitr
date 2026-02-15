@@ -1,28 +1,70 @@
-// Generated from extension/src/*.ts by `npm run extension:build`.
+import type { ClassifierResult, ScoreMap, ThresholdMap } from "../types.js";
+
 const MODEL_FILENAME = "student.int8.onnx";
 const STUDENT_CONFIG_FILENAME = "student_config.json";
 const THRESHOLDS_FILENAME = "thresholds.json";
 const VOCAB_FILENAME = "tokenizer/vocab.txt";
 const ORT_MODULE_RELATIVE_PATH = "../vendor/onnxruntime-web/ort.wasm.min.mjs";
+
 const ENGINE = "transformer";
-const CLASSES = ["clean", "topic_crypto", "scam"];
+const CLASSES = ["clean", "topic_crypto", "scam"] as const;
 const DEFAULT_MAX_LENGTH = 96;
+
 const SPECIAL_TOKENS = {
   pad: "[PAD]",
   unk: "[UNK]",
   cls: "[CLS]",
-  sep: "[SEP]"
-};
+  sep: "[SEP]",
+} as const;
+
 const ZERO_WIDTH_RE = /[\u200B-\u200D\u2060\uFEFF]/g;
 const WHITESPACE_RE = /\s+/g;
 const CONTROL_CODE_RE = /[\u0000-\u001F\u007F-\u009F]/;
 const PUNCT_OR_SYMBOL_RE = /[\p{P}\p{S}]/u;
-let ortPromise = null;
-let modelPromise = null;
-let configPromise = null;
-let thresholdsPromise = null;
-let tokenizerPromise = null;
-const defaultAssetUrl = (filename) => {
+
+type TransformerThresholds = ThresholdMap & {
+  scam: number;
+  topic_crypto: number;
+};
+
+interface LoadTransformerOptions {
+  modelUrl?: string;
+  studentConfigUrl?: string;
+  vocabUrl?: string;
+}
+
+interface LoadThresholdOptions {
+  thresholdsUrl?: string;
+}
+
+interface TokenizerState {
+  vocabMap: Map<string, number>;
+  vocabSize: number;
+  maxLength: number;
+  padId: number;
+  unkId: number;
+  clsId: number;
+  sepId: number;
+}
+
+interface TransformerModel {
+  ort: any;
+  session: any;
+  tokenizer: TokenizerState;
+}
+
+interface PredictTransformerOptions {
+  thresholds?: TransformerThresholds;
+  threshold?: number;
+}
+
+let ortPromise: Promise<any> | null = null;
+let modelPromise: Promise<TransformerModel> | null = null;
+let configPromise: Promise<Record<string, unknown>> | null = null;
+let thresholdsPromise: Promise<TransformerThresholds> | null = null;
+let tokenizerPromise: Promise<TokenizerState> | null = null;
+
+const defaultAssetUrl = (filename: string): string => {
   if (typeof chrome !== "undefined" && chrome.runtime?.getURL) {
     return chrome.runtime.getURL(`transformer/${filename}`);
   }
@@ -31,57 +73,95 @@ const defaultAssetUrl = (filename) => {
   }
   return new URL(filename, import.meta.url).toString();
 };
-const resolveRelativeAssetUrl = (relativePath) => new URL(relativePath, import.meta.url).toString();
-const fetchText = async (url, label) => {
+
+const resolveRelativeAssetUrl = (relativePath: string): string =>
+  new URL(relativePath, import.meta.url).toString();
+
+const fetchText = async (url: string, label: string): Promise<string> => {
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`Failed to load ${label}: ${res.status} ${res.statusText}`);
   }
   return res.text();
 };
-const fetchJson = async (url, label) => {
+
+const fetchJson = async (
+  url: string,
+  label: string,
+): Promise<Record<string, unknown>> => {
   const text = await fetchText(url, label);
   try {
-    return JSON.parse(text);
-  } catch (err) {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch (err: any) {
     throw new Error(
-      `Invalid JSON for ${label}: ${String(err && err.message ? err.message : err)}`
+      `Invalid JSON for ${label}: ${String(err && err.message ? err.message : err)}`,
     );
   }
 };
-const clampProb = (value) => {
+
+const clampProb = (value: unknown): number => {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return 0;
   return Math.min(1, Math.max(0, numeric));
 };
-const parseThresholds = (payload) => {
-  const payloadRecord = payload && typeof payload === "object" ? payload : {};
-  const source = payloadRecord.thresholds && typeof payloadRecord.thresholds === "object" ? payloadRecord.thresholds : payloadRecord;
+
+const parseThresholds = (payload: unknown): TransformerThresholds => {
+  const payloadRecord =
+    payload && typeof payload === "object"
+      ? (payload as Record<string, unknown>)
+      : {};
+  const source =
+    payloadRecord.thresholds && typeof payloadRecord.thresholds === "object"
+      ? (payloadRecord.thresholds as Record<string, unknown>)
+      : payloadRecord;
   const scam = Number(source.scam);
   const topic = Number(source.topic_crypto);
   return {
     scam: Number.isFinite(scam) ? clampProb(scam) : 0.5,
-    topic_crypto: Number.isFinite(topic) ? clampProb(topic) : 0.5
+    topic_crypto: Number.isFinite(topic) ? clampProb(topic) : 0.5,
   };
 };
-const normalizeText = (text) => String(text || "").normalize("NFKC").replace(ZERO_WIDTH_RE, "").replace(WHITESPACE_RE, " ").trim().toLowerCase();
-const isWhitespace = (char) => /\s/u.test(char);
-const isControl = (char) => {
-  if (char === "	" || char === "\n" || char === "\r") {
+
+const normalizeText = (text: unknown): string =>
+  String(text || "")
+    .normalize("NFKC")
+    .replace(ZERO_WIDTH_RE, "")
+    .replace(WHITESPACE_RE, " ")
+    .trim()
+    .toLowerCase();
+
+const isWhitespace = (char: string): boolean => /\s/u.test(char);
+
+const isControl = (char: string): boolean => {
+  if (char === "\t" || char === "\n" || char === "\r") {
     return false;
   }
   return CONTROL_CODE_RE.test(char);
 };
-const isCjkCodePoint = (codePoint) => codePoint >= 19968 && codePoint <= 40959 || codePoint >= 13312 && codePoint <= 19903 || codePoint >= 131072 && codePoint <= 173791 || codePoint >= 173824 && codePoint <= 177983 || codePoint >= 177984 && codePoint <= 178207 || codePoint >= 178208 && codePoint <= 183983 || codePoint >= 63744 && codePoint <= 64255 || codePoint >= 194560 && codePoint <= 195103;
-const isPunctuationOrSymbol = (char) => PUNCT_OR_SYMBOL_RE.test(char);
-const basicTokenize = (normalized) => {
-  const tokens = [];
+
+const isCjkCodePoint = (codePoint: number): boolean =>
+  (codePoint >= 0x4e00 && codePoint <= 0x9fff) ||
+  (codePoint >= 0x3400 && codePoint <= 0x4dbf) ||
+  (codePoint >= 0x20000 && codePoint <= 0x2a6df) ||
+  (codePoint >= 0x2a700 && codePoint <= 0x2b73f) ||
+  (codePoint >= 0x2b740 && codePoint <= 0x2b81f) ||
+  (codePoint >= 0x2b820 && codePoint <= 0x2ceaf) ||
+  (codePoint >= 0xf900 && codePoint <= 0xfaff) ||
+  (codePoint >= 0x2f800 && codePoint <= 0x2fa1f);
+
+const isPunctuationOrSymbol = (char: string): boolean =>
+  PUNCT_OR_SYMBOL_RE.test(char);
+
+const basicTokenize = (normalized: string): string[] => {
+  const tokens: string[] = [];
   let current = "";
-  const flush = () => {
+
+  const flush = (): void => {
     if (!current) return;
     tokens.push(current);
     current = "";
   };
+
   for (const char of normalized) {
     if (isControl(char)) {
       continue;
@@ -90,27 +170,36 @@ const basicTokenize = (normalized) => {
       flush();
       continue;
     }
+
     const codePoint = char.codePointAt(0) || 0;
     if (isCjkCodePoint(codePoint) || isPunctuationOrSymbol(char)) {
       flush();
       tokens.push(char);
       continue;
     }
+
     current += char;
   }
   flush();
   return tokens;
 };
-const wordpieceTokenize = (token, vocabMap, maxInputCharsPerWord = 100) => {
+
+const wordpieceTokenize = (
+  token: string,
+  vocabMap: Map<string, number>,
+  maxInputCharsPerWord = 100,
+): string[] => {
   const tokenChars = Array.from(token);
   if (!tokenChars.length || tokenChars.length > maxInputCharsPerWord) {
     return [SPECIAL_TOKENS.unk];
   }
-  const pieces = [];
+
+  const pieces: string[] = [];
   let start = 0;
   while (start < tokenChars.length) {
     let end = tokenChars.length;
-    let found = null;
+    let found: string | null = null;
+
     while (start < end) {
       const subword = tokenChars.slice(start, end).join("");
       const candidate = start > 0 ? `##${subword}` : subword;
@@ -120,16 +209,19 @@ const wordpieceTokenize = (token, vocabMap, maxInputCharsPerWord = 100) => {
       }
       end -= 1;
     }
+
     if (!found) {
       return [SPECIAL_TOKENS.unk];
     }
     pieces.push(found);
     start = end;
   }
+
   return pieces;
 };
-const parseVocab = (text) => {
-  const vocabMap = /* @__PURE__ */ new Map();
+
+const parseVocab = (text: string): Map<string, number> => {
+  const vocabMap = new Map<string, number>();
   const lines = text.split(/\r?\n/);
   for (let i = 0; i < lines.length; i += 1) {
     const token = lines[i];
@@ -140,170 +232,232 @@ const parseVocab = (text) => {
   }
   return vocabMap;
 };
+
 const loadTokenizer = async ({
   vocabUrl,
-  maxLength
-} = {}) => {
+  maxLength,
+}: {
+  vocabUrl?: string;
+  maxLength?: number;
+} = {}): Promise<TokenizerState> => {
   if (!tokenizerPromise) {
     tokenizerPromise = (async () => {
       const resolvedVocabUrl = vocabUrl || defaultAssetUrl(VOCAB_FILENAME);
       const vocabText = await fetchText(resolvedVocabUrl, "transformer vocab");
       const vocabMap = parseVocab(vocabText);
       const vocabSize = vocabMap.size;
+
       const padId = vocabMap.get(SPECIAL_TOKENS.pad);
       const unkId = vocabMap.get(SPECIAL_TOKENS.unk);
       const clsId = vocabMap.get(SPECIAL_TOKENS.cls);
       const sepId = vocabMap.get(SPECIAL_TOKENS.sep);
-      if (!Number.isInteger(padId) || !Number.isInteger(unkId) || !Number.isInteger(clsId) || !Number.isInteger(sepId)) {
+      if (
+        !Number.isInteger(padId) ||
+        !Number.isInteger(unkId) ||
+        !Number.isInteger(clsId) ||
+        !Number.isInteger(sepId)
+      ) {
         throw new Error(
-          "Tokenizer vocab is missing required special tokens ([PAD], [UNK], [CLS], [SEP])."
+          "Tokenizer vocab is missing required special tokens ([PAD], [UNK], [CLS], [SEP]).",
         );
       }
+
       return {
         vocabMap,
         vocabSize,
-        maxLength: Number.isInteger(maxLength) && maxLength > 0 ? maxLength : DEFAULT_MAX_LENGTH,
+        maxLength:
+          Number.isInteger(maxLength) && maxLength > 0
+            ? maxLength
+            : DEFAULT_MAX_LENGTH,
         padId,
         unkId,
         clsId,
-        sepId
+        sepId,
       };
     })();
   }
   return tokenizerPromise;
 };
-const encodeSingle = (text, tokenizerState) => {
+
+const encodeSingle = (
+  text: string,
+  tokenizerState: TokenizerState,
+): { tokenIds: number[]; attentionMask: number[] } => {
   const normalized = normalizeText(text);
   const basicTokens = basicTokenize(normalized);
-  const subwordTokens = [];
+  const subwordTokens: string[] = [];
   for (const token of basicTokens) {
     const pieces = wordpieceTokenize(token, tokenizerState.vocabMap);
     for (const piece of pieces) subwordTokens.push(piece);
   }
+
   const tokenIds = [tokenizerState.clsId];
   for (const token of subwordTokens) {
     const id = tokenizerState.vocabMap.get(token);
     tokenIds.push(Number.isInteger(id) ? id : tokenizerState.unkId);
   }
   tokenIds.push(tokenizerState.sepId);
+
   if (tokenIds.length > tokenizerState.maxLength) {
     tokenIds.length = tokenizerState.maxLength;
     tokenIds[tokenizerState.maxLength - 1] = tokenizerState.sepId;
   }
+
   const attentionMask = new Array(tokenIds.length).fill(1);
   while (tokenIds.length < tokenizerState.maxLength) {
     tokenIds.push(tokenizerState.padId);
     attentionMask.push(0);
   }
+
   return { tokenIds, attentionMask };
 };
-const encodeBatch = (texts, tokenizerState) => {
-  const flatInputIds = [];
-  const flatAttention = [];
+
+const encodeBatch = (
+  texts: string[],
+  tokenizerState: TokenizerState,
+): { inputIds: BigInt64Array; attentionMask: BigInt64Array } => {
+  const flatInputIds: number[] = [];
+  const flatAttention: number[] = [];
+
   for (const text of texts) {
     const encoded = encodeSingle(text, tokenizerState);
     flatInputIds.push(...encoded.tokenIds);
     flatAttention.push(...encoded.attentionMask);
   }
+
   return {
     inputIds: BigInt64Array.from(flatInputIds, (value) => BigInt(value)),
-    attentionMask: BigInt64Array.from(flatAttention, (value) => BigInt(value))
+    attentionMask: BigInt64Array.from(flatAttention, (value) => BigInt(value)),
   };
 };
-const loadOrt = async () => {
+
+const loadOrt = async (): Promise<any> => {
   if (!ortPromise) {
-    ortPromise = import(ORT_MODULE_RELATIVE_PATH).then((mod) => mod.default || mod).catch((err) => {
-      throw new Error(
-        `Failed to import onnxruntime-web runtime (${ORT_MODULE_RELATIVE_PATH}). Add runtime assets under extension/vendor/onnxruntime-web/. ` + String(err && err.message ? err.message : err)
-      );
-    });
+    ortPromise = import(ORT_MODULE_RELATIVE_PATH)
+      .then((mod: any) => mod.default || mod)
+      .catch((err: any) => {
+        throw new Error(
+          `Failed to import onnxruntime-web runtime (${ORT_MODULE_RELATIVE_PATH}). ` +
+            "Add runtime assets under extension/vendor/onnxruntime-web/. " +
+            String(err && err.message ? err.message : err),
+        );
+      });
   }
   return ortPromise;
 };
-const resolveMaxLength = (config) => {
-  const architecture = config.architecture && typeof config.architecture === "object" ? config.architecture : null;
+
+const resolveMaxLength = (config: Record<string, unknown>): number => {
+  const architecture =
+    config.architecture && typeof config.architecture === "object"
+      ? (config.architecture as Record<string, unknown>)
+      : null;
   const configured = Number(architecture?.max_length);
   if (Number.isFinite(configured) && configured > 0) {
     return Math.floor(configured);
   }
   return DEFAULT_MAX_LENGTH;
 };
-const loadTransformerThresholds = async ({
-  thresholdsUrl
-} = {}) => {
+
+export const loadTransformerThresholds = async ({
+  thresholdsUrl,
+}: LoadThresholdOptions = {}): Promise<TransformerThresholds> => {
   if (!thresholdsPromise) {
     thresholdsPromise = (async () => {
-      const resolvedThresholdsUrl = thresholdsUrl || defaultAssetUrl(THRESHOLDS_FILENAME);
+      const resolvedThresholdsUrl =
+        thresholdsUrl || defaultAssetUrl(THRESHOLDS_FILENAME);
       const payload = await fetchJson(
         resolvedThresholdsUrl,
-        "transformer thresholds"
+        "transformer thresholds",
       );
       return parseThresholds(payload);
     })();
   }
   return thresholdsPromise;
 };
-const loadTransformerModel = async ({
+
+export const loadTransformerModel = async ({
   modelUrl,
   studentConfigUrl,
-  vocabUrl
-} = {}) => {
+  vocabUrl,
+}: LoadTransformerOptions = {}): Promise<TransformerModel> => {
   if (!modelPromise) {
     modelPromise = (async () => {
       const resolvedModelUrl = modelUrl || defaultAssetUrl(MODEL_FILENAME);
-      const resolvedConfigUrl = studentConfigUrl || defaultAssetUrl(STUDENT_CONFIG_FILENAME);
+      const resolvedConfigUrl =
+        studentConfigUrl || defaultAssetUrl(STUDENT_CONFIG_FILENAME);
+
       if (!configPromise) {
         configPromise = fetchJson(
           resolvedConfigUrl,
-          "transformer student config"
+          "transformer student config",
         );
       }
       const [ort, config] = await Promise.all([loadOrt(), configPromise]);
+
       ort.env.wasm.numThreads = 1;
       ort.env.wasm.proxy = false;
       ort.env.wasm.wasmPaths = resolveRelativeAssetUrl(
-        "../vendor/onnxruntime-web/"
+        "../vendor/onnxruntime-web/",
       );
+
       const maxLength = resolveMaxLength(config);
       const tokenizer = await loadTokenizer({ vocabUrl, maxLength });
-      const architecture = config.architecture && typeof config.architecture === "object" ? config.architecture : null;
+      const architecture =
+        config.architecture && typeof config.architecture === "object"
+          ? (config.architecture as Record<string, unknown>)
+          : null;
       const expectedVocabSize = Number(architecture?.vocab_size);
-      if (Number.isFinite(expectedVocabSize) && expectedVocabSize > 0 && tokenizer.vocabSize !== expectedVocabSize) {
+      if (
+        Number.isFinite(expectedVocabSize) &&
+        expectedVocabSize > 0 &&
+        tokenizer.vocabSize !== expectedVocabSize
+      ) {
         throw new Error(
-          `Tokenizer vocab size mismatch: expected ${expectedVocabSize}, got ${tokenizer.vocabSize}.`
+          `Tokenizer vocab size mismatch: expected ${expectedVocabSize}, got ${tokenizer.vocabSize}.`,
         );
       }
+
       const session = await ort.InferenceSession.create(resolvedModelUrl, {
         executionProviders: ["wasm"],
-        graphOptimizationLevel: "all"
+        graphOptimizationLevel: "all",
       });
       return {
         ort,
         session,
-        tokenizer
+        tokenizer,
       };
     })();
   }
   return modelPromise;
 };
-const applyThresholds = (thresholds, threshold) => {
+
+const applyThresholds = (
+  thresholds: TransformerThresholds | undefined,
+  threshold: number | undefined,
+): TransformerThresholds => {
   const base = {
     scam: Number(thresholds?.scam),
-    topic_crypto: Number(thresholds?.topic_crypto)
+    topic_crypto: Number(thresholds?.topic_crypto),
   };
   if (Number.isFinite(threshold)) {
     const value = clampProb(threshold);
     return {
       scam: value,
-      topic_crypto: value
+      topic_crypto: value,
     };
   }
   return {
     scam: Number.isFinite(base.scam) ? clampProb(base.scam) : 0.5,
-    topic_crypto: Number.isFinite(base.topic_crypto) ? clampProb(base.topic_crypto) : 0.5
+    topic_crypto: Number.isFinite(base.topic_crypto)
+      ? clampProb(base.topic_crypto)
+      : 0.5,
   };
 };
-const softmaxBinaryPositive = (negLogit, posLogit) => {
+
+const softmaxBinaryPositive = (
+  negLogit: unknown,
+  posLogit: unknown,
+): number => {
   const a = Number(negLogit);
   const b = Number(posLogit);
   const max = Math.max(a, b);
@@ -311,31 +465,40 @@ const softmaxBinaryPositive = (negLogit, posLogit) => {
   const expPos = Math.exp(b - max);
   return expPos / (expNeg + expPos);
 };
-const sigmoid = (value) => {
+
+const sigmoid = (value: unknown): number => {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return 0;
   if (numeric >= 0) {
-    const z2 = Math.exp(-numeric);
-    return 1 / (1 + z2);
+    const z = Math.exp(-numeric);
+    return 1 / (1 + z);
   }
   const z = Math.exp(numeric);
   return z / (1 + z);
 };
-const toResult = (scamProb, topicProb, thresholds) => {
+
+const toResult = (
+  scamProb: number,
+  topicProb: number,
+  thresholds: TransformerThresholds,
+): ClassifierResult => {
   const scam = clampProb(scamProb);
   const topic = clampProb(topicProb);
   const clean = clampProb(1 - Math.max(scam, topic));
+
   let label = "clean";
   if (scam >= thresholds.scam) {
     label = "scam";
   } else if (topic >= thresholds.topic_crypto) {
     label = "topic_crypto";
   }
-  const scores = {
+
+  const scores: ScoreMap = {
     clean,
     topic_crypto: topic,
-    scam
+    scam,
   };
+
   return {
     isFlagged: label === "scam",
     probability: scam,
@@ -345,65 +508,79 @@ const toResult = (scamProb, topicProb, thresholds) => {
     labels: [label],
     scores,
     mode: ENGINE,
-    classes: CLASSES
+    classes: CLASSES,
   };
 };
-const predictTransformerBatch = async (texts, { thresholds, threshold } = {}) => {
-  const safeTexts = Array.isArray(texts) ? texts.map((text) => String(text ?? "")) : [];
+
+export const predictTransformerBatch = async (
+  texts: unknown,
+  { thresholds, threshold }: PredictTransformerOptions = {},
+): Promise<ClassifierResult[]> => {
+  const safeTexts = Array.isArray(texts)
+    ? texts.map((text) => String(text ?? ""))
+    : [];
   if (safeTexts.length === 0) return [];
+
   const [model, loadedThresholds] = await Promise.all([
     loadTransformerModel(),
-    thresholds ? Promise.resolve(thresholds) : loadTransformerThresholds()
+    thresholds ? Promise.resolve(thresholds) : loadTransformerThresholds(),
   ]);
   const appliedThresholds = applyThresholds(loadedThresholds, threshold);
+
   const batchSize = safeTexts.length;
   const maxLength = model.tokenizer.maxLength;
   const encoded = encodeBatch(safeTexts, model.tokenizer);
+
   const feeds = {
     input_ids: new model.ort.Tensor("int64", encoded.inputIds, [
       batchSize,
-      maxLength
+      maxLength,
     ]),
     attention_mask: new model.ort.Tensor("int64", encoded.attentionMask, [
       batchSize,
-      maxLength
-    ])
+      maxLength,
+    ]),
   };
+
   const outputs = await model.session.run(feeds, [
     "scam_logits",
-    "topic_logits"
+    "topic_logits",
   ]);
-  const scamLogits = outputs?.scam_logits?.data;
-  const topicLogits = outputs?.topic_logits?.data;
+  const scamLogits = outputs?.scam_logits?.data as
+    | ArrayLike<number>
+    | undefined;
+  const topicLogits = outputs?.topic_logits?.data as
+    | ArrayLike<number>
+    | undefined;
+
   if (!scamLogits || !topicLogits) {
     throw new Error("Transformer inference did not return scam/topic logits.");
   }
-  const results = [];
+
+  const results: ClassifierResult[] = [];
   for (let i = 0; i < batchSize; i += 1) {
     const scamProb = softmaxBinaryPositive(
       scamLogits[i * 2],
-      scamLogits[i * 2 + 1]
+      scamLogits[i * 2 + 1],
     );
     const topicProb = sigmoid(topicLogits[i]);
     results.push(toResult(scamProb, topicProb, appliedThresholds));
   }
   return results;
 };
-const predictTransformer = async (text, options = {}) => {
+
+export const predictTransformer = async (
+  text: unknown,
+  options: PredictTransformerOptions = {},
+): Promise<ClassifierResult> => {
   const [result] = await predictTransformerBatch([text], options);
   return result;
 };
-const resetTransformerModel = () => {
+
+export const resetTransformerModel = (): void => {
   ortPromise = null;
   modelPromise = null;
   configPromise = null;
   thresholdsPromise = null;
   tokenizerPromise = null;
-};
-export {
-  loadTransformerModel,
-  loadTransformerThresholds,
-  predictTransformer,
-  predictTransformerBatch,
-  resetTransformerModel
 };
