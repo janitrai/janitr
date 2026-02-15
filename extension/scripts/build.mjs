@@ -1,6 +1,7 @@
-import { copyFile, mkdir, stat } from "node:fs/promises";
+import { copyFile, mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { build } from "esbuild";
+import { format as prettierFormat, resolveConfig } from "prettier";
 
 const ORT_DIST_DIR = path.resolve("node_modules/onnxruntime-web/dist");
 const ORT_VENDOR_DIR = path.resolve("extension/vendor/onnxruntime-web");
@@ -24,12 +25,20 @@ const ENTRY_POINTS = [
   "extension/src/tests/transformer-smoke.ts",
 ];
 
+const GENERATED_OUTPUTS = ENTRY_POINTS.map((entryPoint) =>
+  path.resolve(
+    entryPoint
+      .replace(/^extension\/src\//, "extension/")
+      .replace(/\.ts$/u, ".js"),
+  ),
+);
+
 const copyOrtRuntimeAssets = async () => {
   try {
     await stat(ORT_DIST_DIR);
   } catch {
     throw new Error(
-      "Missing onnxruntime-web runtime files. Run `npm install` before `npm run extension:build`.",
+      "Missing onnxruntime-web runtime files. Run `pnpm install` before `pnpm extension:build`.",
     );
   }
 
@@ -49,6 +58,20 @@ const copyOrtRuntimeAssets = async () => {
   }
 };
 
+const formatGeneratedOutputs = async () => {
+  for (const outputPath of GENERATED_OUTPUTS) {
+    const source = await readFile(outputPath, "utf8");
+    const config = (await resolveConfig(outputPath)) || {};
+    const formatted = await prettierFormat(source, {
+      ...config,
+      filepath: outputPath,
+    });
+    if (formatted !== source) {
+      await writeFile(outputPath, formatted, "utf8");
+    }
+  }
+};
+
 await copyOrtRuntimeAssets();
 
 await build({
@@ -65,3 +88,5 @@ await build({
     js: "// Generated from extension/src/*.ts by `npm run extension:build`.",
   },
 });
+
+await formatGeneratedOutputs();
