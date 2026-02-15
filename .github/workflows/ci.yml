@@ -18,17 +18,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
 
       - name: Data integrity check
-        run: python scripts/check_integrity.py data/sample.jsonl
+        run: uv run --python 3.12 python scripts/check_integrity.py data/sample.jsonl
 
       - name: Duplicate ID dry-run check
         run: |
-          output="$(python scripts/fix_duplicate_ids.py data/sample.jsonl)"
+          output="$(uv run --python 3.12 python scripts/fix_duplicate_ids.py data/sample.jsonl)"
           echo "$output"
 
           duplicate_count="$(echo "$output" | awk -F': ' '/^Duplicate IDs:/ {print $2; exit}')"
@@ -56,16 +54,12 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
 
       - name: Install dependencies
         run: |
           npm install --no-audit
-          python -m pip install --upgrade pip
-          python -m pip install ruff
 
       - name: Prepare SimpleDoc CLI
         run: |
