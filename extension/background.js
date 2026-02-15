@@ -1,4 +1,15 @@
 // Generated from extension/src/*.ts by `npm run extension:build`.
+import {
+  DEFAULT_HF_EXPERIMENTS_REPO,
+  downloadAndActivateTransformerRun,
+  fetchRemoteRuns,
+  getActiveTransformerSource,
+  listCachedTransformerRuns,
+  removeCachedTransformerRun,
+  setActiveTransformerSource,
+  summarizeRemoteRun,
+  transformerSourceKey,
+} from "./transformer/model-repo.js";
 const OFFSCREEN_URL = "offscreen.html";
 const ENGINE_FASTTEXT = "fasttext";
 const ENGINE_TRANSFORMER = "transformer";
@@ -6,7 +17,9 @@ const ENGINE_AUTO = "auto";
 const DEFAULT_ENGINE = ENGINE_TRANSFORMER;
 const STORAGE_MODEL_BACKEND_KEY = "ic_model_backend";
 const normalizeEngine = (value) => {
-  const candidate = String(value ?? "").trim().toLowerCase();
+  const candidate = String(value ?? "")
+    .trim()
+    .toLowerCase();
   if (candidate === ENGINE_FASTTEXT) return ENGINE_FASTTEXT;
   if (candidate === ENGINE_TRANSFORMER) return ENGINE_TRANSFORMER;
   if (candidate === ENGINE_AUTO) return ENGINE_AUTO;
@@ -66,7 +79,7 @@ const setConfiguredEngine = async (engine) => {
   if (!area) return;
   const normalized = normalizeEngine(engine);
   await storageSet(area, {
-    [STORAGE_MODEL_BACKEND_KEY]: normalized
+    [STORAGE_MODEL_BACKEND_KEY]: normalized,
   });
 };
 const ensureOffscreen = async () => {
@@ -80,19 +93,35 @@ const ensureOffscreen = async () => {
   await chrome.offscreen.createDocument({
     url: OFFSCREEN_URL,
     reasons: ["WORKERS"],
-    justification: "Run local classifier inference (fastText/transformer) without page CSP limitations."
+    justification:
+      "Run local classifier inference (fastText/transformer) without page CSP limitations.",
   });
 };
-const sendToOffscreen = (message) => new Promise((resolve, reject) => {
-  chrome.runtime.sendMessage(message, (response) => {
-    const err = chrome.runtime.lastError;
-    if (err) {
-      reject(err);
-      return;
-    }
-    resolve(response);
+const sendToOffscreen = (message) =>
+  new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(message, (response) => {
+      const err = chrome.runtime.lastError;
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(response);
+    });
   });
-});
+const buildModelState = async () => {
+  const [engine, transformerSource, cachedRuns] = await Promise.all([
+    getConfiguredEngine(),
+    getActiveTransformerSource(),
+    listCachedTransformerRuns(),
+  ]);
+  return {
+    engine,
+    transformerSource,
+    transformerSourceKey: transformerSourceKey(transformerSource),
+    cachedRuns,
+    defaultRepo: DEFAULT_HF_EXPERIMENTS_REPO,
+  };
+};
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (!message) return void 0;
   if (message.type === "ic-set-model-backend") {
@@ -104,7 +133,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       } catch (err) {
         sendResponse({
           ok: false,
-          error: String(err && err.stack ? err.stack : err)
+          error: String(err && err.stack ? err.stack : err),
         });
       }
     })();
@@ -118,7 +147,146 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       } catch (err) {
         sendResponse({
           ok: false,
-          error: String(err && err.stack ? err.stack : err)
+          error: String(err && err.stack ? err.stack : err),
+        });
+      }
+    })();
+    return true;
+  }
+  if (message.type === "ic-get-model-state") {
+    (async () => {
+      try {
+        sendResponse({
+          ok: true,
+          ...(await buildModelState()),
+        });
+      } catch (err) {
+        sendResponse({
+          ok: false,
+          error: String(err && err.stack ? err.stack : err),
+        });
+      }
+    })();
+    return true;
+  }
+  if (message.type === "ic-list-remote-model-runs") {
+    (async () => {
+      try {
+        const repo = String(message.repo || DEFAULT_HF_EXPERIMENTS_REPO).trim();
+        const runs = await fetchRemoteRuns(repo);
+        sendResponse({ ok: true, repo, runs });
+      } catch (err) {
+        sendResponse({
+          ok: false,
+          error: String(err && err.stack ? err.stack : err),
+        });
+      }
+    })();
+    return true;
+  }
+  if (message.type === "ic-get-remote-model-run") {
+    (async () => {
+      try {
+        const repo = String(message.repo || DEFAULT_HF_EXPERIMENTS_REPO).trim();
+        const runId = String(message.runId || "").trim();
+        if (!runId) {
+          throw new Error("runId is required.");
+        }
+        const summary = await summarizeRemoteRun(repo, runId);
+        sendResponse({
+          ok: true,
+          repo,
+          runId,
+          ...summary,
+        });
+      } catch (err) {
+        sendResponse({
+          ok: false,
+          error: String(err && err.stack ? err.stack : err),
+        });
+      }
+    })();
+    return true;
+  }
+  if (message.type === "ic-download-and-activate-transformer-run") {
+    (async () => {
+      try {
+        const repo = String(message.repo || DEFAULT_HF_EXPERIMENTS_REPO).trim();
+        const runId = String(message.runId || "").trim();
+        if (!runId) {
+          throw new Error("runId is required.");
+        }
+        const result = await downloadAndActivateTransformerRun(repo, runId);
+        const setBackendToTransformer =
+          message.setBackendToTransformer !== false;
+        if (setBackendToTransformer) {
+          await setConfiguredEngine(ENGINE_TRANSFORMER);
+        }
+        sendResponse({
+          ok: true,
+          download: result,
+          ...(await buildModelState()),
+        });
+      } catch (err) {
+        sendResponse({
+          ok: false,
+          error: String(err && err.stack ? err.stack : err),
+        });
+      }
+    })();
+    return true;
+  }
+  if (message.type === "ic-use-builtin-transformer") {
+    (async () => {
+      try {
+        await setActiveTransformerSource({ type: "builtin" });
+        if (message.setBackendToTransformer === true) {
+          await setConfiguredEngine(ENGINE_TRANSFORMER);
+        }
+        sendResponse({
+          ok: true,
+          ...(await buildModelState()),
+        });
+      } catch (err) {
+        sendResponse({
+          ok: false,
+          error: String(err && err.stack ? err.stack : err),
+        });
+      }
+    })();
+    return true;
+  }
+  if (message.type === "ic-list-cached-transformer-runs") {
+    (async () => {
+      try {
+        const cachedRuns = await listCachedTransformerRuns();
+        sendResponse({ ok: true, cachedRuns });
+      } catch (err) {
+        sendResponse({
+          ok: false,
+          error: String(err && err.stack ? err.stack : err),
+        });
+      }
+    })();
+    return true;
+  }
+  if (message.type === "ic-remove-cached-transformer-run") {
+    (async () => {
+      try {
+        const repo = String(message.repo || DEFAULT_HF_EXPERIMENTS_REPO).trim();
+        const runId = String(message.runId || "").trim();
+        if (!runId) {
+          throw new Error("runId is required.");
+        }
+        await removeCachedTransformerRun(repo, runId);
+        sendResponse({
+          ok: true,
+          ...(await buildModelState()),
+        });
+      } catch (err) {
+        sendResponse({
+          ok: false,
+          error: String(err && err.stack ? err.stack : err),
         });
       }
     })();
@@ -133,21 +301,21 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     try {
       const configuredEngine = await getConfiguredEngine();
       const requestedEngine = normalizeEngine(
-        message.engine || configuredEngine
+        message.engine || configuredEngine,
       );
       await ensureOffscreen();
       const response = await sendToOffscreen({
         type: "ic-infer-offscreen",
         texts,
-        engine: requestedEngine
+        engine: requestedEngine,
       });
       sendResponse(
-        response || { ok: false, error: "No response from offscreen" }
+        response || { ok: false, error: "No response from offscreen" },
       );
     } catch (err) {
       sendResponse({
         ok: false,
-        error: String(err && err.stack ? err.stack : err)
+        error: String(err && err.stack ? err.stack : err),
       });
     }
   })();

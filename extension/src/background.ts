@@ -1,3 +1,14 @@
+import {
+  DEFAULT_HF_EXPERIMENTS_REPO,
+  downloadAndActivateTransformerRun,
+  fetchRemoteRuns,
+  getActiveTransformerSource,
+  listCachedTransformerRuns,
+  removeCachedTransformerRun,
+  setActiveTransformerSource,
+  summarizeRemoteRun,
+  transformerSourceKey,
+} from "./transformer/model-repo.js";
 import type { Engine } from "./types.js";
 
 const OFFSCREEN_URL = "offscreen.html";
@@ -13,10 +24,7 @@ type StorageAreaLike = {
     key: string,
     callback?: (value: StoragePayload) => void,
   ) => Promise<StoragePayload> | void;
-  set: (
-    payload: StoragePayload,
-    callback?: () => void,
-  ) => Promise<void> | void;
+  set: (payload: StoragePayload, callback?: () => void) => Promise<void> | void;
 };
 
 const normalizeEngine = (value: unknown): Engine => {
@@ -127,69 +135,244 @@ const sendToOffscreen = (message: unknown): Promise<unknown> =>
     });
   });
 
-chrome.runtime.onMessage.addListener((message: any, _sender: any, sendResponse: (response: unknown) => void) => {
-  if (!message) return undefined;
+const buildModelState = async () => {
+  const [engine, transformerSource, cachedRuns] = await Promise.all([
+    getConfiguredEngine(),
+    getActiveTransformerSource(),
+    listCachedTransformerRuns(),
+  ]);
 
-  if (message.type === "ic-set-model-backend") {
-    (async () => {
-      try {
-        const engine = normalizeEngine(message.engine);
-        await setConfiguredEngine(engine);
-        sendResponse({ ok: true, engine });
-      } catch (err: any) {
-        sendResponse({
-          ok: false,
-          error: String(err && err.stack ? err.stack : err),
-        });
-      }
-    })();
-    return true;
-  }
+  return {
+    engine,
+    transformerSource,
+    transformerSourceKey: transformerSourceKey(transformerSource),
+    cachedRuns,
+    defaultRepo: DEFAULT_HF_EXPERIMENTS_REPO,
+  };
+};
 
-  if (message.type === "ic-get-model-backend") {
-    (async () => {
-      try {
-        const engine = await getConfiguredEngine();
-        sendResponse({ ok: true, engine });
-      } catch (err: any) {
-        sendResponse({
-          ok: false,
-          error: String(err && err.stack ? err.stack : err),
-        });
-      }
-    })();
-    return true;
-  }
+chrome.runtime.onMessage.addListener(
+  (message: any, _sender: any, sendResponse: (response: unknown) => void) => {
+    if (!message) return undefined;
 
-  if (message.type !== "ic-infer") {
-    return undefined;
-  }
-
-  const rawTexts = Array.isArray(message.texts) ? message.texts : [];
-  const texts = rawTexts.map((text: unknown) => String(text ?? ""));
-
-  (async () => {
-    try {
-      const configuredEngine = await getConfiguredEngine();
-      const requestedEngine = normalizeEngine(
-        message.engine || configuredEngine,
-      );
-      await ensureOffscreen();
-      const response = await sendToOffscreen({
-        type: "ic-infer-offscreen",
-        texts,
-        engine: requestedEngine,
-      });
-      sendResponse(
-        response || { ok: false, error: "No response from offscreen" },
-      );
-    } catch (err: any) {
-      sendResponse({
-        ok: false,
-        error: String(err && err.stack ? err.stack : err),
-      });
+    if (message.type === "ic-set-model-backend") {
+      (async () => {
+        try {
+          const engine = normalizeEngine(message.engine);
+          await setConfiguredEngine(engine);
+          sendResponse({ ok: true, engine });
+        } catch (err: any) {
+          sendResponse({
+            ok: false,
+            error: String(err && err.stack ? err.stack : err),
+          });
+        }
+      })();
+      return true;
     }
-  })();
 
-  return true;
-});
+    if (message.type === "ic-get-model-backend") {
+      (async () => {
+        try {
+          const engine = await getConfiguredEngine();
+          sendResponse({ ok: true, engine });
+        } catch (err: any) {
+          sendResponse({
+            ok: false,
+            error: String(err && err.stack ? err.stack : err),
+          });
+        }
+      })();
+      return true;
+    }
+
+    if (message.type === "ic-get-model-state") {
+      (async () => {
+        try {
+          sendResponse({
+            ok: true,
+            ...(await buildModelState()),
+          });
+        } catch (err: any) {
+          sendResponse({
+            ok: false,
+            error: String(err && err.stack ? err.stack : err),
+          });
+        }
+      })();
+      return true;
+    }
+
+    if (message.type === "ic-list-remote-model-runs") {
+      (async () => {
+        try {
+          const repo = String(
+            message.repo || DEFAULT_HF_EXPERIMENTS_REPO,
+          ).trim();
+          const runs = await fetchRemoteRuns(repo);
+          sendResponse({ ok: true, repo, runs });
+        } catch (err: any) {
+          sendResponse({
+            ok: false,
+            error: String(err && err.stack ? err.stack : err),
+          });
+        }
+      })();
+      return true;
+    }
+
+    if (message.type === "ic-get-remote-model-run") {
+      (async () => {
+        try {
+          const repo = String(
+            message.repo || DEFAULT_HF_EXPERIMENTS_REPO,
+          ).trim();
+          const runId = String(message.runId || "").trim();
+          if (!runId) {
+            throw new Error("runId is required.");
+          }
+          const summary = await summarizeRemoteRun(repo, runId);
+          sendResponse({
+            ok: true,
+            repo,
+            runId,
+            ...summary,
+          });
+        } catch (err: any) {
+          sendResponse({
+            ok: false,
+            error: String(err && err.stack ? err.stack : err),
+          });
+        }
+      })();
+      return true;
+    }
+
+    if (message.type === "ic-download-and-activate-transformer-run") {
+      (async () => {
+        try {
+          const repo = String(
+            message.repo || DEFAULT_HF_EXPERIMENTS_REPO,
+          ).trim();
+          const runId = String(message.runId || "").trim();
+          if (!runId) {
+            throw new Error("runId is required.");
+          }
+
+          const result = await downloadAndActivateTransformerRun(repo, runId);
+          const setBackendToTransformer =
+            message.setBackendToTransformer !== false;
+          if (setBackendToTransformer) {
+            await setConfiguredEngine(ENGINE_TRANSFORMER);
+          }
+
+          sendResponse({
+            ok: true,
+            download: result,
+            ...(await buildModelState()),
+          });
+        } catch (err: any) {
+          sendResponse({
+            ok: false,
+            error: String(err && err.stack ? err.stack : err),
+          });
+        }
+      })();
+      return true;
+    }
+
+    if (message.type === "ic-use-builtin-transformer") {
+      (async () => {
+        try {
+          await setActiveTransformerSource({ type: "builtin" });
+          if (message.setBackendToTransformer === true) {
+            await setConfiguredEngine(ENGINE_TRANSFORMER);
+          }
+          sendResponse({
+            ok: true,
+            ...(await buildModelState()),
+          });
+        } catch (err: any) {
+          sendResponse({
+            ok: false,
+            error: String(err && err.stack ? err.stack : err),
+          });
+        }
+      })();
+      return true;
+    }
+
+    if (message.type === "ic-list-cached-transformer-runs") {
+      (async () => {
+        try {
+          const cachedRuns = await listCachedTransformerRuns();
+          sendResponse({ ok: true, cachedRuns });
+        } catch (err: any) {
+          sendResponse({
+            ok: false,
+            error: String(err && err.stack ? err.stack : err),
+          });
+        }
+      })();
+      return true;
+    }
+
+    if (message.type === "ic-remove-cached-transformer-run") {
+      (async () => {
+        try {
+          const repo = String(
+            message.repo || DEFAULT_HF_EXPERIMENTS_REPO,
+          ).trim();
+          const runId = String(message.runId || "").trim();
+          if (!runId) {
+            throw new Error("runId is required.");
+          }
+
+          await removeCachedTransformerRun(repo, runId);
+          sendResponse({
+            ok: true,
+            ...(await buildModelState()),
+          });
+        } catch (err: any) {
+          sendResponse({
+            ok: false,
+            error: String(err && err.stack ? err.stack : err),
+          });
+        }
+      })();
+      return true;
+    }
+
+    if (message.type !== "ic-infer") {
+      return undefined;
+    }
+
+    const rawTexts = Array.isArray(message.texts) ? message.texts : [];
+    const texts = rawTexts.map((text: unknown) => String(text ?? ""));
+
+    (async () => {
+      try {
+        const configuredEngine = await getConfiguredEngine();
+        const requestedEngine = normalizeEngine(
+          message.engine || configuredEngine,
+        );
+        await ensureOffscreen();
+        const response = await sendToOffscreen({
+          type: "ic-infer-offscreen",
+          texts,
+          engine: requestedEngine,
+        });
+        sendResponse(
+          response || { ok: false, error: "No response from offscreen" },
+        );
+      } catch (err: any) {
+        sendResponse({
+          ok: false,
+          error: String(err && err.stack ? err.stack : err),
+        });
+      }
+    })();
+
+    return true;
+  },
+);
