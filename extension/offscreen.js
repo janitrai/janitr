@@ -92,7 +92,22 @@ const classifyTexts = async (texts, engine) => {
     return classifyTextsFasttext(texts);
   }
   if (requested === ENGINE_TRANSFORMER) {
-    return classifyTextsTransformer(texts);
+    try {
+      return await classifyTextsTransformer(texts);
+    } catch (err) {
+      if (typeof console !== "undefined" && console.warn) {
+        console.warn(
+          "Transformer inference failed, falling back to fastText.",
+          err,
+        );
+      }
+      const fallback = await classifyTextsFasttext(texts);
+      return {
+        ...fallback,
+        fallbackFrom: ENGINE_TRANSFORMER,
+        fallbackReason: String(err && err.message ? err.message : err),
+      };
+    }
   }
   try {
     return await classifyTextsTransformer(texts);

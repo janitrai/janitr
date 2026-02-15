@@ -258,7 +258,7 @@ const loadOrt = async () => {
       .then((mod) => mod.default || mod)
       .catch((err) => {
         throw new Error(
-          `Failed to import onnxruntime-web runtime (${ORT_MODULE_RELATIVE_PATH}). Add runtime assets under extension/vendor/onnxruntime-web/. ` +
+          `Failed to import onnxruntime-web runtime (${ORT_MODULE_RELATIVE_PATH}). Ensure ort.wasm.min.mjs is packaged in extension/vendor/onnxruntime-web/. ` +
             String(err && err.message ? err.message : err),
         );
       });
@@ -283,6 +283,7 @@ const resolveModelCacheKey = (options) => {
   const modelPart = options.modelUrl || "default_model";
   const configPart = options.studentConfigUrl || "default_config";
   const vocabPart = options.vocabUrl || "default_vocab";
+  const ortWasmPart = options.ortWasmPathPrefix || "default_ort_wasm";
   const hasInlineModel = options.modelData ? "inline_model" : "";
   const hasInlineConfig = options.studentConfig ? "inline_config" : "";
   const hasInlineVocab = options.vocabText ? "inline_vocab" : "";
@@ -290,6 +291,7 @@ const resolveModelCacheKey = (options) => {
     modelPart,
     configPart,
     vocabPart,
+    ortWasmPart,
     hasInlineModel,
     hasInlineConfig,
     hasInlineVocab,
@@ -342,6 +344,7 @@ const loadTransformerModel = async ({
   studentConfig,
   vocabUrl,
   vocabText,
+  ortWasmPathPrefix,
   cacheKey,
 } = {}) => {
   const resolvedCacheKey = resolveModelCacheKey({
@@ -351,6 +354,7 @@ const loadTransformerModel = async ({
     studentConfig,
     vocabUrl,
     vocabText,
+    ortWasmPathPrefix,
     cacheKey,
   });
   if (modelPromise && modelCacheKey !== resolvedCacheKey) {
@@ -377,9 +381,16 @@ const loadTransformerModel = async ({
       const [ort, config] = await Promise.all([loadOrt(), configPromise]);
       ort.env.wasm.numThreads = 1;
       ort.env.wasm.proxy = false;
-      ort.env.wasm.wasmPaths = resolveRelativeAssetUrl(
+      const defaultWasmPathPrefix = resolveRelativeAssetUrl(
         "../vendor/onnxruntime-web/",
       );
+      const configuredWasmPathPrefix =
+        typeof ortWasmPathPrefix === "string" && ortWasmPathPrefix.trim()
+          ? ortWasmPathPrefix.trim()
+          : defaultWasmPathPrefix;
+      ort.env.wasm.wasmPaths = configuredWasmPathPrefix.endsWith("/")
+        ? configuredWasmPathPrefix
+        : `${configuredWasmPathPrefix}/`;
       const maxLength = resolveMaxLength(config);
       const tokenizer = await loadTokenizer({
         vocabUrl,

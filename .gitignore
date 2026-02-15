@@ -13,6 +13,8 @@ extension/transformer/student_config.json
 extension/transformer/thresholds.json
 extension/transformer/tokenizer/
 extension/vendor/onnxruntime-web/*.mjs
+!extension/vendor/onnxruntime-web/ort.wasm.min.mjs
+!extension/vendor/onnxruntime-web/ort-wasm-simd-threaded.mjs
 
 # Training data (generated)
 data/train.txt
