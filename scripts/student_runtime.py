@@ -21,7 +21,10 @@ class TinyStudentModel(nn.Module):
         self.head_scam_clean = nn.Linear(config.hidden_size, 2)
         self.head_topic = nn.Linear(config.hidden_size, 1)
         self.teacher_projections = nn.ModuleList(
-            [nn.Linear(teacher_hidden_size, config.hidden_size) for _ in range(config.num_hidden_layers)]
+            [
+                nn.Linear(teacher_hidden_size, config.hidden_size)
+                for _ in range(config.num_hidden_layers)
+            ]
         )
 
     def forward(
@@ -30,7 +33,10 @@ class TinyStudentModel(nn.Module):
         attention_mask: torch.Tensor,
         output_hidden_states: bool = False,
         return_dict: bool = False,
-    ) -> dict[str, torch.Tensor | tuple[torch.Tensor, ...] | None] | tuple[torch.Tensor, torch.Tensor]:
+    ) -> (
+        dict[str, torch.Tensor | tuple[torch.Tensor, ...] | None]
+        | tuple[torch.Tensor, torch.Tensor]
+    ):
         out = self.bert(
             input_ids=input_ids,
             attention_mask=attention_mask,
@@ -64,12 +70,16 @@ def build_student_bert_config(*, arch: dict[str, Any], pad_token_id: int) -> Ber
     )
 
 
-def load_student_from_dir(student_dir: Path) -> tuple[TinyStudentModel, BertTokenizerFast, dict[str, Any]]:
+def load_student_from_dir(
+    student_dir: Path,
+) -> tuple[TinyStudentModel, BertTokenizerFast, dict[str, Any]]:
     config_payload = load_json(student_dir / "student_config.json")
     arch = config_payload["architecture"]
     tokenizer = BertTokenizerFast.from_pretrained(str(student_dir / "tokenizer"))
     config = build_student_bert_config(arch=arch, pad_token_id=tokenizer.pad_token_id)
-    model = TinyStudentModel(config, teacher_hidden_size=int(arch["teacher_hidden_size"]))
+    model = TinyStudentModel(
+        config, teacher_hidden_size=int(arch["teacher_hidden_size"])
+    )
     state = torch.load(student_dir / "pytorch_model.bin", map_location="cpu")
     model.load_state_dict(state)
     model.eval()

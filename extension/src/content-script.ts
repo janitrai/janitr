@@ -222,7 +222,8 @@ const processQueue = async (): Promise<void> => {
             result.scores && typeof result.scores === "object"
               ? (result.scores as ScoreMap)
               : {};
-          const label = typeof result.label === "string" ? result.label : "clean";
+          const label =
+            typeof result.label === "string" ? result.label : "clean";
           const score =
             typeof scores[label] === "number" ? scores[label] : Number.NaN;
           const labelList = Array.isArray(result.labels)

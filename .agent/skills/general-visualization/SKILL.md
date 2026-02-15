@@ -65,18 +65,18 @@ Prefer aligned plain text blocks over Markdown tables unless the user explicitly
 
 ### Side-by-Side Comparison (default, terminal-safe)
 
-Metric          fastText-ftz  transformer-int8  Change
-Scam precision  .92           .95 *             +3%
-Scam recall     .70           .78 ***           +8%
-Scam FPR        .018          .012              -1%
-Macro F1        .83           .85 *             +2%
+Metric fastText-ftz transformer-int8 Change
+Scam precision .92 .95 \* +3%
+Scam recall .70 .78 _\*\* +8%
+Scam FPR .018 .012 -1%
+Macro F1 .83 .85 _ +2%
 
 ### Comparison with Delta
 
-Metric          baseline-v1   candidate-v2      Change
-Model size MB   3.4           3.1 **            -9%
-Scam recall     .78 *         .76               -2%
-Latency p95 ms  58 **         61                +5%
+Metric baseline-v1 candidate-v2 Change
+Model size MB 3.4 3.1 ** -9%
+Scam recall .78 \* .76 -2%
+Latency p95 ms 58 ** 61 +5%
 
 ## Style Controls
 

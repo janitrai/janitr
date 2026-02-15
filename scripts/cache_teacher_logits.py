@@ -110,14 +110,20 @@ def collate(batch: list[dict]) -> dict:
 
 def list_seed_dirs(teacher_dir: Path, explicit_seeds: str | None) -> list[Path]:
     if explicit_seeds:
-        dirs = [teacher_dir / f"seed_{int(s.strip())}" for s in explicit_seeds.split(",") if s.strip()]
+        dirs = [
+            teacher_dir / f"seed_{int(s.strip())}"
+            for s in explicit_seeds.split(",")
+            if s.strip()
+        ]
     else:
         dirs = sorted(path for path in teacher_dir.glob("seed_*") if path.is_dir())
     if not dirs:
         raise SystemExit(f"No teacher seed directories found under {teacher_dir}")
     for path in dirs:
         if not (path / "pytorch_model.bin").exists():
-            raise SystemExit(f"Teacher checkpoint missing at {path / 'pytorch_model.bin'}")
+            raise SystemExit(
+                f"Teacher checkpoint missing at {path / 'pytorch_model.bin'}"
+            )
     return dirs
 
 
@@ -125,7 +131,9 @@ def layer_indices(num_hidden_layers: int, target_layers: int = 4) -> list[int]:
     return [int(round(x)) for x in np.linspace(1, num_hidden_layers, target_layers)]
 
 
-def load_teacher(seed_dir: Path, device: torch.device) -> tuple[JanitrTeacherModel, any, int, str]:
+def load_teacher(
+    seed_dir: Path, device: torch.device
+) -> tuple[JanitrTeacherModel, any, int, str]:
     config_path = seed_dir / "teacher_config.json"
     if not config_path.exists():
         raise SystemExit(f"Missing teacher config at {config_path}")
@@ -166,14 +174,18 @@ def cache_split(
     max_lengths: list[int] = []
 
     for seed_dir in seed_dirs:
-        model, tokenizer, max_length, _model_name = load_teacher(seed_dir, device=device)
+        model, tokenizer, max_length, _model_name = load_teacher(
+            seed_dir, device=device
+        )
         models.append(model)
         tokenizers.append(tokenizer)
         max_lengths.append(max_length)
 
     max_length = min(max_lengths)
     dataset = PreparedDataset(rows, tokenizers[0], max_length=max_length)
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, collate_fn=collate)
+    loader = DataLoader(
+        dataset, batch_size=batch_size, shuffle=False, collate_fn=collate
+    )
 
     num_layers = int(models[0].encoder.config.num_hidden_layers)
     hid_indices = layer_indices(num_layers, target_layers=4)
@@ -200,7 +212,9 @@ def cache_split(
             seed_hidden: list[np.ndarray] = []
 
             for model in models:
-                with torch.autocast(device_type=device.type, enabled=use_amp, dtype=amp_dtype):
+                with torch.autocast(
+                    device_type=device.type, enabled=use_amp, dtype=amp_dtype
+                ):
                     out = model(input_ids=input_ids, attention_mask=attention_mask)
                 scam = out["scam_logits"].detach().cpu().float().numpy()
                 topic = out["topic_logits"].detach().cpu().float().numpy()
@@ -270,7 +284,14 @@ def cache_split(
     meta_path = Path(f"{out_path}.meta.json")
     if meta_path.exists():
         existing = load_json(meta_path)
-        for key in ("teacher_id", "calibration_id", "seeds", "label_map_hash", "split", "split_hash"):
+        for key in (
+            "teacher_id",
+            "calibration_id",
+            "seeds",
+            "label_map_hash",
+            "split",
+            "split_hash",
+        ):
             if existing.get(key) != metadata.get(key):
                 raise SystemExit(
                     f"Existing cache metadata mismatch for {meta_path} key={key}: "
@@ -293,7 +314,9 @@ def main() -> None:
     parser.add_argument(
         "--dtype",
         choices=["fp16", "bf16", "fp32"],
-        default="bf16" if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else "fp16",
+        default="bf16"
+        if torch.cuda.is_available() and torch.cuda.is_bf16_supported()
+        else "fp16",
     )
     parser.add_argument(
         "--train-out",
@@ -328,10 +351,14 @@ def main() -> None:
     teacher_manifest = load_json(teacher_manifest_path)
     teacher_id = str(teacher_manifest.get("teacher_id", "")).strip()
     if not teacher_id:
-        raise SystemExit(f"Teacher manifest at {teacher_manifest_path} is missing teacher_id.")
+        raise SystemExit(
+            f"Teacher manifest at {teacher_manifest_path} is missing teacher_id."
+        )
     expected_seeds = [int(seed) for seed in teacher_manifest.get("seeds", [])]
     if not expected_seeds:
-        raise SystemExit(f"Teacher manifest at {teacher_manifest_path} has empty seed list.")
+        raise SystemExit(
+            f"Teacher manifest at {teacher_manifest_path} has empty seed list."
+        )
 
     calibration = load_json(args.calibration)
     calibration_meta = calibration.get("meta", {})

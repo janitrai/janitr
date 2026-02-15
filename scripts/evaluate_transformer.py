@@ -42,7 +42,9 @@ DEFAULT_THRESHOLD_OUT = CONFIG_DIR / "thresholds.transformer.json"
 
 
 class EvalDataset(Dataset):
-    def __init__(self, rows: list[PreparedRecord], tokenizer: BertTokenizerFast, max_length: int) -> None:
+    def __init__(
+        self, rows: list[PreparedRecord], tokenizer: BertTokenizerFast, max_length: int
+    ) -> None:
         self.rows = rows
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -94,14 +96,22 @@ def infer_probs_torch(
         for batch in loader:
             input_ids = batch["input_ids"].to(device)
             attention = batch["attention_mask"].to(device)
-            with torch.autocast(device_type=device.type, enabled=use_amp, dtype=torch.bfloat16):
-                scam_logits, topic_logits = model(input_ids=input_ids, attention_mask=attention)
+            with torch.autocast(
+                device_type=device.type, enabled=use_amp, dtype=torch.bfloat16
+            ):
+                scam_logits, topic_logits = model(
+                    input_ids=input_ids, attention_mask=attention
+                )
             scam_prob = softmax(scam_logits.detach().cpu().float().numpy())[:, 1]
-            topic_prob = sigmoid(topic_logits.detach().cpu().float().numpy().reshape(-1))
+            topic_prob = sigmoid(
+                topic_logits.detach().cpu().float().numpy().reshape(-1)
+            )
             scam_probs.extend(scam_prob.tolist())
             topic_probs.extend(topic_prob.tolist())
 
-    return np.array(scam_probs, dtype=np.float64), np.array(topic_probs, dtype=np.float64)
+    return np.array(scam_probs, dtype=np.float64), np.array(
+        topic_probs, dtype=np.float64
+    )
 
 
 def infer_probs_onnx(
@@ -132,7 +142,9 @@ def infer_probs_onnx(
         topic_prob = sigmoid(out[1].reshape(-1))
         scam_probs.extend(scam_prob.tolist())
         topic_probs.extend(topic_prob.tolist())
-    return np.array(scam_probs, dtype=np.float64), np.array(topic_probs, dtype=np.float64)
+    return np.array(scam_probs, dtype=np.float64), np.array(
+        topic_probs, dtype=np.float64
+    )
 
 
 def compute_metrics(
@@ -174,11 +186,15 @@ def compute_metrics(
         "with_url": [row.has_url for row in rows],
         "without_url": [not row.has_url for row in rows],
         "seen_handles": [
-            (row.author_handle in train_handles) if row.author_handle is not None else False
+            (row.author_handle in train_handles)
+            if row.author_handle is not None
+            else False
             for row in rows
         ],
         "unseen_handles": [
-            (row.author_handle not in train_handles) if row.author_handle is not None else True
+            (row.author_handle not in train_handles)
+            if row.author_handle is not None
+            else True
             for row in rows
         ],
     }
@@ -204,7 +220,9 @@ def compute_metrics(
             scam_threshold=scam_threshold,
             topic_threshold=topic_threshold,
         )
-        sub_summary = summarize_label_predictions(sub_y_true, sub_preds, classes=TRAINING_CLASSES)
+        sub_summary = summarize_label_predictions(
+            sub_y_true, sub_preds, classes=TRAINING_CLASSES
+        )
         subgroup_metrics[name] = {
             "samples": len(sub_rows),
             "metrics": sub_summary["metrics"],
@@ -243,7 +261,9 @@ def main() -> None:
     parser.add_argument("--valid", type=Path, default=DEFAULT_VALID)
     parser.add_argument("--holdout", type=Path, default=DEFAULT_HOLDOUT)
     parser.add_argument("--train", type=Path, default=DEFAULT_TRAIN)
-    parser.add_argument("--onnx", type=Path, default=None, help="If set, evaluate this ONNX model")
+    parser.add_argument(
+        "--onnx", type=Path, default=None, help="If set, evaluate this ONNX model"
+    )
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--max-length", type=int, default=96)
     parser.add_argument("--max-unk-ratio", type=float, default=0.05)

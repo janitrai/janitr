@@ -85,10 +85,14 @@ def require_cuda(*, context: str) -> "Any":
     try:
         import torch
     except ImportError as exc:
-        raise SystemExit(f"{context} requires torch with CUDA support installed.") from exc
+        raise SystemExit(
+            f"{context} requires torch with CUDA support installed."
+        ) from exc
 
     if not torch.cuda.is_available():
-        raise SystemExit(f"{context} requires CUDA, but torch.cuda.is_available() is False.")
+        raise SystemExit(
+            f"{context} requires CUDA, but torch.cuda.is_available() is False."
+        )
 
     device = torch.device("cuda")
     dev_name = torch.cuda.get_device_name(device)
@@ -151,7 +155,10 @@ def extract_raw_labels(sample: dict[str, Any]) -> list[str]:
 def collapse_training_targets(raw_labels: Sequence[str]) -> tuple[str, int, list[int]]:
     raw_set = set(raw_labels)
     is_scam = bool(raw_set & SCAM_RAW_LABELS)
-    topic_bits = [1 if topic in raw_set or topic.replace("topic_", "") in raw_set else 0 for topic in TOPIC_LABELS]
+    topic_bits = [
+        1 if topic in raw_set or topic.replace("topic_", "") in raw_set else 0
+        for topic in TOPIC_LABELS
+    ]
 
     if is_scam:
         collapsed = "scam"
@@ -240,7 +247,9 @@ def load_prepared_rows(path: Path) -> list[PreparedRecord]:
             PreparedRecord(
                 id=str(payload["id"]),
                 text=str(payload.get("text", "")),
-                text_normalized=str(payload.get("text_normalized") or payload.get("text", "")),
+                text_normalized=str(
+                    payload.get("text_normalized") or payload.get("text", "")
+                ),
                 labels=list(payload.get("labels", [])),
                 raw_labels=list(payload.get("raw_labels", [])),
                 collapsed_label=str(payload["collapsed_label"]),
@@ -248,7 +257,9 @@ def load_prepared_rows(path: Path) -> list[PreparedRecord]:
                 y_topics=[int(x) for x in payload.get("y_topics", [0])],
                 has_url=bool(payload.get("has_url", False)),
                 author_handle=(
-                    str(payload["author_handle"]).lower() if payload.get("author_handle") else None
+                    str(payload["author_handle"]).lower()
+                    if payload.get("author_handle")
+                    else None
                 ),
             )
         )
@@ -324,16 +335,22 @@ def one_vs_all_metrics(
     return metrics
 
 
-def micro_macro_from_metrics(metrics: dict[str, dict[str, float]]) -> dict[str, dict[str, float]]:
+def micro_macro_from_metrics(
+    metrics: dict[str, dict[str, float]],
+) -> dict[str, dict[str, float]]:
     tps = sum(m["tp"] for m in metrics.values())
     fps = sum(m["fp"] for m in metrics.values())
     fns = sum(m["fn"] for m in metrics.values())
 
     micro_precision = safe_div(tps, tps + fps)
     micro_recall = safe_div(tps, tps + fns)
-    micro_f1 = safe_div(2 * micro_precision * micro_recall, micro_precision + micro_recall)
+    micro_f1 = safe_div(
+        2 * micro_precision * micro_recall, micro_precision + micro_recall
+    )
 
-    macro_precision = safe_div(sum(m["precision"] for m in metrics.values()), len(metrics))
+    macro_precision = safe_div(
+        sum(m["precision"] for m in metrics.values()), len(metrics)
+    )
     macro_recall = safe_div(sum(m["recall"] for m in metrics.values()), len(metrics))
     macro_f1 = safe_div(sum(m["f1"] for m in metrics.values()), len(metrics))
 
@@ -357,7 +374,9 @@ def exact_match_accuracy(y_true: Sequence[str], y_pred: Sequence[str]) -> float:
     return sum(1 for gold, pred in zip(y_true, y_pred) if gold == pred) / len(y_true)
 
 
-def format_one_vs_all_metrics(per_class: dict[str, dict[str, float]]) -> dict[str, dict[str, float]]:
+def format_one_vs_all_metrics(
+    per_class: dict[str, dict[str, float]],
+) -> dict[str, dict[str, float]]:
     return {
         label: {
             "precision": vals["precision"],
@@ -459,7 +478,9 @@ def tune_thresholds_for_scam_fpr(
         topic_threshold=topic_thr,
     )
     summary = summarize_label_predictions(y_true, preds, classes=classes)
-    summary["note"] = "No thresholds met target scam FPR; used conservative fallback 0.99/0.99."
+    summary["note"] = (
+        "No thresholds met target scam FPR; used conservative fallback 0.99/0.99."
+    )
     return scam_thr, topic_thr, summary
 
 
@@ -582,7 +603,9 @@ def load_json(path: Path) -> dict[str, Any]:
 
 
 def stable_object_hash(payload: Any) -> str:
-    blob = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    blob = json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    )
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
 

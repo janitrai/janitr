@@ -137,9 +137,13 @@ def main() -> None:
         )
     rows = rows[: args.parity_samples]
     dataset = EvalDataset(rows, tokenizer=tokenizer, max_length=max_length)
-    loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, collate_fn=collate)
+    loader = DataLoader(
+        dataset, batch_size=args.batch_size, shuffle=False, collate_fn=collate
+    )
 
-    ort_session = ort.InferenceSession(str(args.out), providers=["CPUExecutionProvider"])
+    ort_session = ort.InferenceSession(
+        str(args.out), providers=["CPUExecutionProvider"]
+    )
 
     deltas: list[float] = []
     matches = 0
@@ -153,7 +157,9 @@ def main() -> None:
             input_ids = batch["input_ids"]
             attention = batch["attention_mask"]
 
-            torch_scam, torch_topic = model(input_ids=input_ids, attention_mask=attention)
+            torch_scam, torch_topic = model(
+                input_ids=input_ids, attention_mask=attention
+            )
             torch_scam_prob = softmax(torch_scam.numpy())[:, 1]
             torch_topic_prob = sigmoid(torch_topic.numpy().reshape(-1))
 
@@ -167,15 +173,25 @@ def main() -> None:
             ort_scam_prob = softmax(ort_out[0])[:, 1]
             ort_topic_prob = sigmoid(ort_out[1].reshape(-1))
 
-            delta = np.abs(torch_scam_prob - ort_scam_prob) + np.abs(torch_topic_prob - ort_topic_prob)
+            delta = np.abs(torch_scam_prob - ort_scam_prob) + np.abs(
+                torch_topic_prob - ort_topic_prob
+            )
             deltas.extend((delta / 2.0).tolist())
 
-            for ts, tt, os, ot in zip(torch_scam_prob, torch_topic_prob, ort_scam_prob, ort_topic_prob):
+            for ts, tt, os, ot in zip(
+                torch_scam_prob, torch_topic_prob, ort_scam_prob, ort_topic_prob
+            ):
                 torch_label = decision_from_probs(
-                    float(ts), float(tt), scam_threshold=scam_thr, topic_threshold=topic_thr
+                    float(ts),
+                    float(tt),
+                    scam_threshold=scam_thr,
+                    topic_threshold=topic_thr,
                 )
                 ort_label = decision_from_probs(
-                    float(os), float(ot), scam_threshold=scam_thr, topic_threshold=topic_thr
+                    float(os),
+                    float(ot),
+                    scam_threshold=scam_thr,
+                    topic_threshold=topic_thr,
                 )
                 matches += int(torch_label == ort_label)
                 total += 1

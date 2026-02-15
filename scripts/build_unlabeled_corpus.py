@@ -75,7 +75,9 @@ def main() -> None:
                     skipped_short += 1
                     continue
 
-                digest = hashlib.blake2b(text.encode("utf-8"), digest_size=16).hexdigest()
+                digest = hashlib.blake2b(
+                    text.encode("utf-8"), digest_size=16
+                ).hexdigest()
                 if digest in seen:
                     continue
                 seen.add(digest)

@@ -7,7 +7,7 @@ const fastTextModulePromise = fastTextModularized({
       return wasmUrl;
     }
     return new URL(path, import.meta.url).toString();
-  }
+  },
 });
 let fastTextModule = null;
 let postRunFunc = null;
@@ -39,21 +39,22 @@ const getFloat32ArrayFromHeap = (len) => {
   const dataHeap = new Uint8Array(
     fastTextModule.HEAPU8.buffer,
     dataPtr,
-    dataBytes
+    dataBytes,
   );
   return {
     ptr: dataHeap.byteOffset,
     size: len,
-    buffer: dataHeap.buffer
+    buffer: dataHeap.buffer,
   };
 };
-const heapToFloat32 = (heapBuffer) => new Float32Array(heapBuffer.buffer, heapBuffer.ptr, heapBuffer.size);
+const heapToFloat32 = (heapBuffer) =>
+  new Float32Array(heapBuffer.buffer, heapBuffer.ptr, heapBuffer.size);
 class FastText {
   f;
   constructor() {
     if (!fastTextModule) {
       throw new Error(
-        "fastText WASM module not initialized. Await fastTextReady first."
+        "fastText WASM module not initialized. Await fastTextReady first.",
       );
     }
     this.f = new fastTextModule.FastText();
@@ -62,84 +63,93 @@ class FastText {
    * Loads the model file from the specified URL and returns `FastTextModel`.
    */
   loadModel(url) {
-    const fetchFunc = thisModule && thisModule.fetch || fetch;
+    const fetchFunc = (thisModule && thisModule.fetch) || fetch;
     const fastTextNative = this.f;
     const module = fastTextModule;
     if (!module) {
       return Promise.reject(new Error("fastText WASM module is not ready."));
     }
     return new Promise((resolve, reject) => {
-      fetchFunc(url).then((response) => response.arrayBuffer()).then((bytes) => {
-        const byteArray = new Uint8Array(bytes);
-        module.FS.writeFile(modelFileInWasmFs, byteArray);
-      }).then(() => {
-        fastTextNative.loadModel(modelFileInWasmFs);
-        resolve(new FastTextModel(fastTextNative));
-      }).catch((error) => {
-        reject(error);
-      });
+      fetchFunc(url)
+        .then((response) => response.arrayBuffer())
+        .then((bytes) => {
+          const byteArray = new Uint8Array(bytes);
+          module.FS.writeFile(modelFileInWasmFs, byteArray);
+        })
+        .then(() => {
+          fastTextNative.loadModel(modelFileInWasmFs);
+          resolve(new FastTextModel(fastTextNative));
+        })
+        .catch((error) => {
+          reject(error);
+        });
     });
   }
   _train(url, modelName, kwargs = {}, callback = null) {
-    const fetchFunc = thisModule && thisModule.fetch || fetch;
+    const fetchFunc = (thisModule && thisModule.fetch) || fetch;
     const fastTextNative = this.f;
     const module = fastTextModule;
     if (!module) {
       return Promise.reject(new Error("fastText WASM module is not ready."));
     }
     return new Promise((resolve, reject) => {
-      fetchFunc(url).then((response) => response.arrayBuffer()).then((bytes) => {
-        const byteArray = new Uint8Array(bytes);
-        module.FS.writeFile(trainFileInWasmFs, byteArray);
-      }).then(() => {
-        const argsList = [
-          "lr",
-          "lrUpdateRate",
-          "dim",
-          "ws",
-          "epoch",
-          "minCount",
-          "minCountLabel",
-          "neg",
-          "wordNgrams",
-          "loss",
-          "model",
-          "bucket",
-          "minn",
-          "maxn",
-          "t",
-          "label",
-          "verbose",
-          "pretrainedVectors",
-          "saveOutput",
-          "seed",
-          "qout",
-          "retrain",
-          "qnorm",
-          "cutoff",
-          "dsub",
-          "qnorm",
-          "autotuneValidationFile",
-          "autotuneMetric",
-          "autotunePredictions",
-          "autotuneDuration",
-          "autotuneModelSize"
-        ];
-        const args = new module.Args();
-        argsList.forEach((key) => {
-          if (key in kwargs) {
-            args[key] = kwargs[key];
-          }
+      fetchFunc(url)
+        .then((response) => response.arrayBuffer())
+        .then((bytes) => {
+          const byteArray = new Uint8Array(bytes);
+          module.FS.writeFile(trainFileInWasmFs, byteArray);
+        })
+        .then(() => {
+          const argsList = [
+            "lr",
+            "lrUpdateRate",
+            "dim",
+            "ws",
+            "epoch",
+            "minCount",
+            "minCountLabel",
+            "neg",
+            "wordNgrams",
+            "loss",
+            "model",
+            "bucket",
+            "minn",
+            "maxn",
+            "t",
+            "label",
+            "verbose",
+            "pretrainedVectors",
+            "saveOutput",
+            "seed",
+            "qout",
+            "retrain",
+            "qnorm",
+            "cutoff",
+            "dsub",
+            "qnorm",
+            "autotuneValidationFile",
+            "autotuneMetric",
+            "autotunePredictions",
+            "autotuneDuration",
+            "autotuneModelSize",
+          ];
+          const args = new module.Args();
+          argsList.forEach((key) => {
+            if (key in kwargs) {
+              args[key] = kwargs[key];
+            }
+          });
+          args.model = module.ModelName[modelName];
+          args.loss =
+            "loss" in kwargs ? module.LossName[String(kwargs.loss)] : "hs";
+          args.thread = 1;
+          args.input = trainFileInWasmFs;
+          fastTextNative.train(args, callback);
+          resolve(new FastTextModel(fastTextNative));
+        })
+        .catch((error) => {
+          reject(error);
         });
-        args.model = module.ModelName[modelName];
-        args.loss = "loss" in kwargs ? module.LossName[String(kwargs.loss)] : "hs";
-        args.thread = 1;
-        args.input = trainFileInWasmFs;
-        fastTextNative.train(args, callback);
-        resolve(new FastTextModel(fastTextNative));
-      }).catch((error) => {
-        reject(error);
-      });
     });
   }
   trainSupervised(url, kwargs = {}, callback) {
@@ -168,7 +178,7 @@ class FastTextModel {
   getSentenceVector(text) {
     if (text.includes("\n") && typeof console !== "undefined" && console.warn) {
       console.warn(
-        "Sentence vector expects a single line; replacing newlines."
+        "Sentence vector expects a single line; replacing newlines.",
       );
     }
     const normalized = text.replace(/\n/g, " ") + "\n";
@@ -226,34 +236,33 @@ class FastTextModel {
     }
     this.f.saveModel(modelFileInWasmFs);
     const content = fastTextModule.FS.readFile(modelFileInWasmFs, {
-      encoding: "binary"
+      encoding: "binary",
     });
     const bytes = Uint8Array.from(content);
     return new Blob([bytes], { type: "application/octet-stream" });
   }
   test(url, k, threshold) {
-    const fetchFunc = thisModule && thisModule.fetch || fetch;
+    const fetchFunc = (thisModule && thisModule.fetch) || fetch;
     const fastTextNative = this.f;
     const module = fastTextModule;
     if (!module) {
       return Promise.reject(new Error("fastText WASM module is not ready."));
     }
     return new Promise((resolve, reject) => {
-      fetchFunc(url).then((response) => response.arrayBuffer()).then((bytes) => {
-        const byteArray = new Uint8Array(bytes);
-        module.FS.writeFile(testFileInWasmFs, byteArray);
-      }).then(() => {
-        const meter = fastTextNative.test(testFileInWasmFs, k, threshold);
-        resolve(meter);
-      }).catch((error) => {
-        reject(error);
-      });
+      fetchFunc(url)
+        .then((response) => response.arrayBuffer())
+        .then((bytes) => {
+          const byteArray = new Uint8Array(bytes);
+          module.FS.writeFile(testFileInWasmFs, byteArray);
+        })
+        .then(() => {
+          const meter = fastTextNative.test(testFileInWasmFs, k, threshold);
+          resolve(meter);
+        })
+        .catch((error) => {
+          reject(error);
+        });
     });
   }
 }
-export {
-  FastText,
-  FastTextModel,
-  addOnPostRun,
-  fastTextReady
-};
+export { FastText, FastTextModel, addOnPostRun, fastTextReady };

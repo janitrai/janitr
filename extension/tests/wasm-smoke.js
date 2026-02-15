@@ -1,18 +1,18 @@
 // Generated from extension/src/*.ts by `npm run extension:build`.
 import {
   loadClassifierThresholds,
-  predictClassifier
+  predictClassifier,
 } from "../fasttext/classifier.js";
 const output = document.getElementById("output");
 const samples = [
   {
     text: "🚀 FREE AIRDROP! Connect wallet now to claim your reward.",
-    note: "scam-ish"
+    note: "scam-ish",
   },
   {
     text: "Just finished my morning run and made breakfast. Feeling great today!",
-    note: "clean-ish"
-  }
+    note: "clean-ish",
+  },
 ];
 const run = async () => {
   try {

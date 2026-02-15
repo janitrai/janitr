@@ -1,7 +1,7 @@
 // Generated from extension/src/*.ts by `npm run extension:build`.
 import {
   getFastTextClass,
-  getFastTextModule
+  getFastTextModule,
 } from "../vendor/fasttext/main/common.mjs";
 const MODEL_FILENAME = "model.ftz";
 const MODEL_STAGE1_FILENAME = "model.stage1.ftz";
@@ -18,14 +18,14 @@ const normalizeText = (text) => {
   if (!text) return "";
   return String(text).replace(/\s+/g, " ").trim();
 };
-const defaultAssetUrl = (filename) => new URL(`./${filename}`, import.meta.url).toString();
+const defaultAssetUrl = (filename) =>
+  new URL(`./${filename}`, import.meta.url).toString();
 const defaultModelUrl = () => defaultAssetUrl(MODEL_FILENAME);
 const defaultThresholdsUrl = (modelUrl) => {
   if (modelUrl) {
     try {
       return new URL(THRESHOLDS_FILENAME, modelUrl).toString();
-    } catch {
-    }
+    } catch {}
   }
   return defaultAssetUrl(THRESHOLDS_FILENAME);
 };
@@ -38,21 +38,32 @@ const resolveAssetUrl = (assetRef, baseUrl, fallbackFilename) => {
   }
 };
 const defaultWasmUrl = () => {
-  if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL) {
+  if (
+    typeof chrome !== "undefined" &&
+    chrome.runtime &&
+    chrome.runtime.getURL
+  ) {
     return chrome.runtime.getURL("vendor/fasttext/core/fastText.common.wasm");
   }
-  if (typeof browser !== "undefined" && browser.runtime && browser.runtime.getURL) {
+  if (
+    typeof browser !== "undefined" &&
+    browser.runtime &&
+    browser.runtime.getURL
+  ) {
     return browser.runtime.getURL("vendor/fasttext/core/fastText.common.wasm");
   }
   return new URL(
     "../vendor/fasttext/core/fastText.common.wasm",
-    import.meta.url
+    import.meta.url,
   ).toString();
 };
 const parseThresholds = (payload) => {
   if (!payload || typeof payload !== "object") return null;
   const payloadRecord = payload;
-  const raw = payloadRecord.thresholds && typeof payloadRecord.thresholds === "object" ? payloadRecord.thresholds : payloadRecord;
+  const raw =
+    payloadRecord.thresholds && typeof payloadRecord.thresholds === "object"
+      ? payloadRecord.thresholds
+      : payloadRecord;
   if (!raw || typeof raw !== "object") return null;
   const parsed = {};
   for (const label of CLASSES) {
@@ -65,9 +76,7 @@ const parseThresholds = (payload) => {
   return Object.keys(parsed).length > 0 ? parsed : null;
 };
 const parseMode = (payload) => {
-  const mode = String(
-    payload?.mode || ""
-  ).toLowerCase();
+  const mode = String(payload?.mode || "").toLowerCase();
   return mode === MODE_TWO_STAGE ? MODE_TWO_STAGE : MODE_SINGLE;
 };
 const parseModels = (payload) => {
@@ -75,12 +84,12 @@ const parseModels = (payload) => {
   if (!raw || typeof raw !== "object") {
     return {
       stage1: MODEL_STAGE1_FILENAME,
-      stage2: MODEL_STAGE2_FILENAME
+      stage2: MODEL_STAGE2_FILENAME,
     };
   }
   return {
     stage1: String(raw.stage1 || raw.scam || MODEL_STAGE1_FILENAME),
-    stage2: String(raw.stage2 || raw.topic_crypto || MODEL_STAGE2_FILENAME)
+    stage2: String(raw.stage2 || raw.topic_crypto || MODEL_STAGE2_FILENAME),
   };
 };
 const parseConfig = (payload, url) => {
@@ -88,25 +97,20 @@ const parseConfig = (payload, url) => {
   if (!thresholds) {
     throw new Error(`Invalid thresholds payload from ${url}`);
   }
-  const fallbackThresholds = parseThresholds(
-    payload?.fallback_thresholds
-  );
+  const fallbackThresholds = parseThresholds(payload?.fallback_thresholds);
   return {
     mode: parseMode(payload),
     thresholds,
     models: parseModels(payload),
-    fallbackThresholds
+    fallbackThresholds,
   };
 };
-const loadConfig = async ({
-  thresholdsUrl,
-  modelUrl
-} = {}) => {
+const loadConfig = async ({ thresholdsUrl, modelUrl } = {}) => {
   const url = thresholdsUrl || defaultThresholdsUrl(modelUrl);
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(
-      `Failed to load thresholds from ${url} (${response.status})`
+      `Failed to load thresholds from ${url} (${response.status})`,
     );
   }
   const payload = await response.json();
@@ -126,10 +130,7 @@ const buildThresholds = (perLabel, globalThreshold) => {
   }
   return thresholds;
 };
-const loadClassifierThresholds = async ({
-  thresholdsUrl,
-  modelUrl
-} = {}) => {
+const loadClassifierThresholds = async ({ thresholdsUrl, modelUrl } = {}) => {
   if (!configPromise) {
     configPromise = loadConfig({ thresholdsUrl, modelUrl }).then((config2) => {
       cachedConfig = config2;
@@ -171,7 +172,9 @@ const buildSingleScores = (model, text, k) => {
   const scores = {};
   for (const label of CLASSES) {
     const value = Number(rawScores[label]);
-    scores[label] = Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
+    scores[label] = Number.isFinite(value)
+      ? Math.min(1, Math.max(0, value))
+      : 0;
   }
   return scores;
 };
@@ -180,14 +183,18 @@ const buildTwoStageScores = (stage1Model, stage2Model, text) => {
   const stage2Scores = readPredictionScores(stage2Model, text, 2);
   const scamScore = Number(stage1Scores.scam);
   const topicScore = Number(stage2Scores.topic_crypto);
-  const scam = Number.isFinite(scamScore) ? Math.min(1, Math.max(0, scamScore)) : 0;
-  const topic = Number.isFinite(topicScore) ? Math.min(1, Math.max(0, topicScore)) : 0;
+  const scam = Number.isFinite(scamScore)
+    ? Math.min(1, Math.max(0, scamScore))
+    : 0;
+  const topic = Number.isFinite(topicScore)
+    ? Math.min(1, Math.max(0, topicScore))
+    : 0;
   const clean = Math.min(1, Math.max(0, 1 - Math.max(scam, topic)));
   return {
     clean,
     topic_crypto: topic,
     scam,
-    promo: 0
+    promo: 0,
   };
 };
 const pickLabels = (scores, appliedThresholds, options) => {
@@ -196,7 +203,9 @@ const pickLabels = (scores, appliedThresholds, options) => {
     if ((scores.scam ?? 0) >= Number(appliedThresholds.scam ?? 1)) {
       return ["scam"];
     }
-    if ((scores.topic_crypto ?? 0) >= Number(appliedThresholds.topic_crypto ?? 1)) {
+    if (
+      (scores.topic_crypto ?? 0) >= Number(appliedThresholds.topic_crypto ?? 1)
+    ) {
       return ["topic_crypto"];
     }
     return allowEmpty ? [] : ["clean"];
@@ -212,8 +221,8 @@ const pickLabels = (scores, appliedThresholds, options) => {
       predicted.add("clean");
     } else {
       const bestLabel = Object.entries(scores).reduce(
-        (best, entry) => entry[1] > best[1] ? entry : best,
-        ["", -Infinity]
+        (best, entry) => (entry[1] > best[1] ? entry : best),
+        ["", -Infinity],
       )[0];
       if (bestLabel) {
         predicted.add(bestLabel);
@@ -225,10 +234,7 @@ const pickLabels = (scores, appliedThresholds, options) => {
   }
   return CLASSES.filter((label) => predicted.has(label));
 };
-const loadClassifierModel = async ({
-  modelUrl,
-  thresholdsUrl
-} = {}) => {
+const loadClassifierModel = async ({ modelUrl, thresholdsUrl } = {}) => {
   const resolvedModelUrl = modelUrl || defaultModelUrl();
   await loadClassifierThresholds({ thresholdsUrl, modelUrl: resolvedModelUrl });
   if (!modelPromise) {
@@ -237,15 +243,16 @@ const loadClassifierModel = async ({
         mode: MODE_SINGLE,
         models: {
           stage1: MODEL_STAGE1_FILENAME,
-          stage2: MODEL_STAGE2_FILENAME
+          stage2: MODEL_STAGE2_FILENAME,
         },
         thresholds: {},
-        fallbackThresholds: null
+        fallbackThresholds: null,
       };
       const wasmUrl = defaultWasmUrl();
-      const getFastTextModuleWithPath = () => getFastTextModule({ wasmPath: wasmUrl });
+      const getFastTextModuleWithPath = () =>
+        getFastTextModule({ wasmPath: wasmUrl });
       const FastText = await getFastTextClass({
-        getFastTextModule: getFastTextModuleWithPath
+        getFastTextModule: getFastTextModuleWithPath,
       });
       const loadModelFromUrl = async (url) => {
         const ft = new FastText();
@@ -255,22 +262,22 @@ const loadClassifierModel = async ({
         const stage1Url = resolveAssetUrl(
           config.models.stage1,
           resolvedModelUrl,
-          MODEL_STAGE1_FILENAME
+          MODEL_STAGE1_FILENAME,
         );
         const stage2Url = resolveAssetUrl(
           config.models.stage2,
           resolvedModelUrl,
-          MODEL_STAGE2_FILENAME
+          MODEL_STAGE2_FILENAME,
         );
         try {
           const [stage1, stage2] = await Promise.all([
             loadModelFromUrl(stage1Url),
-            loadModelFromUrl(stage2Url)
+            loadModelFromUrl(stage2Url),
           ]);
           return {
             mode: MODE_TWO_STAGE,
             stage1,
-            stage2
+            stage2,
           };
         } catch (err) {
           if (config.fallbackThresholds) {
@@ -279,7 +286,7 @@ const loadClassifierModel = async ({
           if (typeof console !== "undefined" && console.warn) {
             console.warn(
               "Failed to load two-stage models, falling back to single model:",
-              err
+              err,
             );
           }
         }
@@ -287,7 +294,7 @@ const loadClassifierModel = async ({
       const model = await loadModelFromUrl(resolvedModelUrl);
       return {
         mode: MODE_SINGLE,
-        model
+        model,
       };
     })();
   }
@@ -299,20 +306,21 @@ const resetClassifierModel = () => {
   cachedThresholds = null;
   cachedConfig = null;
 };
-const predictClassifier = async (text, {
-  thresholds,
-  threshold,
-  k = CLASSES.length,
-  allowEmpty = false
-} = {}) => {
+const predictClassifier = async (
+  text,
+  { thresholds, threshold, k = CLASSES.length, allowEmpty = false } = {},
+) => {
   const modelBundle = await loadClassifierModel();
   const cleaned = normalizeText(text).replace(/\n/g, " ");
-  const perLabelThresholds = thresholds || await loadClassifierThresholds();
+  const perLabelThresholds = thresholds || (await loadClassifierThresholds());
   const appliedThresholds = buildThresholds(perLabelThresholds, threshold);
-  const scores = modelBundle.mode === MODE_TWO_STAGE ? buildTwoStageScores(modelBundle.stage1, modelBundle.stage2, cleaned) : buildSingleScores(modelBundle.model, cleaned, k);
+  const scores =
+    modelBundle.mode === MODE_TWO_STAGE
+      ? buildTwoStageScores(modelBundle.stage1, modelBundle.stage2, cleaned)
+      : buildSingleScores(modelBundle.model, cleaned, k);
   const labels = pickLabels(scores, appliedThresholds, {
     allowEmpty,
-    mode: modelBundle.mode
+    mode: modelBundle.mode,
   });
   const predictedLabels = new Set(labels);
   const primaryProbability = scores.scam ?? 0;
@@ -324,7 +332,7 @@ const predictClassifier = async (text, {
     thresholds: appliedThresholds,
     label: isFlagged ? "scam" : labels[0] || "clean",
     labels,
-    scores
+    scores,
   };
 };
 export {
@@ -333,5 +341,5 @@ export {
   loadClassifierModel,
   loadClassifierThresholds,
   predictClassifier,
-  resetClassifierModel
+  resetClassifierModel,
 };

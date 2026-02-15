@@ -22,16 +22,20 @@ const SKIP_TAGS = /* @__PURE__ */ new Set([
   "CODE",
   "PRE",
   "SVG",
-  "CANVAS"
+  "CANVAS",
 ]);
-const idle = () => new Promise((resolve) => {
-  if (typeof requestIdleCallback === "function") {
-    requestIdleCallback(() => resolve(), { timeout: 500 });
-  } else {
-    setTimeout(resolve, 16);
-  }
-});
-const normalizeText = (text) => String(text || "").replace(/\s+/g, " ").trim();
+const idle = () =>
+  new Promise((resolve) => {
+    if (typeof requestIdleCallback === "function") {
+      requestIdleCallback(() => resolve(), { timeout: 500 });
+    } else {
+      setTimeout(resolve, 16);
+    }
+  });
+const normalizeText = (text) =>
+  String(text || "")
+    .replace(/\s+/g, " ")
+    .trim();
 const previewText = (text, limit = 200) => {
   const cleaned = normalizeText(text);
   if (cleaned.length <= limit) return cleaned;
@@ -55,10 +59,18 @@ const extractText = (el) => {
   return text;
 };
 const getRuntime = () => {
-  if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
+  if (
+    typeof chrome !== "undefined" &&
+    chrome.runtime &&
+    chrome.runtime.sendMessage
+  ) {
     return chrome.runtime;
   }
-  if (typeof browser !== "undefined" && browser.runtime && browser.runtime.sendMessage) {
+  if (
+    typeof browser !== "undefined" &&
+    browser.runtime &&
+    browser.runtime.sendMessage
+  ) {
     return browser.runtime;
   }
   return null;
@@ -68,7 +80,10 @@ const sendMessage = (message) => {
   if (!runtime) {
     return Promise.reject(new Error("Extension runtime is unavailable."));
   }
-  if (typeof runtime.sendMessage === "function" && runtime.sendMessage.length >= 2) {
+  if (
+    typeof runtime.sendMessage === "function" &&
+    runtime.sendMessage.length >= 2
+  ) {
     return new Promise((resolve, reject) => {
       runtime.sendMessage(message, (response) => {
         const err = runtime.lastError;
@@ -90,11 +105,16 @@ const inferBatch = async (texts) => {
   return {
     results: Array.isArray(response.results) ? response.results : [],
     engine: typeof response.engine === "string" ? response.engine : "unknown",
-    fallbackFrom: typeof response.fallbackFrom === "string" ? response.fallbackFrom : null
+    fallbackFrom:
+      typeof response.fallbackFrom === "string" ? response.fallbackFrom : null,
   };
 };
 const formatScores = (scores, limit = 4) => {
-  const entries = Object.entries(scores).filter(([, score]) => Number.isFinite(score)).sort((a, b) => b[1] - a[1]).slice(0, limit).map(([label, score]) => `${label}=${score.toFixed(3)}`);
+  const entries = Object.entries(scores)
+    .filter(([, score]) => Number.isFinite(score))
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([label, score]) => `${label}=${score.toFixed(3)}`);
   return entries.join(" ");
 };
 const clearHighlight = (el) => {
@@ -106,7 +126,14 @@ const clearHighlight = (el) => {
   el.removeAttribute("data-ic-confidence");
   el.removeAttribute("title");
 };
-const applyHighlight = (el, label, score, confidence, labels = [], scores = {}) => {
+const applyHighlight = (
+  el,
+  label,
+  score,
+  confidence,
+  labels = [],
+  scores = {},
+) => {
   if (!el) return;
   const htmlElement = el;
   htmlElement.classList.add("ic-flagged");
@@ -125,7 +152,9 @@ const applyHighlight = (el, label, score, confidence, labels = [], scores = {}) 
   }
   const labelText = labels.length > 0 ? labels.join(" + ") : `${label}`;
   const scoreText = Number.isFinite(score) ? `, score=${score.toFixed(3)}` : "";
-  const confidenceText = Number.isFinite(confidence) ? `, confidence=${confidence.toFixed(3)}` : "";
+  const confidenceText = Number.isFinite(confidence)
+    ? `, confidence=${confidence.toFixed(3)}`
+    : "";
   const scoreList = formatScores(scores);
   const scoreListText = scoreList ? `, scores: ${scoreList}` : "";
   htmlElement.title = `Classifier: ${labelText}${scoreText}${confidenceText}${scoreListText}`;
@@ -155,29 +184,38 @@ const processQueue = async () => {
     if (items.length > 0) {
       try {
         const { results, engine, fallbackFrom } = await inferBatch(
-          items.map((item) => item.text)
+          items.map((item) => item.text),
         );
         for (let i = 0; i < items.length; i += 1) {
           const { el } = items[i];
           const result = results[i];
           if (!result) continue;
-          const scores = result.scores && typeof result.scores === "object" ? result.scores : {};
-          const label = typeof result.label === "string" ? result.label : "clean";
-          const score = typeof scores[label] === "number" ? scores[label] : Number.NaN;
-          const labelList = Array.isArray(result.labels) ? result.labels.filter(
-            (entry) => typeof entry === "string"
-          ) : [];
-          const fallbackConfidence = typeof result.probability === "number" ? result.probability : 0;
-          const confidence = typeof scores.scam === "number" ? scores.scam : fallbackConfidence;
+          const scores =
+            result.scores && typeof result.scores === "object"
+              ? result.scores
+              : {};
+          const label =
+            typeof result.label === "string" ? result.label : "clean";
+          const score =
+            typeof scores[label] === "number" ? scores[label] : Number.NaN;
+          const labelList = Array.isArray(result.labels)
+            ? result.labels.filter((entry) => typeof entry === "string")
+            : [];
+          const fallbackConfidence =
+            typeof result.probability === "number" ? result.probability : 0;
+          const confidence =
+            typeof scores.scam === "number" ? scores.scam : fallbackConfidence;
           if (LOG_INFERENCE) {
             console.log("[IC] inference", {
               engine,
               fallbackFrom,
               label,
               score: Number.isFinite(score) ? Number(score.toFixed(3)) : score,
-              confidence: Number.isFinite(confidence) ? Number(confidence.toFixed(3)) : confidence,
+              confidence: Number.isFinite(confidence)
+                ? Number(confidence.toFixed(3))
+                : confidence,
               length: items[i].text.length,
-              text: previewText(items[i].text)
+              text: previewText(items[i].text),
             });
           }
           if (label !== "clean") {
@@ -216,7 +254,7 @@ const scanTree = (root) => {
       const text = normalizeText(node2.textContent || "");
       if (text.length < MIN_CHARS) return NodeFilter.FILTER_REJECT;
       return NodeFilter.FILTER_ACCEPT;
-    }
+    },
   });
   let node = walker.nextNode();
   while (node) {
@@ -252,8 +290,8 @@ const observeMutations = () => {
               if (el.matches(X_TWEET_SELECTOR)) {
                 enqueueElement(el);
               }
-              el.querySelectorAll(X_TWEET_SELECTOR).forEach(
-                (tweet) => enqueueElement(tweet)
+              el.querySelectorAll(X_TWEET_SELECTOR).forEach((tweet) =>
+                enqueueElement(tweet),
               );
             } else {
               scanTree(el);
@@ -266,7 +304,7 @@ const observeMutations = () => {
   observer.observe(document.documentElement, {
     subtree: true,
     childList: true,
-    characterData: true
+    characterData: true,
   });
 };
 const injectStyles = () => {

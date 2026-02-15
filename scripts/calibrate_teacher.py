@@ -99,8 +99,12 @@ def main() -> None:
     teacher_manifest = load_json(teacher_manifest_path)
     teacher_id = str(teacher_manifest.get("teacher_id", "")).strip()
     if not teacher_id:
-        raise SystemExit(f"Teacher manifest at {teacher_manifest_path} is missing teacher_id.")
-    valid_hash_expected = teacher_manifest.get("splits", {}).get("valid", {}).get("hash")
+        raise SystemExit(
+            f"Teacher manifest at {teacher_manifest_path} is missing teacher_id."
+        )
+    valid_hash_expected = (
+        teacher_manifest.get("splits", {}).get("valid", {}).get("hash")
+    )
     valid_hash_actual = hash_prepared_rows(valid_rows)
     if valid_hash_expected and str(valid_hash_expected) != valid_hash_actual:
         raise SystemExit(
@@ -121,8 +125,12 @@ def main() -> None:
     if not aligned:
         raise SystemExit("No aligned rows between prepared-valid and teacher preds.")
 
-    scam_logits = np.array([item[1]["scam_logits"] for item in aligned], dtype=np.float64)
-    topic_logits = np.array([item[1]["topic_logit"] for item in aligned], dtype=np.float64)
+    scam_logits = np.array(
+        [item[1]["scam_logits"] for item in aligned], dtype=np.float64
+    )
+    topic_logits = np.array(
+        [item[1]["topic_logit"] for item in aligned], dtype=np.float64
+    )
     y_scam = np.array([item[0].y_scam_clean for item in aligned], dtype=np.float64)
     y_topic = np.array([item[0].y_topics[0] for item in aligned], dtype=np.float64)
 
@@ -148,10 +156,18 @@ def main() -> None:
     scam_prob_cal = softmax(scam_logits / temp_scam)[:, 1]
     topic_prob_cal = sigmoid(topic_logits / temp_topic)
 
-    scam_bins_raw = calibration_bins(y_scam.astype(int).tolist(), scam_prob_raw.tolist())
-    scam_bins_cal = calibration_bins(y_scam.astype(int).tolist(), scam_prob_cal.tolist())
-    topic_bins_raw = calibration_bins(y_topic.astype(int).tolist(), topic_prob_raw.tolist())
-    topic_bins_cal = calibration_bins(y_topic.astype(int).tolist(), topic_prob_cal.tolist())
+    scam_bins_raw = calibration_bins(
+        y_scam.astype(int).tolist(), scam_prob_raw.tolist()
+    )
+    scam_bins_cal = calibration_bins(
+        y_scam.astype(int).tolist(), scam_prob_cal.tolist()
+    )
+    topic_bins_raw = calibration_bins(
+        y_topic.astype(int).tolist(), topic_prob_raw.tolist()
+    )
+    topic_bins_cal = calibration_bins(
+        y_topic.astype(int).tolist(), topic_prob_cal.tolist()
+    )
 
     payload = {
         "meta": {
@@ -179,7 +195,9 @@ def main() -> None:
                 "topic_calibrated": expected_calibration_error(topic_bins_cal),
             },
             "brier": {
-                "scam_raw": brier_score(y_scam.astype(int).tolist(), scam_prob_raw.tolist()),
+                "scam_raw": brier_score(
+                    y_scam.astype(int).tolist(), scam_prob_raw.tolist()
+                ),
                 "scam_calibrated": brier_score(
                     y_scam.astype(int).tolist(), scam_prob_cal.tolist()
                 ),

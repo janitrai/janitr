@@ -25,7 +25,13 @@ DEFAULT_STUDENT_DIR = MODELS_DIR / "student"
 
 
 class StudentCalibrationReader(CalibrationDataReader):
-    def __init__(self, tokenizer: BertTokenizerFast, texts: list[str], max_length: int, batch_size: int) -> None:
+    def __init__(
+        self,
+        tokenizer: BertTokenizerFast,
+        texts: list[str],
+        max_length: int,
+        batch_size: int,
+    ) -> None:
         self._inputs: list[dict[str, np.ndarray]] = []
         for idx in range(0, len(texts), batch_size):
             chunk = texts[idx : idx + batch_size]
@@ -74,7 +80,9 @@ def main() -> None:
     else:
         tokenizer_dir = args.student_dir / "tokenizer"
         if not tokenizer_dir.exists():
-            raise SystemExit(f"Tokenizer directory not found for static quantization: {tokenizer_dir}")
+            raise SystemExit(
+                f"Tokenizer directory not found for static quantization: {tokenizer_dir}"
+            )
         if not args.valid.exists():
             raise SystemExit(f"Prepared valid split not found: {args.valid}")
 

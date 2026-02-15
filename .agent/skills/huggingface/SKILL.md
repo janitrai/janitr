@@ -93,11 +93,13 @@ python3 scripts/sync_datasets_to_experiments_repo.py \
 ```
 
 Defaults:
+
 - x-posts dataset source: `data/sample.jsonl`
 - x-replies dataset source: `data/replies.jsonl`
 - snapshot id: auto-generated `yyyy-mm-dd-<petname>`
 
 Behavior:
+
 - Writes snapshot under `datasets/snapshots/<snapshot_id>/`.
 - Updates `datasets/INDEX.json`.
 - If content is unchanged (same hashes), does not create a duplicate snapshot.
